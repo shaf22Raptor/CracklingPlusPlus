@@ -1,12 +1,9 @@
 ﻿// CracklingPlusPlus.cpp : Defines the entry point for the application.
-//
 
-#include "CracklingPlusPlus.h"
-
-using namespace std;
+#include <Helpers.h>
 
 int main()
 {
-	cout << "Hello CMake." << endl;
+	Printer("Starting OUTPUT");
 	return 0;
 }
