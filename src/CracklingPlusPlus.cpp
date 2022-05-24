@@ -2,8 +2,12 @@
 
 #include <Helpers.h>
 
+
 int main()
 {
-	Printer("Starting OUTPUT");
+	printer("Starting OUTPUT");
+	std::cout << rc("ATGC") << "\n";
+	std::cout << transToDNA("AAAATTTTGGGGUUUU") << "\n";
+	std::cout << atPercentage("AAAATTTTGGGGCCC") << "\n";
 	return 0;
 }
