@@ -17,3 +17,5 @@ string transToDNA(string RNA);
 float atPercentage(string seq);
 
 void printer(string formattedString);
+
+void runner(char* args);

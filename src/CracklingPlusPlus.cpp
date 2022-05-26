@@ -9,4 +9,7 @@ int main()
 	printer(rc("ATGC"));
 	printer(transToDNA("AAAATTTTGGGGUUUU"));
 	printer(std::to_string(atPercentage("AAAATTTTGGGGCCC")));
+	char argsBuffer[1024];
+	snprintf(argsBuffer, 1024, "%s", "dir");
+	runner(argsBuffer);
 }

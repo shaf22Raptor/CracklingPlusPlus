@@ -56,4 +56,11 @@ void printer(string formattedString)
 	return;
 }
 
+void runner(char* args)
+{
+	int returnCode;
 
+	returnCode = system(args);
+
+	printer(std::to_string(returnCode));
+}
