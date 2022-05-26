@@ -6,8 +6,7 @@
 int main()
 {
 	printer("Starting OUTPUT");
-	std::cout << rc("ATGC") << "\n";
-	std::cout << transToDNA("AAAATTTTGGGGUUUU") << "\n";
-	std::cout << atPercentage("AAAATTTTGGGGCCC") << "\n";
-	return 0;
+	printer(rc("ATGC"));
+	printer(transToDNA("AAAATTTTGGGGUUUU"));
+	printer(std::to_string(atPercentage("AAAATTTTGGGGCCC")));
 }

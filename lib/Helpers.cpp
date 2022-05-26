@@ -3,6 +3,7 @@
 
 array<char, 24> nulceotideArray = { 'a', 'c', 'g', 't', 'r', 'y', 'm', 'k', 'b', 'd', 'h', 'v', 'A', 'C', 'G', 'T', 'R', 'Y', 'M', 'K', 'B', 'D', 'H', 'V' };
 array<char, 24> complementArray = { 't', 'g', 'c', 'a', 'y', 'r', 'k', 'm', 'v', 'h', 'd', 'b', 'T', 'G', 'C', 'A', 'Y', 'R', 'K', 'M', 'V', 'H', 'D', 'B' };
+array<char, 4> atArray = { 'a', 't', 'A', 'T' };
 
 string rc(string DNA)
 {
@@ -30,7 +31,6 @@ float atPercentage(string seq)
 {
 	float total = 0.0f;
 	float length = seq.size();
-	array<char, 4> atArray = { 'a', 't', 'A', 'T' };
 	array<char, 4>::iterator p;
 	for (int i = 0; i < seq.size(); i++)
 	{
@@ -47,7 +47,12 @@ float atPercentage(string seq)
 
 void printer(string formattedString)
 {
-	std::cout << "Timestamp : " << formattedString << std::endl;
+	time_t rawtime = time(0);
+	struct tm* timeinfo = localtime(&rawtime);
+	char timestampBuffer[32];
+	strftime(timestampBuffer, 32, ">>> %Y-%m-%d %H:%M:%S:\t", timeinfo);
+	
+	std::cout << timestampBuffer << formattedString << std::endl;
 	return;
 }
 

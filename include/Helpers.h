@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <iterator>
 #include <array>
+#include <ctime>
 
 using std::string;
 using std::array;
