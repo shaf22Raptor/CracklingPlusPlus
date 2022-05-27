@@ -1,9 +1,9 @@
 ﻿// CracklingPlusPlus.cpp : Defines the entry point for the application.
 
-#include <Helpers.h>
+#include <Helpers.hpp>
 
 
-int main()
+int main(int argc, char** argv)
 {
 	printer("Starting OUTPUT");
 	printer(rc("ATGC"));
@@ -11,5 +11,6 @@ int main()
 	printer(std::to_string(atPercentage("AAAATTTTGGGGCCC")));
 	char argsBuffer[1024];
 	snprintf(argsBuffer, 1024, "%s", "dir");
+	runner(argsBuffer);
 	runner(argsBuffer);
 }

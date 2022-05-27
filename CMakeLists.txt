@@ -8,7 +8,7 @@ project ("CracklingPlusPlus" VERSION 1.0.0 DESCRIPTION "C++ version of Crackling
 add_executable (${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/src/CracklingPlusPlus.cpp)
 
 # Add include directory 
-include_directories(${CMAKE_SOURCE_DIR}/include)
+include_directories (${CMAKE_SOURCE_DIR}/include)
 
 # Add library subdirectory
 add_subdirectory (${CMAKE_SOURCE_DIR}/lib)
@@ -24,4 +24,5 @@ if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET CracklingPlusPlus PROPERTY CXX_STANDARD 20)
 endif()
 
-# TODO: Add tests and install targets if needed.
+# Add tests subdirectory
+add_subdirectory (${CMAKE_SOURCE_DIR}/tests)
