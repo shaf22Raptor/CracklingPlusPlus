@@ -5,8 +5,40 @@ array<char, 24> nulceotideArray = { 'a', 'c', 'g', 't', 'r', 'y', 'm', 'k', 'b',
 array<char, 24> complementArray = { 't', 'g', 'c', 'a', 'y', 'r', 'k', 'm', 'v', 'h', 'd', 'b', 'T', 'G', 'C', 'A', 'Y', 'R', 'K', 'M', 'V', 'H', 'D', 'B' };
 array<char, 4> atArray = { 'a', 't', 'A', 'T' };
 
+void printer(string formattedString)
+{
+	time_t rawtime = time(0);
+	struct tm* timeinfo = localtime(&rawtime);
+	char timestampBuffer[32];
+	strftime(timestampBuffer, 32, ">>> %Y-%m-%d %H:%M:%S:\t", timeinfo);
+	
+	std::cout << timestampBuffer << formattedString << std::endl;
+	return;
+}
+
+void errPrinter(string formattedString)
+{
+	time_t rawtime = time(0);
+	struct tm* timeinfo = localtime(&rawtime);
+	char timestampBuffer[32];
+	strftime(timestampBuffer, 32, ">>> %Y-%m-%d %H:%M:%S:\t", timeinfo);
+	
+	std::cerr << timestampBuffer << formattedString << std::endl;
+	return;
+}
+
 string rc(string DNA)
 {
+	// Ensure input lenght is greater than 0
+	if (DNA.length() < 1)
+	{
+		throw std::length_error("Type Error, Seqeunce length must be greater than 0!");
+	}
+	// Ensure input lenght is not greater than 1024
+	else if (DNA.length() > 1024)
+	{
+		throw std::length_error("Type Error, Seqeunce length must be less than 1024!");
+	}
 	// Reverse the input seqeuence 
 	std::reverse(DNA.begin(), DNA.end());
 	// Convert each character to the complement
@@ -16,6 +48,7 @@ string rc(string DNA)
 		int complementPos = std::distance(nulceotideArray.begin(), nulceotidePos);
 		DNA[i] = complementArray[complementPos];
 	}
+	// Return reverse compliment
 	return DNA;
 }
 
@@ -45,22 +78,24 @@ float atPercentage(string seq)
 	return (100.0f * total / length);
 }
 
-void printer(string formattedString)
-{
-	time_t rawtime = time(0);
-	struct tm* timeinfo = localtime(&rawtime);
-	char timestampBuffer[32];
-	strftime(timestampBuffer, 32, ">>> %Y-%m-%d %H:%M:%S:\t", timeinfo);
-	
-	std::cout << timestampBuffer << formattedString << std::endl;
-	return;
-}
-
 void runner(char* args)
 {
-	int returnCode;
-
-	returnCode = system(args);
-
-	printer(std::to_string(returnCode));
+	char buffer[1024];
+	snprintf(buffer, 1024, "| Calling: %s", args);
+	printer(buffer);
+	try 
+	{
+		int returnCode = system(args);
+		if (returnCode != 0)
+		{
+			throw std::runtime_error("Runtime Error, returned a normal 0 value!");
+		}
+	}
+	catch (string error)
+	{
+		errPrinter(error);
+		return;
+	}
+    printer("| Finished");
+	return;
 }
