@@ -25,7 +25,7 @@ TEST_CASE("Reverse Compliments are computed correctly")
     }
     SUBCASE("Test rc on 'C' seq")
     {
-        CHECK( rc("CCCCCCCCCCCCCCCCCCCCCGG") == "CCGGGGGGGGGGGGGGGGGGGGG");
+        CHECK( rc("CCCCCCCCCCCCCCCCCCCCGG") == "CCGGGGGGGGGGGGGGGGGGGGG");
     }
     SUBCASE("Test rc on short seq ( < 23)")
     {
