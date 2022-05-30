@@ -14,11 +14,10 @@ include_directories (${CMAKE_SOURCE_DIR}/include)
 add_subdirectory (${CMAKE_SOURCE_DIR}/lib)
 
 # Link library subdirectory
-target_link_directories (${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/lib)
+link_directories (${CMAKE_SOURCE_DIR}/lib)
 
 # Link HelperLib
-target_link_libraries (${PROJECT_NAME} PUBLIC helperLib)
-
+link_libraries (helperLib)
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET CracklingPlusPlus PROPERTY CXX_STANDARD 20)
