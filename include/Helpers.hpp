@@ -7,15 +7,12 @@
 #include <array>
 #include <ctime>
 
-using std::string;
-using std::array;
+std::string rc(std::string DNA);
 
-string rc(string DNA);
+std::string transToDNA(std::string RNA);
 
-string transToDNA(string RNA);
+float atPercentage(std::string seq);
 
-float atPercentage(string seq);
-
-void printer(string formattedString);
+void printer(std::string formattedString);
 
 void runner(char* args);

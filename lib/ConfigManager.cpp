@@ -1,5 +1,8 @@
 #include <ConfigManager.hpp>
 
+using std::string;
+using std::list;
+
 ConfigManager::ConfigManager(string configFilePath) 
 {
 	/*

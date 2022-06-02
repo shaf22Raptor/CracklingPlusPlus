@@ -9,38 +9,34 @@
 #include <regex>
 #include <filesystem>
 
-
-using std::string;
-using std::list;
-
 class ConfigManager
 {
 private:
-	list<string> filesToProcess;
-	std::map<string, std::map<string, string>> configMap;
+	std::list<std::string> filesToProcess;
+	std::map<std::string, std::map<std::string, std::string>> configMap;
 	
 
 public:
 	
-	ConfigManager(string configFilePath);
+	ConfigManager(std::string configFilePath);
 	
 	int getConsensusToolCount();
 
-	void set(string section, string key, string value);
+	void set(std::string section, std::string key, std::string value);
 
-	int getInt(string section, string key);
+	int getInt(std::string section, std::string key);
 
-	float getFloat(string section, string key);
+	float getFloat(std::string section, std::string key);
 
-	double getDouble(string section, string key);
+	double getDouble(std::string section, std::string key);
 
-	string getString(string section, string key);
+	std::string getString(std::string section, std::string key);
 
-	const char* getCString(string section, string key);
+	const char* getCString(std::string section, std::string key);
 
-	bool getBool(string section, string key);
+	bool getBool(std::string section, std::string key);
 
-	std::filesystem::path getPath(string section, string key);
+	std::filesystem::path getPath(std::string section, std::string key);
 
-	list<string> getFilesToProcess();
+	std::list<std::string> getFilesToProcess();
 };
