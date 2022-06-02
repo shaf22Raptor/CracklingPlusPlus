@@ -1,7 +1,7 @@
 #include <Helpers.hpp>
 #include <doctest.h>
 
-TEST_CASE("Reverse Compliments are computed correctly")
+TEST_CASE("rc" * doctest::description("Ensure that the Reverse Compliment function is working correctly") * doctest::timeout(5))
 {
     SUBCASE("Test rc on palindromic seq")
     {
