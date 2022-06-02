@@ -2,6 +2,7 @@
 
 #include <Helpers.hpp>
 #include <ConfigManager.hpp>
+#include <Constants.hpp>
 
 
 int main(int argc, char** argv)
@@ -15,4 +16,8 @@ int main(int argc, char** argv)
 	// Run crackling
 	printer("Starting crackling");
 	printer("Finished");
+	printer(CODE_ACCEPTED);
+	printer(CODE_REJECTED);
+	printer(CODE_UNTESTED);
+	printer(CODE_AMBIGUOUS);
 }
