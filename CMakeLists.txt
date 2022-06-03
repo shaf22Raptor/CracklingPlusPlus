@@ -7,7 +7,7 @@ set (CMAKE_CXX_STANDARD 17)
 project ("CracklingPlusPlus" VERSION 1.0.0 DESCRIPTION "C++ version of Crackling")
 
 # Copy file
-configure_file(${CMAKE_SOURCE_DIR}/src/test-test_config.ini ${CMAKE_BINARY_DIR} COPYONLY)
+configure_file(${CMAKE_SOURCE_DIR}/src/test_config.ini ${CMAKE_BINARY_DIR} COPYONLY)
 
 # Add include directory 
 include_directories (${CMAKE_SOURCE_DIR}/include)
@@ -23,6 +23,9 @@ link_libraries (helperLib)
 
 # Link ConfigManager
 link_libraries (ConfigManager)
+
+# Link ConfigManager
+link_libraries (Logger)
 
 # Add source to this project's executable.
 add_executable (${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/src/CracklingPlusPlus.cpp)

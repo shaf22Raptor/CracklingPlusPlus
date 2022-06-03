@@ -210,6 +210,11 @@ ConfigManager::ConfigManager(string configFilePath)
 	snprintf(buffer, 1024, "%s-bowtie-output.txt", getCString("general", "name"));
 	set("bowtie2", "output", (outputDirPathObject / buffer).string());
 
+	snprintf(buffer, 1024, "%s-%s.log", getCString("general", "name"), configPathObject.stem().string().c_str());
+	set("output", "log", (outputDirPathObject / buffer).string());
+
+	snprintf(buffer, 1024, "%s-%s.errlog", getCString("general", "name"), configPathObject.stem().string().c_str());
+	set("output", "error", (outputDirPathObject / buffer).string());
 };
 
 int ConfigManager::getConsensusToolCount()
