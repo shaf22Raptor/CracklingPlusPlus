@@ -24,7 +24,7 @@ link_libraries (helperLib)
 # Link ConfigManager
 link_libraries (ConfigManager)
 
-# Link ConfigManager
+# Link Logger Class
 link_libraries (Logger)
 
 # Add source to this project's executable.
