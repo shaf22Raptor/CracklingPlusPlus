@@ -36,7 +36,6 @@ private:
     std::streambuf* origSrcBuffer;
     std::ofstream outputFileStream;
     logBuffer customBuffer;
-    std::ostream* loggedOutputStream;
 };
 
 

@@ -51,10 +51,10 @@ Logger::Logger(ostream& logSource, string outFile)
     customBuffer = logBuffer(*origOutputStream, outputFileStream);
 
     // Create new ostream
-    loggedOutputStream = &ostream(&customBuffer);
+    ostream loggedOutputStream(&customBuffer);
 
     // Set log source to use new ostream that uses our custom buffer
-    origOutputStream->rdbuf(loggedOutputStream->rdbuf());
+    origOutputStream->rdbuf(loggedOutputStream.rdbuf());
 }
 
 void Logger::close() {
