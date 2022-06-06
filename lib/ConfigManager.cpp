@@ -1,3 +1,4 @@
+// ConfigManager Class
 #include <ConfigManager.hpp>
 
 using std::string;
@@ -215,7 +216,7 @@ ConfigManager::ConfigManager(string configFilePath)
 
 	snprintf(buffer, 1024, "%s-%s.errlog", getCString("general", "name"), configPathObject.stem().string().c_str());
 	set("output", "error", (outputDirPathObject / buffer).string());
-};
+}
 
 int ConfigManager::getConsensusToolCount()
 {
