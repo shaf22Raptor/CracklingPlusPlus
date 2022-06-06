@@ -3,6 +3,7 @@
 #include <iostream>
 #include <streambuf>
 #include <fstream>
+#include <cstring>
 
 class logBuffer : public std::streambuf
 {
