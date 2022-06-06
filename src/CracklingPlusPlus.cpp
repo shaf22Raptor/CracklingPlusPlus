@@ -4,7 +4,6 @@
 #include <ConfigManager.hpp>
 #include <Constants.hpp>
 #include <Logger.hpp>
-#include <Windows.h>
 
 // "C:\\Users\\n9725059\\Documents\\Crackling-fork\\Crackling\\log.log"
 
@@ -29,7 +28,6 @@ int main(int argc, char** argv)
 	printer(CODE_REJECTED);
 	printer(CODE_UNTESTED);
 	printer(CODE_AMBIGUOUS);
-	Sleep(5000);
 	printer("Finished");
 
 	// Clean up
