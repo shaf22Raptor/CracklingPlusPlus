@@ -10,24 +10,12 @@ array<char, 4> atArray = { 'a', 't', 'A', 'T' };
 
 void printer(string formattedString)
 {
-	time_t rawtime = time(0);
-	struct tm* timeinfo = localtime(&rawtime);
-	char timestampBuffer[32];
-	strftime(timestampBuffer, 32, ">>> %Y-%m-%d %H:%M:%S:\t", timeinfo);
-	
-	std::cout << timestampBuffer << formattedString << std::endl;
-	return;
+	std::cout << formattedString << std::endl;
 }
 
 void errPrinter(string formattedString)
 {
-	time_t rawtime = time(0);
-	struct tm* timeinfo = localtime(&rawtime);
-	char timestampBuffer[32];
-	strftime(timestampBuffer, 32, ">>> %Y-%m-%d %H:%M:%S:\t", timeinfo);
-	
-	std::cerr << timestampBuffer << formattedString << std::endl;
-	return;
+	std::cerr << formattedString << std::endl;
 }
 
 string rc(string DNA)

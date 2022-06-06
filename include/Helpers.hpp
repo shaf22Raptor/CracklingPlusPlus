@@ -15,4 +15,6 @@ float atPercentage(std::string seq);
 
 void printer(std::string formattedString);
 
+void errPrinter(std::string formattedString);
+
 void runner(char* args);
