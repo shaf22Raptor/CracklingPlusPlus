@@ -4,6 +4,8 @@
 #include <list>
 #include <map>
 
+char formattingBuffer[1024];
+
 std::string CODE_ACCEPTED = "1";
 std::string CODE_REJECTED = "0";
 std::string CODE_UNTESTED = "?";
