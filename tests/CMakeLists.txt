@@ -1,6 +1,9 @@
 ﻿# CMakeList.txt : CMake project for CracklingPlusPlus
 cmake_minimum_required (VERSION 3.8)
 
+# Copy testing data
+file(COPY ${CMAKE_SOURCE_DIR}/tests/data/ DESTINATION data/)
+
 # Enable testing
 enable_testing()
 
@@ -12,3 +15,9 @@ add_executable(testHelpers Helpers.cpp $<TARGET_OBJECTS:testMain>)
 
 # Added Helpers test
 add_test(NAME testHelpers COMMAND testHelpers)
+
+# Adding CHOPCHOP tests excutable
+add_executable(testCHOPCHOP CHOPCHOP.cpp $<TARGET_OBJECTS:testMain>)
+
+# Added Helpers test
+add_test(NAME testCHOPCHOP COMMAND testCHOPCHOP)
