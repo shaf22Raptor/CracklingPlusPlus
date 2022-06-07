@@ -21,8 +21,6 @@ link_directories (${CMAKE_SOURCE_DIR}/lib)
 # Link Libraries 
 link_libraries (helperLib ConfigManager Logger CHOPCHOP)
 
-
-
 # Add source to this project's executable.
 add_executable (${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/src/CracklingPlusPlus.cpp)
 
