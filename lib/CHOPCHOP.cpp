@@ -13,7 +13,6 @@ void CHOPCHOP::run(std::map<std::string, std::map<std::string, std::string>> can
 {
     if (!toolIsSelected)
     {
-        printer("CHOPCHOP has been configured not to run. Skipping CHOPCHOP");
         return;
     }
 
