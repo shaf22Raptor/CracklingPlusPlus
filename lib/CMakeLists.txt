@@ -9,3 +9,4 @@ add_library( Logger STATIC ${CMAKE_SOURCE_DIR}/lib/Logger.cpp ${CMAKE_SOURCE_DIR
 
 # Added CHOPCHOP
 add_library( CHOPCHOP STATIC ${CMAKE_SOURCE_DIR}/lib/CHOPCHOP.cpp ${CMAKE_SOURCE_DIR}/include/CHOPCHOP.hpp)
+target_link_libraries(CHOPCHOP PRIVATE helperLib)

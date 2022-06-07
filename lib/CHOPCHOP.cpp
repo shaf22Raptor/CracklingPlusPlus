@@ -1,6 +1,5 @@
 // CHOPCHOP class
 #include <CHOPCHOP.hpp>
-#include <Helpers.hpp>
 
 using std::string;
 using std::map;
