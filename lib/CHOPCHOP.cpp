@@ -6,7 +6,7 @@ using std::map;
 
 CHOPCHOP::CHOPCHOP(ConfigManager cm) : failedcount(0), testedcount(0), toolIsSelected(false)
 {
-    toolIsSelected = cm.getBool("consensus", "CHOPCHOP");
+    toolIsSelected = cm.getBool("consensus", "chopchop");
 }
 
 void CHOPCHOP::run(std::map<std::string, std::map<std::string, std::string>> candidateGuides)
@@ -32,8 +32,10 @@ void CHOPCHOP::run(std::map<std::string, std::map<std::string, std::string>> can
         }
         testedcount++;
     }
-    snprintf(formattingBuffer, 1024, "%d of %d failed here.", failedcount, testedcount);
-    printer(formattingBuffer);
+
+
+    snprintf(printingBuffer, 1024, "%d of %d failed here.", failedcount, testedcount);
+    printer(printingBuffer);
     return;
 }
 
