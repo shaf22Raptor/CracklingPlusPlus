@@ -44,14 +44,17 @@ ConfigManager::ConfigManager(string configFilePath)
 			// Extract section header only 
 			std::regex_search(currentLine, match, expression);
 			section = match.str().substr(1, match.str().length() - 2);
+			std::transform(section.begin(), section.end(), section.begin(), [](unsigned char c) { return std::tolower(c); });
 		}
 		// Entry line, Key and Value seperated by '='
 		else
 		{
 			// Before '='
 			key = currentLine.substr(0, currentLine.find("="));
+			std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) { return std::tolower(c); });
 			// After '='
 			value = currentLine.substr(currentLine.find("=")+1, currentLine.length()-1);
+			std::transform(value.begin(), value.end(), value.begin(), [](unsigned char c) { return std::tolower(c); });
 			// Update configMap
 			set(section, key, value);
 		}
