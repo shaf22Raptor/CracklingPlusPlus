@@ -4,6 +4,7 @@
 #include <ConfigManager.hpp>
 #include <Constants.hpp>
 #include <Logger.hpp>
+#include <CHOPCHOP.hpp>
 
 // "C:\\Users\\n9725059\\Documents\\Crackling-fork\\Crackling\\log.log"
 
