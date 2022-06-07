@@ -1,5 +1,6 @@
 // CHOPCHOP class
 #include <CHOPCHOP.hpp>
+#include <Helpers.hpp>
 
 using std::string;
 using std::map;
@@ -13,6 +14,7 @@ void CHOPCHOP::run(std::map<std::string, std::map<std::string, std::string>> can
 {
     if (!toolIsSelected)
     {
+        printer("CHOPCHOP has been configured not to run. Skipping CHOPCHOP");
         return;
     }
 
@@ -34,7 +36,7 @@ void CHOPCHOP::run(std::map<std::string, std::map<std::string, std::string>> can
 
 
     snprintf(printingBuffer, 1024, "%d of %d failed here.", failedcount, testedcount);
-    
+    printer(printingBuffer);
     return;
 }
 
