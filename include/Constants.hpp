@@ -4,21 +4,19 @@
 #include <list>
 #include <map>
 
-char formattingBuffer[1024];
+const std::string CODE_ACCEPTED = "1";
+const std::string CODE_REJECTED = "0";
+const std::string CODE_UNTESTED = "?";
+const std::string CODE_AMBIGUOUS = "-";
+const std::string CODE_ERROR = "!";
 
-std::string CODE_ACCEPTED = "1";
-std::string CODE_REJECTED = "0";
-std::string CODE_UNTESTED = "?";
-std::string CODE_AMBIGUOUS = "-";
-std::string CODE_ERROR = "!";
+const std::string MODULE_MM10DB = "mm10db";
+const std::string MODULE_SGRNASCORER2 = "sgrnascorer2";
+const std::string MODULE_CHOPCHOP = "chopchop";
+const std::string MODULE_CONSENSUS = "consensus";
+const std::string MODULE_SPECIFICITY = "specificity";
 
-std::string MODULE_MM10DB = "mm10db";
-std::string MODULE_SGRNASCORER2 = "sgrnascorer2";
-std::string MODULE_CHOPCHOP = "chopchop";
-std::string MODULE_CONSENSUS = "consensus";
-std::string MODULE_SPECIFICITY = "specificity";
-
-std::map < std::string, std::string> DEFAULT_GUIDE_PROPERTIES = {
+const std::map < std::string, std::string> DEFAULT_GUIDE_PROPERTIES = {
     {"seq"                      , ""},
     {"header"                   , ""},
     {"isUnique"                 , CODE_ACCEPTED},
@@ -47,7 +45,7 @@ std::map < std::string, std::string> DEFAULT_GUIDE_PROPERTIES = {
     {"passedAvoidLeadingT"      , CODE_UNTESTED},
 };
 
-std::list<std::string> DEFAULT_GUIDE_PROPERTIES_ORDER ({
+const std::list<std::string> DEFAULT_GUIDE_PROPERTIES_ORDER ({
     "seq",
     "sgrnascorer2score",
     "header",
