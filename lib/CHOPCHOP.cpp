@@ -34,7 +34,7 @@ void CHOPCHOP::run(std::map<std::string, std::map<std::string, std::string>> can
 
 
     snprintf(printingBuffer, 1024, "%d of %d failed here.", failedcount, testedcount);
-    printer(printingBuffer);
+    
     return;
 }
 
