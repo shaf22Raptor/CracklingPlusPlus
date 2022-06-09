@@ -4,7 +4,7 @@
 using std::string;
 using std::map;
 
-CHOPCHOP::CHOPCHOP(ConfigManager cm) : failedcount(0), testedcount(0), toolIsSelected(false)
+CHOPCHOP::CHOPCHOP(ConfigManager cm) : failedcount(0), testedcount(0), toolIsSelected(false), printingBuffer({0})
 {
     toolIsSelected = cm.getBool("consensus", "chopchop");
 }
@@ -17,6 +17,7 @@ void CHOPCHOP::run(std::map<std::string, std::map<std::string, std::string>> can
         return;
     }
 
+    printer("CHOPCHOP - remove those without G in position 20.");
     failedcount = 0;
     testedcount = 0;
     for (auto const& [target23, resultsMap] : candidateGuides)
