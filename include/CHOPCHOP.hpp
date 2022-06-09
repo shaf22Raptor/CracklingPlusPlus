@@ -16,8 +16,8 @@ public:
 	bool G20(std::string candidateGuide);
 
 private:
-	int testedCount;
-	int failedCount;
+	int testedcount;
+	int failedcount;
 	bool toolIsSelected;
 	char printingBuffer[1024];
 };
