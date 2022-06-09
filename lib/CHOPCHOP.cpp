@@ -4,9 +4,12 @@
 using std::string;
 using std::map;
 
-CHOPCHOP::CHOPCHOP(ConfigManager cm) : failedCount(0), testedCount(0), toolIsSelected(false), printingBuffer({0})
+CHOPCHOP::CHOPCHOP(ConfigManager cm) : failedCount(0), testedCount(0), toolIsSelected(false), optimsationLevel("ultralow"), toolCount(0), consensusN(0), printingBuffer({0})
 {
     toolIsSelected = cm.getBool("consensus", "chopchop");
+    optimsationLevel = cm.getString("general", "optimisation");
+    toolCount = cm.getConsensusToolCount();
+    consensusN = cm.getInt("consensus", "n");
 }
 
 void CHOPCHOP::run(std::map<std::string, std::map<std::string, std::string>> candidateGuides)
@@ -22,6 +25,9 @@ void CHOPCHOP::run(std::map<std::string, std::map<std::string, std::string>> can
     testedCount = 0;
     for (auto const& [target23, resultsMap] : candidateGuides)
     {
+        // Run time filtering
+        if (!filterCandidateGuides(resultsMap, MODULE_CHOPCHOP, optimsationLevel, consensusN, toolCount)) { continue; }
+
         if (G20(target23))
         {
             candidateGuides[target23]["passedG20"] = CODE_ACCEPTED;
@@ -33,7 +39,6 @@ void CHOPCHOP::run(std::map<std::string, std::map<std::string, std::string>> can
         }
         testedCount++;
     }
-
 
     snprintf(printingBuffer, 1024, "%d of %d failed here.", failedCount, testedCount);
     printer(printingBuffer);

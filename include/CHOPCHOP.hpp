@@ -19,5 +19,8 @@ private:
 	int testedCount;
 	int failedCount;
 	bool toolIsSelected;
+	std::string optimsationLevel;
+	int toolCount;
+	int consensusN;
 	char printingBuffer[1024];
 };
