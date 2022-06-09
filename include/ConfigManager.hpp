@@ -11,11 +11,6 @@
 
 class ConfigManager
 {
-private:
-	std::list<std::string> filesToProcess;
-	std::map<std::string, std::map<std::string, std::string>> configMap;
-	
-
 public:
 	
 	ConfigManager(std::string configFilePath);
@@ -39,4 +34,11 @@ public:
 	std::filesystem::path getPath(std::string section, std::string key);
 
 	std::list<std::string> getFilesToProcess();
+
+private:
+	std::list<std::string> filesToProcess;
+	std::map<std::string, std::map<std::string, std::string>> configMap;
+	
+
+
 };
