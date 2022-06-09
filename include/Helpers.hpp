@@ -6,8 +6,12 @@
 #include <iterator>
 #include <array>
 #include <ctime>
+#include <map>
+#include <Constants.hpp>
 
 std::string rc(std::string DNA);
+
+bool filterCandidateGuides(std::map<std::string, std::string> candidateGuideResultMap, std::string selectedModule);
 
 void printer(std::string formattedString);
 
