@@ -6,17 +6,6 @@ using std::array;
 
 array<char, 24> nulceotideArray = { 'a', 'c', 'g', 't', 'r', 'y', 'm', 'k', 'b', 'd', 'h', 'v', 'A', 'C', 'G', 'T', 'R', 'Y', 'M', 'K', 'B', 'D', 'H', 'V' };
 array<char, 24> complementArray = { 't', 'g', 'c', 'a', 'y', 'r', 'k', 'm', 'v', 'h', 'd', 'b', 'T', 'G', 'C', 'A', 'Y', 'R', 'K', 'M', 'V', 'H', 'D', 'B' };
-array<char, 4> atArray = { 'a', 't', 'A', 'T' };
-
-void printer(string formattedString)
-{
-	std::cout << formattedString << std::endl;
-}
-
-void errPrinter(string formattedString)
-{
-	std::cerr << formattedString << std::endl;
-}
 
 string rc(string DNA)
 {
@@ -43,30 +32,14 @@ string rc(string DNA)
 	return DNA;
 }
 
-string transToDNA(string RNA)
+void printer(string formattedString)
 {
-	// Swap U with T
-	std::replace(RNA.begin(), RNA.end(), 'u', 't');
-	std::replace(RNA.begin(), RNA.end(), 'U', 'T');
-	return RNA;
+	std::cout << formattedString << std::endl;
 }
 
-float atPercentage(string seq)
+void errPrinter(string formattedString)
 {
-	float total = 0.0f;
-	float length = seq.size();
-	array<char, 4>::iterator p;
-	for (int i = 0; i < seq.size(); i++)
-	{
-		// Check if the char at the current pos is present in the 'AT' array
-		p = std::find(atArray.begin(), atArray.end(), seq[i]);
-		if (p != atArray.end())
-		{
-			total++;
-		}
-	}
-
-	return (100.0f * total / length);
+	std::cerr << formattedString << std::endl;
 }
 
 void runner(char* args)
