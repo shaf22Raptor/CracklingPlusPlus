@@ -2,6 +2,11 @@
 #pragma once
 #include <string>
 #include <map>
+#include <array>
+#include <iterator>
+#include <fstream>
+#include <list>
+#include <regex>
 #include <ConfigManager.hpp>
 #include <Constants.hpp>
 #include <Helpers.hpp>
@@ -9,9 +14,9 @@
 class mm10db
 {
 public:
-	mm10db(ConfigManager cm);
+	mm10db(ConfigManager& cm);
 
-	void run(std::map<std::string, std::map<std::string, std::string>> candidateGuides);
+	void run(std::map<std::string, std::map<std::string, std::string>>& candidateGuides);
 
 	bool leadingT(std::string candidateGuide);
 
@@ -22,9 +27,14 @@ public:
 	std::string transToDNA(std::string RNA);
 
 private:
-	int testedcount;
-	int failedcount;
 	bool toolIsSelected;
+	std::string optimsationLevel;
+	int toolCount;
+	int consensusN;
+	std::string RNAFoldOutFile;
+	std::string RNAFoldInFile;
+	std::string RNAFoldBin;
+	int RNAFoldPageLength;
 	char printingBuffer[1024];
 
 };
