@@ -9,6 +9,12 @@
 #include <map>
 #include <Constants.hpp>
 
+std::string rtrim(const std::string& s);
+
+std::string ltrim(const std::string& s);
+
+std::string trim(const std::string& s);
+
 std::string rc(std::string DNA);
 
 bool filterCandidateGuides(std::map<std::string, std::string> candidateGuideResultMap, std::string selectedModule, std::string optimisation, int consensusN, int toolCount);

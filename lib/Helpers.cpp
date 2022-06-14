@@ -8,6 +8,26 @@ using std::stoi;
 
 array<char, 24> nulceotideArray = { 'a', 'c', 'g', 't', 'r', 'y', 'm', 'k', 'b', 'd', 'h', 'v', 'A', 'C', 'G', 'T', 'R', 'Y', 'M', 'K', 'B', 'D', 'H', 'V' };
 array<char, 24> complementArray = { 't', 'g', 'c', 'a', 'y', 'r', 'k', 'm', 'v', 'h', 'd', 'b', 'T', 'G', 'C', 'A', 'Y', 'R', 'K', 'M', 'V', 'H', 'D', 'B' };
+const string WHITESPACE = " \n\r\t\f\v";
+
+string rtrim(const string& s)
+{
+	size_t end = s.find_last_not_of(WHITESPACE);
+	if (end == string::npos) { return ""; }
+	return s.substr(0, end + 1);
+}
+
+string ltrim(const string& s)
+{
+	size_t start = s.find_first_not_of(WHITESPACE);
+	if (start == string::npos) { return ""; }
+	return s.substr(start);
+}
+
+string trim(const string& s)
+{
+	return ltrim(rtrim(s));
+}
 
 string rc(string DNA)
 {
