@@ -6,7 +6,7 @@
 #include <Logger.hpp>
 #include <CHOPCHOP.hpp>
 #include <mm10db.hpp>
-#include <inputProcessor.hpp>
+#include <cas9InputProcessor.hpp>
 
 int main(int argc, char** argv)
 {
@@ -20,7 +20,10 @@ int main(int argc, char** argv)
 	Logger coutLogger( std::cout , cm.getString("output", "log"));
 	Logger cerrLogger( std::cerr , cm.getString("output", "error"));
 
-	processInput(cm.getFilesToProcess());
+	// std::list<std::string> batchFiles = processInput(cm.getFilesToProcess(), cm.getInt("input", "batch-size"));
+	cas9InputProcessor ip;
+	std::list<std::string> batchFiles =  ip.processInput(cm.getFilesToProcess(), cm.getInt("input", "batch-size"));
+
 
 	// Clean up
 	coutLogger.close();

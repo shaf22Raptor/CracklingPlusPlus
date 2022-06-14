@@ -18,6 +18,11 @@ add_library(inputProcessor STATIC ${CMAKE_SOURCE_DIR}/lib/inputProcessor.cpp ${C
 # Link Libraries 
 link_libraries (inputProcessor)
 
+# Add cas9InputProcessor
+add_library(cas9InputProcessor STATIC ${CMAKE_SOURCE_DIR}/lib/cas9InputProcessor.cpp ${CMAKE_SOURCE_DIR}/include/cas9InputProcessor.hpp)
+# Link Libraries 
+link_libraries (cas9InputProcessor)
+
 # Add CHOPCHOP
 add_library(CHOPCHOP STATIC ${CMAKE_SOURCE_DIR}/lib/CHOPCHOP.cpp ${CMAKE_SOURCE_DIR}/include/CHOPCHOP.hpp)
 # Link Libraries 
