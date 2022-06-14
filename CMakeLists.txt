@@ -19,10 +19,12 @@ add_subdirectory (${CMAKE_SOURCE_DIR}/lib)
 link_directories (${CMAKE_SOURCE_DIR}/lib)
 
 # Link Libraries 
-link_libraries (helperLib ConfigManager Logger CHOPCHOP)
+link_libraries (helperLib ConfigManager Logger inputProcesor CHOPCHOP mm10db)
 
 # Add source to this project's executable.
 add_executable (${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/src/CracklingPlusPlus.cpp)
 
 # Add tests subdirectory
 add_subdirectory (${CMAKE_SOURCE_DIR}/tests)
+# Copy testing data
+file(COPY ${CMAKE_SOURCE_DIR}/tests/data/ DESTINATION data/)

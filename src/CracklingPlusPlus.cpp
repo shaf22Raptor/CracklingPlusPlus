@@ -5,10 +5,8 @@
 #include <Constants.hpp>
 #include <Logger.hpp>
 #include <CHOPCHOP.hpp>
-
-// "C:\\Users\\n9725059\\Documents\\Crackling-fork\\Crackling\\log.log"
-
-
+#include <mm10db.hpp>
+#include <inputProcessor.hpp>
 
 int main(int argc, char** argv)
 {
@@ -16,23 +14,17 @@ int main(int argc, char** argv)
 
 	// Load config
 	
-	ConfigManager cm("test_config.ini");
+	ConfigManager cm("data/test_config.ini");
 
 	// Create logger objects
 	Logger coutLogger( std::cout , cm.getString("output", "log"));
 	Logger cerrLogger( std::cerr , cm.getString("output", "error"));
 
-
-	// Run crackling
-	printer("Starting crackling");
-	printer(CODE_ACCEPTED);
-	printer(CODE_REJECTED);
-	printer(CODE_UNTESTED);
-	printer(CODE_AMBIGUOUS);
-	printer("Finished");
+	processInput(cm.getFilesToProcess());
 
 	// Clean up
 	coutLogger.close();
+	cerrLogger.close();
 
 	return 0;
 }

@@ -17,7 +17,7 @@ mm10db::mm10db(ConfigManager& cm) :
 	RNAFoldInFile(""), 
 	RNAFoldBin(""),
 	RNAFoldPageLength(0), 
-	printingBuffer({0})
+	printingBuffer{"\0"}
 {
 	toolIsSelected = cm.getBool("consensus", "mm10db");
 	optimsationLevel = cm.getString("general", "optimisation");
@@ -109,7 +109,7 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& cand
 	printer("mm10db - check secondary structure.");
 	string guide = "GUUUUAGAGCUAGAAAUAGCAAGUUAAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAAGUGGCACCGAGUCGGUGCUUUU";
 	std::regex pattern_RNAstructure(".{28}\({4}\.{4}\){4}\.{3}\){4}.{21}\({4}\.{4}\){4}\({7}\.{3}\){7}\.{3}\s\((.+)\)");
-	std::regex pattern_RNAenergy("\s\((.+)\)");
+	std::regex pattern_RNAenergy("\\s\((.+)\)");
 	testedCount = 0;
 	failedCount = 0;
 	int errorCount = 0;

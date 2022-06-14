@@ -4,7 +4,14 @@
 using std::string;
 using std::map;
 
-CHOPCHOP::CHOPCHOP(ConfigManager cm) : failedCount(0), testedCount(0), toolIsSelected(false), optimsationLevel("ultralow"), toolCount(0), consensusN(0), printingBuffer({0})
+CHOPCHOP::CHOPCHOP(ConfigManager cm) : 
+    failedCount(0),
+    testedCount(0),
+    toolIsSelected(false),
+    optimsationLevel("ultralow"),
+    toolCount(0),
+    consensusN(0),
+    printingBuffer{"\0"}
 {
     toolIsSelected = cm.getBool("consensus", "chopchop");
     optimsationLevel = cm.getString("general", "optimisation");
