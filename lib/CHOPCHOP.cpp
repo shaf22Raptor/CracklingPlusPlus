@@ -19,7 +19,7 @@ CHOPCHOP::CHOPCHOP(ConfigManager cm) :
     consensusN = cm.getInt("consensus", "n");
 }
 
-void CHOPCHOP::run(std::map<std::string, std::map<std::string, std::string>> candidateGuides)
+void CHOPCHOP::run(std::map<std::string, std::map<std::string, std::string>>& candidateGuides)
 {
     if (!toolIsSelected)
     {
