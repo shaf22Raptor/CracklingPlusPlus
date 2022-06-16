@@ -34,6 +34,8 @@ private:
 	std::string RNAFoldOutFile;
 	std::string RNAFoldInFile;
 	std::string RNAFoldBin;
+	float lowEnergyThreshold;
+	float highEnergyThreshold;
 	int RNAFoldPageLength;
 	char printingBuffer[1024];
 

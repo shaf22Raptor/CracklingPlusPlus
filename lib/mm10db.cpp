@@ -16,7 +16,9 @@ mm10db::mm10db(ConfigManager& cm) :
 	RNAFoldOutFile(""), 
 	RNAFoldInFile(""), 
 	RNAFoldBin(""),
-	RNAFoldPageLength(0), 
+	RNAFoldPageLength(0),
+	lowEnergyThreshold(0.0f),
+	highEnergyThreshold(0.0f),
 	printingBuffer{"\0"}
 {
 	toolIsSelected = cm.getBool("consensus", "mm10db");
@@ -27,6 +29,8 @@ mm10db::mm10db(ConfigManager& cm) :
 	RNAFoldInFile = cm.getString("rnafold", "input");
 	RNAFoldBin = cm.getString("rnafold", "binary");
 	RNAFoldPageLength = cm.getInt("rnafold", "page-length");
+	lowEnergyThreshold = cm.getFloat("rnafold", "low_energy_threshold");
+	highEnergyThreshold = cm.getFloat("rnafold", "high_energy_threshold");
 }
 
 void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& candidateGuides)
@@ -77,8 +81,8 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& cand
 		else
 		{
 			candidateGuides[target23]["passedATPercent"] = CODE_ACCEPTED;
-			
 		}
+		candidateGuides[target23]["AT"] = std::to_string(AT);
 		testedCount++;
 	}
 	snprintf(printingBuffer, 1024, "%d of %d failed here.", failedCount, testedCount);
@@ -108,8 +112,8 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& cand
 
 	printer("mm10db - check secondary structure.");
 	string guide = "GUUUUAGAGCUAGAAAUAGCAAGUUAAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAAGUGGCACCGAGUCGGUGCUUUU";
-	std::regex pattern_RNAstructure(".{28}\({4}\.{4}\){4}\.{3}\){4}.{21}\({4}\.{4}\){4}\({7}\.{3}\){7}\.{3}\s\((.+)\)");
-	std::regex pattern_RNAenergy("\\s\((.+)\)");
+	std::regex pattern_RNAstructure(".{28}\\({4}\\.{4}\\){4}\\.{3}\\){4}.{21}\\({4}\\.{4}\\){4}\\({7}\\.{3}\\){7}\\.{3}\\s\\((.+)\\)");
+	std::regex pattern_RNAenergy("\\s\\((.+)\\)");
 	testedCount = 0;
 	failedCount = 0;
 	int errorCount = 0;
@@ -127,11 +131,9 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& cand
 		if (RNAFoldPageLength > 0)
 		{
 			// Advance the pageEnd pointer
-			std::advance(pageEnd, RNAFoldPageLength);
+			std::advance(pageEnd, std::min( (int)std::distance(pageEnd, candidateGuides.end()), RNAFoldPageLength));
 			// Record page start
 			pageStart = paginatorIterator;
-			// Compare pageEnd and end pointer of the candidate guide map
-			if (std::distance(pageEnd, candidateGuides.end()) < 0) { pageEnd = candidateGuides.end(); }
 			// Print page information
 			snprintf(printingBuffer, 1024, "\tProcessing page %d (%d per page).", pgIdx, RNAFoldPageLength);
 			printer(printingBuffer);
@@ -154,14 +156,14 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& cand
 			// Run time filtering
 			if (!filterCandidateGuides(resultsMap, MODULE_MM10DB, optimsationLevel, consensusN, toolCount)) { continue; }
 			
-			out << "G" << target23.substr(1, 22) << guide << "\n";
+			out << "G" << target23.substr(1, 19) << guide << "\n";
 			guidesInPage++;
 		}
 
 		out.close();
 
 		// Call RNAFold
-		snprintf(printingBuffer, 1024, "%s --noPS -j%d -i %s > %s", RNAFoldBin, 1, RNAFoldInFile, RNAFoldOutFile);
+		snprintf(printingBuffer, 1024, "%s --noPS -j%d -i %s > %s", RNAFoldBin.c_str(), 1, RNAFoldInFile.c_str(), RNAFoldOutFile.c_str());
 		runner(printingBuffer);
 
 		printer("\t\tStarting to process the RNAfold results.");
@@ -177,13 +179,13 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& cand
 			if (i % 2 == 0)
 			{
 				// 0th, 2nd, 4th, etc.
-				L1 = line;
+				L1 = rtrim(line);
 				target = line.substr(0, 20);
 			}
 			else
 			{
 				// 1st, 3rd, 5th, etc.
-				L2 = line;
+				L2 = rtrim(line);
 				RNAstructures[transToDNA(target.substr(1, 19))] = { L1, L2, target };
 			}
 		}
@@ -193,12 +195,17 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& cand
 
 		for (paginatorIterator; paginatorIterator != pageEnd; paginatorIterator++)
 		{
+
 			string target23 = paginatorIterator->first;
 			string key = target23.substr(1, 19);
 			map<string, string> resultsMap = paginatorIterator->second;
+
+			// Run time filtering
+			if (!filterCandidateGuides(resultsMap, MODULE_MM10DB, optimsationLevel, consensusN, toolCount)) { continue; }
+
 			if (RNAstructures.find(key) == RNAstructures.end())
 			{
-				snprintf(printingBuffer, 1024, "Could not find: %s", key);
+				snprintf(printingBuffer, 1024, "Could not find: %s", key.c_str());
 				printer(printingBuffer);
 				notFoundCount++;
 				continue;
@@ -211,15 +218,15 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& cand
 			target = *listIt;
 			string structure = L2.substr(0, L2.find(" "));
 			string energy = L2.substr(L2.find(" ")+2);
-			resultsMap["ssL1"] = L1;
-			resultsMap["ssStructure"] = structure;
-			resultsMap["ssEnergy"] = energy;
+			candidateGuides[target23]["ssL1"] = L1;
+			candidateGuides[target23]["ssStructure"] = structure;
+			candidateGuides[target23]["ssEnergy"] = energy;
 
-			if ( (transToDNA(target) != target.substr(0, 20)) && 
-				 ((transToDNA("C" + target.substr(1))) != target.substr(0, 20)) && 
-				 ((transToDNA("A" + target.substr(1))) != target.substr(0, 20)) )
+			if ( (transToDNA(target) != target23.substr(0, 20)) && 
+				 ((transToDNA("C" + target.substr(1))) != target23.substr(0, 20)) && 
+				 ((transToDNA("A" + target.substr(1))) != target23.substr(0, 20)) )
 			{
-				resultsMap["passedSecondaryStructure"] = CODE_ERROR;
+				candidateGuides[target23]["passedSecondaryStructure"] = CODE_ERROR;
 				errorCount++;
 				continue;
 			}
@@ -228,22 +235,29 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& cand
 			std::smatch match_energy;
 			if (std::regex_search(L2, match_structure, pattern_RNAstructure))
 			{ 
-				float energy = std::stof(match_structure.str());
-				if (energy < 0.0f)
+				float energy = std::stof(match_structure[1].str());
+				if (energy < lowEnergyThreshold)
 				{
-					resultsMap["passedSecondaryStructure"] = CODE_REJECTED;
+					candidateGuides[target23]["passedSecondaryStructure"] = CODE_REJECTED;
 					failedCount++;
 				}
 				else
 				{
-					resultsMap["passedSecondaryStructure"] = CODE_ACCEPTED;
+					candidateGuides[target23]["passedSecondaryStructure"] = CODE_ACCEPTED;
 				}
-				
 			}
 			else if (std::regex_search(L2, match_energy, pattern_RNAenergy))
 			{
-				
-
+				float energy = std::stof(match_energy[1].str());
+				if (energy <= highEnergyThreshold)
+				{
+					candidateGuides[target23]["passedSecondaryStructure"] = CODE_REJECTED;
+					failedCount++;
+				}
+				else
+				{
+					candidateGuides[target23]["passedSecondaryStructure"] = CODE_ACCEPTED;
+				}
 			}
 			testedCount++;
 		}
@@ -269,18 +283,18 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& cand
 	failedCount = 0;
 	for (auto const& [target23, resultsMap] : candidateGuides)
 	{
-		if ((candidateGuides[target23]["passedAvoidLeadingT"] != CODE_ACCEPTED) ||
-			(candidateGuides[target23]["passedATPercent"] != CODE_ACCEPTED) ||
-			(candidateGuides[target23]["passedTTTT"] != CODE_ACCEPTED) ||
-			(candidateGuides[target23]["passedSecondaryStructure"] != CODE_ACCEPTED))
-		{
-			candidateGuides[target23]["acceptedByMm10db"] = CODE_REJECTED;
-			failedCount++;
-		}
-		else
+		if ((candidateGuides[target23]["passedAvoidLeadingT"] == CODE_ACCEPTED) &&
+			(candidateGuides[target23]["passedATPercent"] == CODE_ACCEPTED) &&
+			(candidateGuides[target23]["passedTTTT"] == CODE_ACCEPTED) &&
+			(candidateGuides[target23]["passedSecondaryStructure"] == CODE_ACCEPTED))
 		{
 			candidateGuides[target23]["acceptedByMm10db"] = CODE_ACCEPTED;
 			acceptedCount++;
+		}
+		else
+		{
+			candidateGuides[target23]["acceptedByMm10db"] = CODE_REJECTED;
+			failedCount++;
 		}
 	}
 
@@ -293,8 +307,8 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& cand
 
 bool mm10db::leadingT(std::string candidateGuide)
 {
-	return	( (candidateGuide[0] == 'T' || candidateGuide[0] == 't') && (candidateGuide.substr(-2, 2) == "GG" || candidateGuide.substr(-2, 2) == "gg") ) ||
-			( (candidateGuide[-1] == 'A' || candidateGuide[-1] == 'a') && (candidateGuide.substr(0, 2) == "CC" || candidateGuide.substr(0, 2) == "cc") );
+	return	( (candidateGuide[0] == 'T' || candidateGuide[0] == 't') && (candidateGuide.substr(candidateGuide.length() - 2, 2) == "GG" || candidateGuide.substr(candidateGuide.length() - 2, 2) == "gg") ) ||
+			( (candidateGuide[candidateGuide.length() -1] == 'A' || candidateGuide[candidateGuide.length() - 1] == 'a') && (candidateGuide.substr(0, 2) == "CC" || candidateGuide.substr(0, 2) == "cc"));
 }
 
 float mm10db::AT_percentage(std::string candidateGuide)
