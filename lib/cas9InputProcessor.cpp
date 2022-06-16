@@ -29,7 +29,6 @@ list<string> cas9InputProcessor::processInput(list<string>& filesToProcess, int 
 
 	// Duplicate tracking
 	set<string> candidateGuides;
-	set<string> duplicateGuides;
 	set<string> recordedSequences;
 	int numDuplicateGuides = 0;
 	int	numIdentifiedGuides = 0;
