@@ -14,5 +14,5 @@ public:
 	std::set<std::string> duplicateGuides;
 
 
-	std::list<std::string> processInput(std::list<std::string>& filesToProcess, int batchSize);
+	std::list<std::string> processInput(std::list<std::string> filesToProcess, int batchSize);
 };

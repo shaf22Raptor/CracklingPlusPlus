@@ -4,7 +4,7 @@ using std::string;
 using std::list;
 using std::set;
 
-list<string> cas9InputProcessor::processInput(list<string>& filesToProcess, int batchSize)
+list<string> cas9InputProcessor::processInput(list<string> filesToProcess, int batchSize)
 {
 	// Guide searching
 	std::regex patternForward("[ATCG]{21}GG");
