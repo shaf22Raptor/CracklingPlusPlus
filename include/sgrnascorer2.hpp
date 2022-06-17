@@ -11,12 +11,14 @@ class sgrnascorer2
 public:
 	sgrnascorer2(ConfigManager cm);
 
-	void run(std::map<std::string, std::map<std::string, std::string>> candidateGuides);
+	void run(std::map<std::string, std::map<std::string, std::string>>& candidateGuides);
 
 private:
-	int testedcount;
-	int failedcount;
 	bool toolIsSelected;
+	std::string optimsationLevel;
+	int toolCount;
+	int consensusN;
+	float scoreThreshold;
 	char printingBuffer[1024];
 
 };
