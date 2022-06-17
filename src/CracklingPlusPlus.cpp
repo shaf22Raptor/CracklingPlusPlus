@@ -7,6 +7,7 @@
 #include <CHOPCHOP.hpp>
 #include <mm10db.hpp>
 #include <cas9InputProcessor.hpp>
+#include <bowtie2.hpp>
 
 int main(int argc, char** argv)
 {
@@ -27,22 +28,24 @@ int main(int argc, char** argv)
 	// Create pipeline objects
 	CHOPCHOP CHOPCHOPModule(cm);
 	mm10db mm10dbModule(cm);
+	bowtie2 bowtie2Module(cm);
 
 	// Start of pipeline
 	for (std::string fileName : batchFiles)
 	{
 		std::map <std::string, std::map<std::string, std::string>> candidateGuides;
 		std::ifstream inFile;
-		std::string inputLine;
 		inFile.open(fileName);
-		while (std::getline(inFile, inputLine))
+
+		for (std::string line; std::getline(inFile, line);)
+		//while (std::getline(inFile, inputLine))
 		{
 			std::string guideInfo[5];
 			for (int i = 0; i < 5; i++)
 			{
-				size_t pos = inputLine.find(',');
-				guideInfo[i] = inputLine.substr(0, pos);
-				inputLine.erase(0, pos + 1);
+				size_t pos = line.find(',');
+				guideInfo[i] = line.substr(0, pos);
+				line.erase(0, pos + 1);
 			}	
 			
 			candidateGuides[guideInfo[0]] = DEFAULT_GUIDE_PROPERTIES;
@@ -72,6 +75,25 @@ int main(int argc, char** argv)
 
 		std::cout << "Finished mm10db" << std::endl;
 
+
+		printer("Evaluating efficiency via consensus approach.");
+		int failedCount = 0;
+		int testedCount = 0;
+		for (auto const& [target23, resultsMap] : candidateGuides)
+		{
+			candidateGuides[target23]["consensusCount"] =	std::to_string(( candidateGuides[target23]["acceptedByMm10db"] == CODE_ACCEPTED ) +
+															( candidateGuides[target23]["acceptedBySgRnaScorer"] == CODE_ACCEPTED ) +
+															( candidateGuides[target23]["passedG20"] == CODE_ACCEPTED ));
+			if (std::stoi(candidateGuides[target23]["consensusCount"]) < cm.getInt("consensus", "n")) { failedCount++; }
+			testedCount++;
+		}
+		char printingBuffer[1024];
+		snprintf(printingBuffer, 1024, "%d of %d failed here.", failedCount, testedCount);
+		printer(printingBuffer);
+
+		bowtie2Module.run(candidateGuides);
+
+		std::cout << "Finished bowtie2" << std::endl;
 	}
 
 

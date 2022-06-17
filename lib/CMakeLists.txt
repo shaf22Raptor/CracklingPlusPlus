@@ -32,3 +32,8 @@ link_libraries (CHOPCHOP)
 add_library(mm10db STATIC ${CMAKE_SOURCE_DIR}/lib/mm10db.cpp ${CMAKE_SOURCE_DIR}/include/mm10db.hpp)
 # Link Libraries 
 link_libraries (mm10db)
+
+# Add bowtie2
+add_library(bowtie2 STATIC ${CMAKE_SOURCE_DIR}/lib/bowtie2.cpp ${CMAKE_SOURCE_DIR}/include/bowtie2.hpp)
+# Link Libraries 
+link_libraries (bowtie2)
