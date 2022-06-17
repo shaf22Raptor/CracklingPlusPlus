@@ -47,7 +47,7 @@ string rc(string DNA)
 	for (int i = 0; i < DNA.size(); i++)
 	{
 		array<char, 24>::iterator nulceotidePos = std::find(nulceotideArray.begin(), nulceotideArray.end(), DNA[i]);
-		__int64 complementPos = std::distance(nulceotideArray.begin(), nulceotidePos);
+		int complementPos = std::distance(nulceotideArray.begin(), nulceotidePos);
 		DNA[i] = complementArray[complementPos];
 	}
 	// Return reverse compliment
