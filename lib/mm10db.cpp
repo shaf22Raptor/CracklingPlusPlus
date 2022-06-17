@@ -264,6 +264,7 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& cand
 
 		// Advance paginatorIterator to page end for next loop
 		paginatorIterator = pageEnd;
+		pgIdx++;
 	}
 	snprintf(printingBuffer, 1024, "%d of %d failed here.", failedCount, testedCount);
 	printer(printingBuffer);
