@@ -29,12 +29,12 @@ int logBuffer::overflow(int c)
         time_t rawtime = time(0);
         struct tm* timeinfo = localtime(&rawtime);
         char timestampBuffer[32];
-        strftime(timestampBuffer, 32, "\n>>> %Y-%m-%d %H:%M:%S: ", timeinfo);
+        strftime(timestampBuffer, 32, ">>> %Y-%m-%d %H:%M:%S: ", timeinfo);
         stdBuf->sputn(timestampBuffer, strlen(timestampBuffer));
         fileBuf->sputn(timestampBuffer, strlen(timestampBuffer));
     }
     isAtStartOfLine = c == '\n';
-
+    if (isAtStartOfLine) { stdBuf->sputc(c)& fileBuf->sputc(c); }
     return stdBuf->sputc(c) & fileBuf->sputc(c);
 }
 
