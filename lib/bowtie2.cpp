@@ -109,7 +109,7 @@ void bowtie2::run(map<string, map<string, string>>& candidateGuides)
 
 		inFile.close();
 
-		snprintf(printingBuffer, 1024, "\t\t\t%d guides in this page.", guidesInPage);
+		snprintf(printingBuffer, 1024, "\t\t%d guides in this page.", guidesInPage);
 		printer(printingBuffer);
 
 		// Call bowtie2

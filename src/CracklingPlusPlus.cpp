@@ -84,11 +84,11 @@ int main(int argc, char** argv)
 
 		CHOPCHOPModule.run(candidateGuides);
 
-		std::cout << "Finished CHOPCHOP" << std::endl;
+
 
 		mm10dbModule.run(candidateGuides);
 
-		std::cout << "Finished mm10db" << std::endl;
+
 
 
 		printer("Evaluating efficiency via consensus approach.");
@@ -103,16 +103,16 @@ int main(int argc, char** argv)
 			testedCount++;
 		}
 		char printingBuffer[1024];
-		snprintf(printingBuffer, 1024, "%d of %d failed here.", failedCount, testedCount);
+		snprintf(printingBuffer, 1024, "\t%d of %d failed here.", failedCount, testedCount);
 		printer(printingBuffer);
 
 		bowtie2Module.run(candidateGuides);
 
-		printer("Finished bowtie2");
+
 
 		otsModule.run(candidateGuides);
 
-		printer("Finished Off-target scoring");
+
 
 		printer("Writing results to file.");
 

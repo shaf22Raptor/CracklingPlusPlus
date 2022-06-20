@@ -162,6 +162,9 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& cand
 
 		out.close();
 
+		snprintf(printingBuffer, 1024, "\t\t%d guides in this page.", guidesInPage);
+		printer(printingBuffer);
+
 		// Call RNAFold
 		snprintf(printingBuffer, 1024, "%s --noPS -j%d -i %s > %s", RNAFoldBin.c_str(), 1, RNAFoldInFile.c_str(), RNAFoldOutFile.c_str());
 		runner(printingBuffer);
@@ -270,12 +273,12 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& cand
 	printer(printingBuffer);
 	if (errorCount > 0) 
 	{
-		snprintf(printingBuffer, 1024, "%d of %d errored here.", errorCount, testedCount);
+		snprintf(printingBuffer, 1024, "\t%d of %d errored here.", errorCount, testedCount);
 		printer(printingBuffer);
 	}
 	if (notFoundCount > 0)
 	{
-		snprintf(printingBuffer, 1024, "%d of %d not found in RNAfold output.", notFoundCount, testedCount);
+		snprintf(printingBuffer, 1024, "\t%d of %d not found in RNAfold output.", notFoundCount, testedCount);
 		printer(printingBuffer);
 	}
 

@@ -68,6 +68,8 @@ void offTargetScoring::run(map<string, map<string, string>>& candidateGuides)
 			pageEnd = candidateGuides.end();
 		}
 
+
+		printer("\tConstructing the Off-target scoring input file.");
 		// Open input file (Opening in binary to avoid CR+LF on windows)
 		std::ofstream inFile;
 		inFile.open(offTargetScoreInFile, std::ios_base::binary | std::ios_base::out);
@@ -94,6 +96,9 @@ void offTargetScoring::run(map<string, map<string, string>>& candidateGuides)
 
 		inFile.close();
 
+		snprintf(printingBuffer, 1024, "\t\t%d guides in this page.", guidesInPage);
+		printer(printingBuffer);
+
 		// Call scoring method
 		snprintf(printingBuffer, 1024, "%s %s %s %s %f %s > %s",
 			offTargetScoreBin.c_str(),
@@ -105,6 +110,8 @@ void offTargetScoring::run(map<string, map<string, string>>& candidateGuides)
 			offTargetScoreOutFile.c_str()
 		);
 		runner(printingBuffer);
+
+		printer("\tStarting to process the Off-target scoring results.");
 
 		map<string, map<string, string>> targetsScored;
 
