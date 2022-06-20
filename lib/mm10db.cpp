@@ -61,7 +61,7 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& cand
 		}
 		testedCount++;
 	}
-	snprintf(printingBuffer, 1024, "%d of %d failed here.", failedCount, testedCount);
+	snprintf(printingBuffer, 1024, "\t%d of %d failed here.", failedCount, testedCount);
 	printer(printingBuffer);
 
 	printer("mm10db - remove based on AT percent.");
@@ -85,7 +85,7 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& cand
 		candidateGuides[target23]["AT"] = std::to_string(AT);
 		testedCount++;
 	}
-	snprintf(printingBuffer, 1024, "%d of %d failed here.", failedCount, testedCount);
+	snprintf(printingBuffer, 1024, "\t%d of %d failed here.", failedCount, testedCount);
 	printer(printingBuffer);
 
 	printer("mm10db - remove all targets that contain TTTT.");
@@ -107,7 +107,7 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& cand
 		}
 		testedCount++;
 	}
-	snprintf(printingBuffer, 1024, "%d of %d failed here.", failedCount, testedCount);
+	snprintf(printingBuffer, 1024, "\t%d of %d failed here.", failedCount, testedCount);
 	printer(printingBuffer);
 
 	printer("mm10db - check secondary structure.");
@@ -266,7 +266,7 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& cand
 		paginatorIterator = pageEnd;
 		pgIdx++;
 	}
-	snprintf(printingBuffer, 1024, "%d of %d failed here.", failedCount, testedCount);
+	snprintf(printingBuffer, 1024, "\t%d of %d failed here.", failedCount, testedCount);
 	printer(printingBuffer);
 	if (errorCount > 0) 
 	{
