@@ -6,6 +6,8 @@ using std::set;
 
 list<string> cas9InputProcessor::processInput(list<string> filesToProcess, int batchSize)
 {
+	printer("Analysing files...");
+
 	// Guide searching
 	std::regex patternForward("[ATCG]{21}GG");
 	std::regex patternReverse("CC[ACGT]{21}");
@@ -38,6 +40,10 @@ list<string> cas9InputProcessor::processInput(list<string> filesToProcess, int b
 	if (std::filesystem::is_directory(systemTempDir / "Crackling")) { std::filesystem::remove_all(systemTempDir / "Crackling"); }
 	if (!std::filesystem::create_directory(systemTempDir / "Crackling")) { throw std::runtime_error("Unable to create temp working dir!"); }
 	std::filesystem::path tempWorkingDir(systemTempDir / "Crackling");
+
+
+	snprintf(printingBuffer, 1024, "Storing batch files in: %s", tempWorkingDir.string().c_str());
+	printer(printingBuffer);
 
 	// Create first batch file
 	outFileName = tempWorkingDir / (std::to_string(batchFiles.size()) + "_batchFile.txt");
@@ -114,7 +120,7 @@ list<string> cas9InputProcessor::processInput(list<string> filesToProcess, int b
 									outFile.open(outFileName);
 									guidesInBatch = 1;
 								}
-								outFile << guide << "," << seqHeader << "," << matchPos << "," << (matchPos + 23) << "," << "+" << "\n";
+								outFile << guide << "," << seqHeader << "," << matchPos << "," << (matchPos + 23) << "," << "-" << "\n";
 							}
 							else
 							{
@@ -182,7 +188,7 @@ list<string> cas9InputProcessor::processInput(list<string> filesToProcess, int b
 							outFile.open(outFileName);
 							guidesInBatch = 1;
 						}
-						outFile << guide << "," << seqHeader << "," << matchPos << "," << (matchPos + 23) << "," << "+" << "\n";
+						outFile << guide << "," << seqHeader << "," << matchPos << "," << (matchPos + 23) << "," << "-" << "\n";
 					}
 					else
 					{
@@ -196,6 +202,19 @@ list<string> cas9InputProcessor::processInput(list<string> filesToProcess, int b
 		}
 		// TODO: Other file formats here
 
+		snprintf(printingBuffer, 1024, "\tExtracted from  %d%% of input.", numDuplicateGuides);
+		printer(printingBuffer);
+
 	}
+	float duplicatePercent = ((float)numDuplicateGuides / (float)numIdentifiedGuides) * 100.0f;
+	snprintf(printingBuffer, 1024, "\tIdentified %d possible target sites.", numIdentifiedGuides);
+	printer(printingBuffer);
+	snprintf(printingBuffer, 1024, "\tOf these, %d are not unique. These sites occur a total of %d times.", (int)duplicateGuides.size(), numDuplicateGuides);
+	printer(printingBuffer);
+	snprintf(printingBuffer, 1024, "\t%d of %d (%.2f%%) of guides will be ignored for optimisation levels over ultralow",numDuplicateGuides, numIdentifiedGuides, duplicatePercent);
+	printer(printingBuffer);
+	snprintf(printingBuffer, 1024, "\t%d distinct guides were identified.", (int)candidateGuides.size());
+	printer(printingBuffer);
+
 	return batchFiles;
 }
