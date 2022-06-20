@@ -37,3 +37,8 @@ link_libraries (mm10db)
 add_library(bowtie2 STATIC ${CMAKE_SOURCE_DIR}/lib/bowtie2.cpp ${CMAKE_SOURCE_DIR}/include/bowtie2.hpp)
 # Link Libraries 
 link_libraries (bowtie2)
+
+# Add offtargetScoring
+add_library(offtargetScoring STATIC ${CMAKE_SOURCE_DIR}/lib/offtargetScoring.cpp ${CMAKE_SOURCE_DIR}/include/offtargetScoring.hpp)
+# Link Libraries 
+link_libraries (offtargetScoring)

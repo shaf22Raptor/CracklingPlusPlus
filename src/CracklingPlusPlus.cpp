@@ -8,6 +8,7 @@
 #include <mm10db.hpp>
 #include <cas9InputProcessor.hpp>
 #include <bowtie2.hpp>
+#include <offTargetScoring.hpp>
 
 int main(int argc, char** argv)
 {
@@ -29,6 +30,20 @@ int main(int argc, char** argv)
 	CHOPCHOP CHOPCHOPModule(cm);
 	mm10db mm10dbModule(cm);
 	bowtie2 bowtie2Module(cm);
+	offTargetScoring otsModule(cm);
+
+	// Add header line to output file
+	std::ofstream outFile(cm.getString("output", "file"), std::ios_base::binary);
+	std::string headerLine;
+	for (std::string guideProperty : DEFAULT_GUIDE_PROPERTIES_ORDER)
+	{
+		headerLine += guideProperty + ",";
+	}
+	headerLine = headerLine.substr(0, headerLine.length() - 1) + "\n";
+
+	outFile << headerLine;
+
+	outFile.close();
 
 	// Start of pipeline
 	for (std::string fileName : batchFiles)
@@ -93,7 +108,32 @@ int main(int argc, char** argv)
 
 		bowtie2Module.run(candidateGuides);
 
-		std::cout << "Finished bowtie2" << std::endl;
+		printer("Finished bowtie2");
+
+		otsModule.run(candidateGuides);
+
+		printer("Finished Off-target scoring");
+
+		printer("Writing results to file.");
+
+
+		std::ofstream outFile(cm.getString("output", "file"), std::ios_base::app | std::ios_base::binary);
+		std::string headerLine;
+
+		for (std::map<std::string, std::map<std::string, std::string>>::iterator iter = candidateGuides.begin(); iter != candidateGuides.end(); iter++)
+		{
+			std::string target23 = iter->first;
+			std::string line;
+			for (std::string guideProperty : DEFAULT_GUIDE_PROPERTIES_ORDER)
+			{
+				line += candidateGuides[target23][guideProperty] + ",";
+			}
+			line = line.substr(0, line.length() - 1) + "\n";
+			outFile << line;
+		}
+
+		outFile.close();
+
 	}
 
 
