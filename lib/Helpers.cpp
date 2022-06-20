@@ -5,10 +5,27 @@ using std::string;
 using std::array;
 using std::map;
 using std::stoi;
+using std::vector;
 
 array<char, 24> nulceotideArray = { 'a', 'c', 'g', 't', 'r', 'y', 'm', 'k', 'b', 'd', 'h', 'v', 'A', 'C', 'G', 'T', 'R', 'Y', 'M', 'K', 'B', 'D', 'H', 'V' };
 array<char, 24> complementArray = { 't', 'g', 'c', 'a', 'y', 'r', 'k', 'm', 'v', 'h', 'd', 'b', 'T', 'G', 'C', 'A', 'Y', 'R', 'K', 'M', 'V', 'H', 'D', 'B' };
 const string WHITESPACE = " \n\r\t\f\v";
+
+
+vector<string> split(string s, string delimiter)
+{
+	vector<string> splitLine;
+
+	size_t delimiterPos = 0;
+	while ((delimiterPos = s.find(delimiter)) != std::string::npos) {
+		splitLine.push_back(s.substr(0, delimiterPos));
+		s.erase(0, delimiterPos + 1);
+	}
+	splitLine.push_back(s.substr(0, delimiterPos));
+
+	return splitLine;
+}
+
 
 string rtrim(const string& s)
 {
