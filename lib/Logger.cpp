@@ -14,8 +14,7 @@ logBuffer::logBuffer(ostream& stdOut, ostream& destFile)
 }
 
 int logBuffer::sync() {
-    fileBuf->pubsync();
-    return stdBuf->pubsync();
+    return stdBuf->pubsync() & fileBuf->pubsync();
 }
 
 int logBuffer::underflow(int c)
