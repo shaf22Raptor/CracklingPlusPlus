@@ -134,6 +134,20 @@ int main(int argc, char** argv)
 
 		outFile.close();
 
+		printer("Cleaning auxiliary files.");
+
+		std::filesystem::remove(cm.getString("rnafold", "input"));
+		std::filesystem::remove(cm.getString("rnafold", "output"));
+		std::filesystem::remove(cm.getString("offtargetscore", "input"));
+		std::filesystem::remove(cm.getString("offtargetscore", "output"));
+		std::filesystem::remove(cm.getString("bowtie2", "input"));
+		std::filesystem::remove(cm.getString("bowtie2", "output"));
+
+		printer("Done.");
+
+		snprintf(printingBuffer, 1024, "%d guides evaluated.", (int)candidateGuides.size());
+		printer(printingBuffer);
+
 	}
 
 
