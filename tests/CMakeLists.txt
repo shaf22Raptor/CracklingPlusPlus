@@ -10,14 +10,20 @@ enable_testing()
 # Seperate file with doctest main() entry point
 add_library(testMain OBJECT testMain.cpp)
 
-# Adding Helpers tests excutable
+# Add Helpers tests excutable
 add_executable(testHelpers Helpers.cpp $<TARGET_OBJECTS:testMain>)
 
-# Added Helpers test
+# Link Libraries 
+target_link_libraries (testHelpers helperLib)
+
+# Add Helpers test
 add_test(NAME testHelpers COMMAND testHelpers)
 
-# Adding CHOPCHOP tests excutable
+# Add CHOPCHOP tests excutable
 add_executable(testCHOPCHOP CHOPCHOP.cpp $<TARGET_OBJECTS:testMain>)
 
-# Added Helpers test
+# Link Libraries 
+target_link_libraries (testCHOPCHOP CHOPCHOP)
+
+# Add CHOPCHOP test
 add_test(NAME testCHOPCHOP COMMAND testCHOPCHOP)
