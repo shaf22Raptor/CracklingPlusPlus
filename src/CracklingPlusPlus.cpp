@@ -12,148 +12,157 @@
 
 int main(int argc, char** argv)
 {
-	// Check input arguments
-
-	// Load config
-	
-	ConfigManager cm("data/test_config.ini");
-
-	// Create logger objects
-	Logger coutLogger( std::cout , cm.getString("output", "log"));
-	Logger cerrLogger( std::cerr , cm.getString("output", "error"));
-
-	// Process input
-	cas9InputProcessor ip;
-	std::list<std::string> batchFiles =  ip.processInput(cm.getFilesToProcess(), cm.getInt("input", "batch-size"));
-
-	// Create pipeline objects
-	CHOPCHOP CHOPCHOPModule(cm);
-	mm10db mm10dbModule(cm);
-	bowtie2 bowtie2Module(cm);
-	offTargetScoring otsModule(cm);
-
-	// Add header line to output file
-	std::ofstream outFile(cm.getString("output", "file"), std::ios_base::binary);
-	std::string headerLine;
-	for (std::string guideProperty : DEFAULT_GUIDE_PROPERTIES_ORDER)
+	try
 	{
-		headerLine += guideProperty + ",";
-	}
-	headerLine = headerLine.substr(0, headerLine.length() - 1) + "\n";
+		// Check input arguments
 
-	outFile << headerLine;
+		// Load config
 
-	outFile.close();
+		ConfigManager cm("data/test_config.ini");
 
-	// Start of pipeline
-	for (std::string fileName : batchFiles)
-	{
-		std::map <std::string, std::map<std::string, std::string>> candidateGuides;
-		std::ifstream inFile;
-		inFile.open(fileName);
+		// Create logger objects
+		Logger coutLogger(std::cout, cm.getString("output", "log"));
+		Logger cerrLogger(std::cerr, cm.getString("output", "error"));
 
-		for (std::string line; std::getline(inFile, line);)
-		//while (std::getline(inFile, inputLine))
-		{
-			std::string guideInfo[5];
-			for (int i = 0; i < 5; i++)
-			{
-				size_t pos = line.find(',');
-				guideInfo[i] = line.substr(0, pos);
-				line.erase(0, pos + 1);
-			}	
-			
-			candidateGuides[guideInfo[0]] = DEFAULT_GUIDE_PROPERTIES;
-			candidateGuides[guideInfo[0]]["seq"] = guideInfo[0];
-			if (ip.duplicateGuides.find(guideInfo[0]) != ip.duplicateGuides.end())
-			{
-				candidateGuides[guideInfo[0]]["header"] = CODE_AMBIGUOUS;
-				candidateGuides[guideInfo[0]]["start"] = CODE_AMBIGUOUS;
-				candidateGuides[guideInfo[0]]["end"] = CODE_AMBIGUOUS;
-				candidateGuides[guideInfo[0]]["strand"] = CODE_AMBIGUOUS;
-				candidateGuides[guideInfo[0]]["isUnique"] = CODE_REJECTED;
-			}
-			else
-			{
-				candidateGuides[guideInfo[0]]["header"] = guideInfo[1];
-				candidateGuides[guideInfo[0]]["start"] = guideInfo[2];
-				candidateGuides[guideInfo[0]]["end"] = guideInfo[3];
-				candidateGuides[guideInfo[0]]["strand"] = guideInfo[4];
-			}
-		}
+		// Process input
+		cas9InputProcessor ip;
+		std::list<std::string> batchFiles = ip.processInput(cm.getFilesToProcess(), cm.getInt("input", "batch-size"));
 
-		CHOPCHOPModule.run(candidateGuides);
+		// Create pipeline objects
+		CHOPCHOP CHOPCHOPModule(cm);
+		mm10db mm10dbModule(cm);
+		bowtie2 bowtie2Module(cm);
+		offTargetScoring otsModule(cm);
 
-
-
-		mm10dbModule.run(candidateGuides);
-
-
-
-
-		printer("Evaluating efficiency via consensus approach.");
-		int failedCount = 0;
-		int testedCount = 0;
-		for (auto const& [target23, resultsMap] : candidateGuides)
-		{
-			candidateGuides[target23]["consensusCount"] =	std::to_string(( candidateGuides[target23]["acceptedByMm10db"] == CODE_ACCEPTED ) +
-															( candidateGuides[target23]["acceptedBySgRnaScorer"] == CODE_ACCEPTED ) +
-															( candidateGuides[target23]["passedG20"] == CODE_ACCEPTED ));
-			if (std::stoi(candidateGuides[target23]["consensusCount"]) < cm.getInt("consensus", "n")) { failedCount++; }
-			testedCount++;
-		}
-		char printingBuffer[1024];
-		snprintf(printingBuffer, 1024, "\t%d of %d failed here.", failedCount, testedCount);
-		printer(printingBuffer);
-
-		bowtie2Module.run(candidateGuides);
-
-
-
-		otsModule.run(candidateGuides);
-
-
-
-		printer("Writing results to file.");
-
-
-		std::ofstream outFile(cm.getString("output", "file"), std::ios_base::app | std::ios_base::binary);
+		// Add header line to output file
+		std::ofstream outFile(cm.getString("output", "file"), std::ios_base::binary);
 		std::string headerLine;
-
-		for (std::map<std::string, std::map<std::string, std::string>>::iterator iter = candidateGuides.begin(); iter != candidateGuides.end(); iter++)
+		for (std::string guideProperty : DEFAULT_GUIDE_PROPERTIES_ORDER)
 		{
-			std::string target23 = iter->first;
-			std::string line;
-			for (std::string guideProperty : DEFAULT_GUIDE_PROPERTIES_ORDER)
-			{
-				line += candidateGuides[target23][guideProperty] + ",";
-			}
-			line = line.substr(0, line.length() - 1) + "\n";
-			outFile << line;
+			headerLine += guideProperty + ",";
 		}
+		headerLine = headerLine.substr(0, headerLine.length() - 1) + "\n";
+
+		outFile << headerLine;
 
 		outFile.close();
 
-		printer("Cleaning auxiliary files.");
+		// Start of pipeline
+		for (std::string fileName : batchFiles)
+		{
+			std::map <std::string, std::map<std::string, std::string>> candidateGuides;
+			std::ifstream inFile;
+			inFile.open(fileName);
 
-		std::filesystem::remove(cm.getString("rnafold", "input"));
-		std::filesystem::remove(cm.getString("rnafold", "output"));
-		std::filesystem::remove(cm.getString("offtargetscore", "input"));
-		std::filesystem::remove(cm.getString("offtargetscore", "output"));
-		std::filesystem::remove(cm.getString("bowtie2", "input"));
-		std::filesystem::remove(cm.getString("bowtie2", "output"));
+			for (std::string line; std::getline(inFile, line);)
+				//while (std::getline(inFile, inputLine))
+			{
+				std::string guideInfo[5];
+				for (int i = 0; i < 5; i++)
+				{
+					size_t pos = line.find(',');
+					guideInfo[i] = line.substr(0, pos);
+					line.erase(0, pos + 1);
+				}
 
-		printer("Done.");
+				candidateGuides[guideInfo[0]] = DEFAULT_GUIDE_PROPERTIES;
+				candidateGuides[guideInfo[0]]["seq"] = guideInfo[0];
+				if (ip.duplicateGuides.find(guideInfo[0]) != ip.duplicateGuides.end())
+				{
+					candidateGuides[guideInfo[0]]["header"] = CODE_AMBIGUOUS;
+					candidateGuides[guideInfo[0]]["start"] = CODE_AMBIGUOUS;
+					candidateGuides[guideInfo[0]]["end"] = CODE_AMBIGUOUS;
+					candidateGuides[guideInfo[0]]["strand"] = CODE_AMBIGUOUS;
+					candidateGuides[guideInfo[0]]["isUnique"] = CODE_REJECTED;
+				}
+				else
+				{
+					candidateGuides[guideInfo[0]]["header"] = guideInfo[1];
+					candidateGuides[guideInfo[0]]["start"] = guideInfo[2];
+					candidateGuides[guideInfo[0]]["end"] = guideInfo[3];
+					candidateGuides[guideInfo[0]]["strand"] = guideInfo[4];
+				}
+			}
 
-		snprintf(printingBuffer, 1024, "%d guides evaluated.", (int)candidateGuides.size());
-		printer(printingBuffer);
+			CHOPCHOPModule.run(candidateGuides);
 
+
+
+			mm10dbModule.run(candidateGuides);
+
+
+
+
+			printer("Evaluating efficiency via consensus approach.");
+			int failedCount = 0;
+			int testedCount = 0;
+			for (auto const& [target23, resultsMap] : candidateGuides)
+			{
+				candidateGuides[target23]["consensusCount"] = std::to_string((candidateGuides[target23]["acceptedByMm10db"] == CODE_ACCEPTED) +
+					(candidateGuides[target23]["acceptedBySgRnaScorer"] == CODE_ACCEPTED) +
+					(candidateGuides[target23]["passedG20"] == CODE_ACCEPTED));
+				if (std::stoi(candidateGuides[target23]["consensusCount"]) < cm.getInt("consensus", "n")) { failedCount++; }
+				testedCount++;
+			}
+			char printingBuffer[1024];
+			snprintf(printingBuffer, 1024, "\t%d of %d failed here.", failedCount, testedCount);
+			printer(printingBuffer);
+
+			bowtie2Module.run(candidateGuides);
+
+
+
+			otsModule.run(candidateGuides);
+
+
+
+			printer("Writing results to file.");
+
+
+			std::ofstream outFile(cm.getString("output", "file"), std::ios_base::app | std::ios_base::binary);
+			std::string headerLine;
+
+			for (std::map<std::string, std::map<std::string, std::string>>::iterator iter = candidateGuides.begin(); iter != candidateGuides.end(); iter++)
+			{
+				std::string target23 = iter->first;
+				std::string line;
+				for (std::string guideProperty : DEFAULT_GUIDE_PROPERTIES_ORDER)
+				{
+					line += candidateGuides[target23][guideProperty] + ",";
+				}
+				line = line.substr(0, line.length() - 1) + "\n";
+				outFile << line;
+			}
+
+			outFile.close();
+
+			printer("Cleaning auxiliary files.");
+
+			std::filesystem::remove(cm.getString("rnafold", "input"));
+			std::filesystem::remove(cm.getString("rnafold", "output"));
+			std::filesystem::remove(cm.getString("offtargetscore", "input"));
+			std::filesystem::remove(cm.getString("offtargetscore", "output"));
+			std::filesystem::remove(cm.getString("bowtie2", "input"));
+			std::filesystem::remove(cm.getString("bowtie2", "output"));
+
+			printer("Done.");
+
+			snprintf(printingBuffer, 1024, "%d guides evaluated.", (int)candidateGuides.size());
+			printer(printingBuffer);
+
+		}
+
+
+		// Clean up
+		coutLogger.close();
+		cerrLogger.close();
+		
+		return 0;
 	}
-
-
-	// Clean up
-	coutLogger.close();
-	cerrLogger.close();
-
-	return 0;
+	catch (const std::exception& error)
+	{
+		errPrinter(error.what());
+		// Clean up after error and close gracefully
+		return -1;
+	}
 }

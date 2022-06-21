@@ -3,6 +3,7 @@
 
 using std::string;
 using std::list;
+using std::filesystem::path;
 
 ConfigManager::ConfigManager(string configFilePath) 
 {
@@ -10,7 +11,7 @@ ConfigManager::ConfigManager(string configFilePath)
 		Check config file exists
 	*/ 
 	// Create path object
-	std::filesystem::path configPathObject = configFilePath;
+	path configPathObject = configFilePath;
 	// Normalise path delimiters to the systems preferred delimiters
 	configPathObject = configPathObject.make_preferred();
 	// Check file exists
@@ -25,17 +26,17 @@ ConfigManager::ConfigManager(string configFilePath)
 		Read config file into map<string, map<string,string>> format
 	*/
 	// Assign strings to represent appropriate values
-	string section, key, value, currentLine;
+	string section, key, value;
 	// Regex matching variables
 	std::smatch match;
 	std::regex expression("\\[.*\\]");
 	// Open config file
 	std::ifstream configFile(configFilePath);
 	// Readlines untill EOF
-	while (std::getline(configFile, currentLine))
+	for (string currentLine; std::getline(configFile, currentLine);)
 	{
 		// Remove white spaces and resize string
-		currentLine.erase(std::remove(currentLine.begin(), currentLine.end(), ' '), currentLine.end());
+		currentLine = trim(currentLine);
 		// Comment line or empty line, ignore
 		if (currentLine[0] == ';' || currentLine == "") { continue; }
 		// Section header line, update section variable
@@ -50,10 +51,10 @@ ConfigManager::ConfigManager(string configFilePath)
 		else
 		{
 			// Before '='
-			key = currentLine.substr(0, currentLine.find("="));
+			key = trim(currentLine.substr(0, currentLine.find("=")));
 			std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) { return std::tolower(c); });
 			// After '='
-			value = currentLine.substr(currentLine.find("=")+1, currentLine.length()-1);
+			value = trim(currentLine.substr(currentLine.find("=")+1, currentLine.length()-1));
 			std::transform(value.begin(), value.end(), value.begin(), [](unsigned char c) { return std::tolower(c); });
 			// Update configMap
 			set(section, key, value);
@@ -62,11 +63,11 @@ ConfigManager::ConfigManager(string configFilePath)
 
 
 	/*
-		Normalise all path
+		Normalise all paths
 	*/
 	// Ensure the path delimiters are set to the system preferred
-	set("input", "exon-seqeunces", getPath("input", "exon-seqeunces").make_preferred().string());
-	set("input", "offtarget-site", getPath("input", "offtarget-site").make_preferred().string());
+	set("input", "exon-sequences", getPath("input", "exon-sequences").make_preferred().string());
+	set("input", "offtarget-sites", getPath("input", "offtarget-sites").make_preferred().string());
 	set("input", "gff-annotation", getPath("input", "gff-annotation").make_preferred().string());
 	set("input", "bowtie2-index", getPath("input", "bowtie2-index").make_preferred().string());
 	set("output", "dir", getPath("output", "dir").make_preferred().string());
@@ -80,55 +81,70 @@ ConfigManager::ConfigManager(string configFilePath)
 		Check that the config file is valid
 	*/
 	// Run Validate function
-	char buffer[1024];		// Buffer used to format strings
-	int returnCode;			// Return code used to check if the binary was run successfuly
+	char printingBuffer[1024];	// Buffer used to format strings
+	char stdoutBuffer[1024];	// Buffer used to collet stdout
+	int returnCode;				// Return code used to check if the binary was run successfuly
+	string resultOutput;		// String that collects the stdout
+	FILE* stdoutStream;			// Stream to collect stdout from popen calls
 
 	// Check that binarys are callable
 
 	// Check ISSL
-	snprintf(buffer, 1024, "%s --version", getCString("offtargetscore", "binary"));
-	returnCode = system(buffer);
-	if (returnCode != 0)
+	snprintf(printingBuffer, 1024, "%s 2>&1", getCString("offtargetscore", "binary"));
+	stdoutStream = portablePopen(printingBuffer, "r");
+	while (fgets(stdoutBuffer, 1024, stdoutStream) != NULL)
 	{
-		std::cout << "Could not run ISSL BINARY" << "\n";
+		resultOutput.append(stdoutBuffer);
+	}
+	portablePclose(stdoutStream);
+
+	if (resultOutput != "Usage: isslscoreofftargets.exe [issltable] [query file] [max distance] [score-threshold] [score-method]\n") 
+	{ 
+		throw std::runtime_error("Could not find Off-target scoring binary");
 	}
 
 	// Check bowtie2
-	snprintf(buffer, 1024, "%s --version", getCString("bowtie2", "binary"));
-	returnCode = system(buffer);
+	snprintf(printingBuffer, 1024, "%s --version", getCString("bowtie2", "binary"));
+	stdoutBuffer[0] = '\0';
+	stdoutStream = portablePopen(printingBuffer, "r");
+	returnCode = portablePclose(stdoutStream);
+
 	if (returnCode != 0)
 	{
-		std::cout << "Could not run bowtie2 BINARY" << "\n";
+		throw std::runtime_error("Could not find Bowtie2 binary");
 	}
 
 	// Check rnafold
-	snprintf(buffer, 1024, "%s --version", getCString("rnafold", "binary"));
-	returnCode = system(buffer);
+	snprintf(printingBuffer, 1024, "%s --version", getCString("rnafold", "binary"));
+	stdoutBuffer[0] = '\0';
+	stdoutStream = portablePopen(printingBuffer, "r");
+	returnCode = portablePclose(stdoutStream);
+
 	if (returnCode != 0)
 	{
-		std::cout << "Could not run RNAfold BINARY" << "\n";
+		throw std::runtime_error("Could not find RNAFold binary");
 	}
+
 
 	// Check that the 'n' value for the consensus is valid
 	int toolCount = getConsensusToolCount();
 	int n = getInt("consensus","n");
 	if (n > toolCount)
 	{
-		snprintf(buffer, 1024, "The consensus approach is incorrectly set. You have specified %d tools to be run but the n-value is %d. Change n to be <= %d.", toolCount, n, toolCount);
-		std::cout << buffer << "\n";
+		throw std::runtime_error("The consensus approach is incorrectly set. You have specified %d tools to be run but the n-value is %d. Change n to be <= %d.");
 	}
 
 	// Check that output file doesn't already exist
 	// Generate outputfile name
-	snprintf(buffer, 1024, "%s-%s", getCString("general", "name"), getCString("output", "filename"));
+	snprintf(printingBuffer, 1024, "%s-%s", getCString("general", "name"), getCString("output", "filename"));
 	// Get output dir path object
-	std::filesystem::path outputDirPathObject = getPath("output", "dir");
+	path outputDirPathObject = getPath("output", "dir");
 	// Append output file name to output dir
-	set("output", "file", (outputDirPathObject / buffer).string());
+	set("output", "file", (outputDirPathObject / printingBuffer).string());
 	if (std::filesystem::exists(getPath("output","file")))
 	{
-		snprintf(buffer, 1024, "The output file already exists: %s.\nTo avoid loosing data, please rename your output file.", getCString("output", "file"));
-		std::cout << buffer << "\n";
+		snprintf(printingBuffer, 1024, "The output file already exists: %s.\nTo avoid loosing data, please rename your output file.", getCString("output", "file"));
+		throw std::runtime_error(printingBuffer);
 	};
 
 	// Check all the fields have values
@@ -174,7 +190,7 @@ ConfigManager::ConfigManager(string configFilePath)
 		Generate files to process
 	*/
 	// Create path object for input
-	std::filesystem::path inputPathObject = getPath("input","exon-sequences");
+	path inputPathObject = getPath("input","exon-sequences");
 	// Check for directory or file
 	if (std::filesystem::is_directory(inputPathObject))
 	{
@@ -183,7 +199,7 @@ ConfigManager::ConfigManager(string configFilePath)
 			std::filesystem::directory_iterator{ inputPathObject })
 		{
 			// Normalise path and add to list
-			std::filesystem::path fileToProcess = dir_entry.path();
+			path fileToProcess = dir_entry.path();
 			filesToProcess.push_back(fileToProcess.make_preferred().string());
 		}
 	}
@@ -196,29 +212,29 @@ ConfigManager::ConfigManager(string configFilePath)
 	/*
 		Generate temp output file names
 	*/
-	snprintf(buffer, 1024, "%s-rnafold-input.txt", getCString("general", "name"));
-	set("rnafold","input", (outputDirPathObject / buffer).string());
+	snprintf(printingBuffer, 1024, "%s-rnafold-input.txt", getCString("general", "name"));
+	set("rnafold","input", (outputDirPathObject / printingBuffer).string());
 
-	snprintf(buffer, 1024, "%s-rnafold-output.txt", getCString("general", "name"));
-	set("rnafold", "output", (outputDirPathObject / buffer).string());
+	snprintf(printingBuffer, 1024, "%s-rnafold-output.txt", getCString("general", "name"));
+	set("rnafold", "output", (outputDirPathObject / printingBuffer).string());
 
-	snprintf(buffer, 1024, "%s-offtargetscore-input.txt", getCString("general", "name"));
-	set("offtargetscore", "input", (outputDirPathObject / buffer).string());
+	snprintf(printingBuffer, 1024, "%s-offtargetscore-input.txt", getCString("general", "name"));
+	set("offtargetscore", "input", (outputDirPathObject / printingBuffer).string());
 
-	snprintf(buffer, 1024, "%s-offtargetscore-output.txt", getCString("general", "name"));
-	set("offtargetscore", "output", (outputDirPathObject / buffer).string());
+	snprintf(printingBuffer, 1024, "%s-offtargetscore-output.txt", getCString("general", "name"));
+	set("offtargetscore", "output", (outputDirPathObject / printingBuffer).string());
 
-	snprintf(buffer, 1024, "%s-bowtie-input.txt", getCString("general", "name"));
-	set("bowtie2", "input", (outputDirPathObject / buffer).string());
+	snprintf(printingBuffer, 1024, "%s-bowtie-input.txt", getCString("general", "name"));
+	set("bowtie2", "input", (outputDirPathObject / printingBuffer).string());
 
-	snprintf(buffer, 1024, "%s-bowtie-output.txt", getCString("general", "name"));
-	set("bowtie2", "output", (outputDirPathObject / buffer).string());
+	snprintf(printingBuffer, 1024, "%s-bowtie-output.txt", getCString("general", "name"));
+	set("bowtie2", "output", (outputDirPathObject / printingBuffer).string());
 
-	snprintf(buffer, 1024, "%s-%s.log", getCString("general", "name"), configPathObject.stem().string().c_str());
-	set("output", "log", (outputDirPathObject / buffer).string());
+	snprintf(printingBuffer, 1024, "%s-%s.log", getCString("general", "name"), configPathObject.stem().string().c_str());
+	set("output", "log", (outputDirPathObject / printingBuffer).string());
 
-	snprintf(buffer, 1024, "%s-%s.errlog", getCString("general", "name"), configPathObject.stem().string().c_str());
-	set("output", "error", (outputDirPathObject / buffer).string());
+	snprintf(printingBuffer, 1024, "%s-%s.errlog", getCString("general", "name"), configPathObject.stem().string().c_str());
+	set("output", "error", (outputDirPathObject / printingBuffer).string());
 }
 
 int ConfigManager::getConsensusToolCount()
@@ -270,9 +286,9 @@ bool ConfigManager::getBool(string section, string key)
 	}
 }
 
-std::filesystem::path ConfigManager::getPath(string section, string key)
+path ConfigManager::getPath(string section, string key)
 {
-	return std::filesystem::path(this->configMap[section][key]);
+	return path(this->configMap[section][key]);
 }
 
 list<string> ConfigManager::getFilesToProcess() {

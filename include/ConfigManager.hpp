@@ -8,6 +8,17 @@
 #include <algorithm>
 #include <regex>
 #include <filesystem>
+#include <Helpers.hpp>
+
+#if defined(_POSIX_C_SOURCE) && (_POSIX_C_SOURCE >= 2)
+# define portablePopen popen
+# define portablePclose pclose
+#elif defined(_MSC_VER)
+# define portablePopen _popen
+# define portablePclose _pclose
+#else
+# error "Error, no popen"
+#endif
 
 class ConfigManager
 {
@@ -38,7 +49,4 @@ public:
 private:
 	std::list<std::string> filesToProcess;
 	std::map<std::string, std::map<std::string, std::string>> configMap;
-	
-
-
 };
