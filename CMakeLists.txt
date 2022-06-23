@@ -26,3 +26,7 @@ add_subdirectory (${CMAKE_SOURCE_DIR}/tests)
 
 # Copy testing data
 file(COPY ${CMAKE_SOURCE_DIR}/tests/data/ DESTINATION data/)
+
+set_target_properties(${PROJECT_NAME} PROPERTIES 
+    VS_DEBUGGER_COMMAND ${PROJECT_NAME}
+    VS_DEBUGGER_COMMAND_ARGUMENTS "data/test_config.ini")
