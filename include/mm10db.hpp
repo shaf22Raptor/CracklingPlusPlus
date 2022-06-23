@@ -7,6 +7,7 @@
 #include <fstream>
 #include <list>
 #include <regex>
+#include <sstream>
 #include <ConfigManager.hpp>
 #include <Constants.hpp>
 #include <Helpers.hpp>
@@ -18,13 +19,13 @@ public:
 
 	void run(std::map<std::string, std::map<std::string, std::string>>& candidateGuides);
 
-	bool leadingT(std::string candidateGuide);
+	bool static leadingT(std::string candidateGuide);
 
-	float AT_percentage(std::string candidateGuide);
+	float static AT_percentage(std::string candidateGuide);
 
-	bool polyT(std::string candidateGuide);
+	bool static polyT(std::string candidateGuide);
 
-	std::string transToDNA(std::string RNA);
+	std::string static transToDNA(std::string RNA);
 
 private:
 	bool toolIsSelected;

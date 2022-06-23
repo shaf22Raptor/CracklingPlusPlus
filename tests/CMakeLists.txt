@@ -27,3 +27,12 @@ target_link_libraries (testCHOPCHOP CHOPCHOP)
 
 # Add CHOPCHOP test
 add_test(NAME testCHOPCHOP COMMAND testCHOPCHOP)
+
+# Add mm10db tests excutable
+add_executable(testmm10db mm10db.cpp $<TARGET_OBJECTS:testMain>)
+
+# Link Libraries 
+target_link_libraries (testmm10db mm10db)
+
+# Add CHOPCHOP test
+add_test(NAME testmm10db COMMAND testmm10db)

@@ -72,7 +72,7 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& cand
 		// Run time filtering
 		if (!filterCandidateGuides(resultsMap, MODULE_MM10DB, optimsationLevel, consensusN, toolCount)) { continue; }
 
-		float AT = AT_percentage(target23);
+		float AT = AT_percentage(target23.substr(0,20));
 		if (AT < 20.0f || AT > 65.0f)
 		{
 			candidateGuides[target23]["passedATPercent"] = CODE_REJECTED;
@@ -82,7 +82,9 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& cand
 		{
 			candidateGuides[target23]["passedATPercent"] = CODE_ACCEPTED;
 		}
-		candidateGuides[target23]["AT"] = std::to_string(AT);
+		std::stringstream converstionStream;
+		converstionStream << std::fixed << std::setprecision(1) << AT;
+		candidateGuides[target23]["AT"] = converstionStream.str();
 		testedCount++;
 	}
 	snprintf(printingBuffer, 1024, "\t%d of %d failed here.", failedCount, testedCount);
@@ -220,7 +222,7 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& cand
 			listIt++;
 			target = *listIt;
 			string structure = L2.substr(0, L2.find(" "));
-			string energy = L2.substr(L2.find(" ")+2);
+			string energy = L2.substr(L2.find(" ")+2, L2.length() - L2.find(" ") - 3);
 			candidateGuides[target23]["ssL1"] = L1;
 			candidateGuides[target23]["ssStructure"] = structure;
 			candidateGuides[target23]["ssEnergy"] = energy;
