@@ -1,17 +1,22 @@
 // sgrnascorer2.hpp
-#pragma once
 #include <string>
 #include <map>
+#include <array>
+#include <svm.h>
 #include <ConfigManager.hpp>
 #include <Constants.hpp>
 #include <Helpers.hpp>
+
+// Variables for model training
 
 class sgrnascorer2
 {
 public:
 	sgrnascorer2(ConfigManager cm);
 
-	void run(std::map<std::string, std::map<std::string, std::string>>& candidateGuides);
+	//TODO: Custom deconstructor to properly handle pointer destruction
+
+	void run(std::map<std::string,std::map<std::string,std::string>>& candidateGuides);
 
 private:
 	bool toolIsSelected;
@@ -19,6 +24,6 @@ private:
 	int toolCount;
 	int consensusN;
 	float scoreThreshold;
-	char printingBuffer[1024];
+	struct svm_model* sgRNAScorer2Model;
 
 };

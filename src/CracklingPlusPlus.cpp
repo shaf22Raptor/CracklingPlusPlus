@@ -1,14 +1,16 @@
 ﻿// CracklingPlusPlus.cpp : Defines the entry point for the application.
 
 #include <Helpers.hpp>
-#include <ConfigManager.hpp>
 #include <Constants.hpp>
 #include <Logger.hpp>
+#include <ConfigManager.hpp>
+#include <cas9InputProcessor.hpp>
 #include <CHOPCHOP.hpp>
 #include <mm10db.hpp>
-#include <cas9InputProcessor.hpp>
+#include <sgrnascorer2.hpp>
 #include <bowtie2.hpp>
 #include <offTargetScoring.hpp>
+
 
 int main(int argc, char** argv)
 {
@@ -31,6 +33,7 @@ int main(int argc, char** argv)
 		// Create pipeline objects
 		CHOPCHOP CHOPCHOPModule(cm);
 		mm10db mm10dbModule(cm);
+		sgrnascorer2 sgRNAScorer2Module(cm);
 		bowtie2 bowtie2Module(cm);
 		offTargetScoring otsModule(cm);
 
@@ -87,11 +90,10 @@ int main(int argc, char** argv)
 			CHOPCHOPModule.run(candidateGuides);
 
 
-
 			mm10dbModule.run(candidateGuides);
 
-
-
+			
+			sgRNAScorer2Module.run(candidateGuides);
 
 			printer("Evaluating efficiency via consensus approach.");
 			int failedCount = 0;

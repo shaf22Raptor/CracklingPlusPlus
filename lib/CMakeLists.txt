@@ -25,6 +25,14 @@ add_library(CHOPCHOP STATIC ${CMAKE_SOURCE_DIR}/lib/CHOPCHOP.cpp ${CMAKE_SOURCE_
 # Add mm10db
 add_library(mm10db STATIC ${CMAKE_SOURCE_DIR}/lib/mm10db.cpp ${CMAKE_SOURCE_DIR}/include/mm10db.hpp)
 
+# Add libsvm
+add_library(libsvm STATIC ${CMAKE_SOURCE_DIR}/lib/svm.cpp ${CMAKE_SOURCE_DIR}/include/svm.h)
+
+# Add sgRNAScorer2
+add_library(sgrnascorer2 STATIC ${CMAKE_SOURCE_DIR}/lib/sgrnascorer2.cpp ${CMAKE_SOURCE_DIR}/include/sgrnascorer2.hpp)
+# Link Libraries 
+target_link_libraries (sgrnascorer2 libsvm)
+
 # Add bowtie2
 add_library(bowtie2 STATIC ${CMAKE_SOURCE_DIR}/lib/bowtie2.cpp ${CMAKE_SOURCE_DIR}/include/bowtie2.hpp)
 

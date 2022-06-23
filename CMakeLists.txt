@@ -19,7 +19,7 @@ add_subdirectory (${CMAKE_SOURCE_DIR}/lib)
 link_directories (${CMAKE_SOURCE_DIR}/lib)
 
 # Link Libraries 
-target_link_libraries (${PROJECT_NAME} helperLib ConfigManager Logger cas9InputProcessor CHOPCHOP mm10db bowtie2 offTargetScoring)
+target_link_libraries (${PROJECT_NAME} helperLib ConfigManager Logger cas9InputProcessor CHOPCHOP mm10db sgrnascorer2 bowtie2 offTargetScoring)
 
 # Add tests subdirectory
 add_subdirectory (${CMAKE_SOURCE_DIR}/tests)
