@@ -1,5 +1,3 @@
-// TODO: Check for memory leaks
-
 #include <sgrnascorer2.hpp>
 #include <svmData.hpp>
 
@@ -61,9 +59,12 @@ sgrnascorer2::sgrnascorer2(ConfigManager cm) :
 	svmParameters.probability = 0;
 
 	sgRNAScorer2Model = svm_train(&svmProblem, &svmParameters);
-	// TODO: free training stuff
-	//free(svmProblem.x);
-	//free(svmTrainingNodes);
+
+	for (int i = 0; i < svmProblem.l; i++)
+	{
+		free(svmProblem.x[i]);
+	}
+	free(svmTrainingNodes);
 }
 
 void sgrnascorer2::run(map<string, map<string, string>>& candidateGuides)
@@ -111,6 +112,8 @@ void sgrnascorer2::run(map<string, map<string, string>>& candidateGuides)
 		double predictedValue;
 
 		svm_predict_values(sgRNAScorer2Model, nodeToTest, &predictedValue);
+
+		free(nodeToTest);
 
 		candidateGuides[target23]["sgrnascorer2score"] = std::to_string(predictedValue);
 

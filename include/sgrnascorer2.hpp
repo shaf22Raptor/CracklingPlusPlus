@@ -12,6 +12,8 @@
 class sgrnascorer2
 {
 public:
+	//TODO: add rule of 5(6) to round out this class
+
 	sgrnascorer2(ConfigManager cm);
 
 	//TODO: Custom deconstructor to properly handle pointer destruction
