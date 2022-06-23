@@ -10,6 +10,10 @@
 #include <vector>
 #include <Constants.hpp>
 
+std::string makeUpper(std::string s);
+
+std::string makeLower(std::string s);
+
 std::vector<std::string> split(std::string s, std::string delimiter);
 
 std::string rtrim(const std::string& s);

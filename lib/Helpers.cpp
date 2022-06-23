@@ -12,6 +12,20 @@ array<char, 24> complementArray = { 't', 'g', 'c', 'a', 'y', 'r', 'k', 'm', 'v',
 const string WHITESPACE = " \n\r\t\f\v";
 
 
+string makeUpper(string s)
+{
+	string upper = s;
+	std::transform(upper.begin(), upper.end(), upper.begin(), [](unsigned char c) { return std::toupper(c); });
+	return upper;
+}
+
+string makeLower(string s)
+{
+	string lower = s;
+	std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) { return std::tolower(c); });
+	return lower;
+}
+
 vector<string> split(string s, string delimiter)
 {
 	vector<string> splitLine;
