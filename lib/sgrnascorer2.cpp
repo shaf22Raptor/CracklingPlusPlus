@@ -55,8 +55,7 @@ void sgrnascorer2::run(map<string, map<string, string>>& candidateGuides)
 		// Run time filtering
 		if (!filterCandidateGuides(resultsMap, MODULE_SGRNASCORER2, optimsationLevel, consensusN, toolCount)) { continue; }
 
-		string seqUpper = target23;
-		std::transform(seqUpper.begin(), seqUpper.end(), seqUpper.begin(), [](unsigned char c) { return std::toupper(c); });
+		string seqUpper = makeUpper(target23);
 
 		// TODO: Helper function to encode. All data should eventually be bit encoded.
 		array<double, 80> encodedSeq;
