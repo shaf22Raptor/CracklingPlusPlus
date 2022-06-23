@@ -1,9 +1,26 @@
 #include <sgrnascorer2.hpp>
-#include <svmData.hpp>
 
 using std::string;
 using std::map;
 using std::array;
+
+map <char, string> encoding = {
+	{'A' , "0001"},
+	{'C' , "0010"},
+	{'T' , "0100"},
+	{'G' , "1000"},
+	{'K' , "1100"},
+	{'M' , "0011"},
+	{'R' , "1001"},
+	{'Y' , "0110"},
+	{'S' , "1010"},
+	{'W' , "0101"},
+	{'B' , "1110"},
+	{'V' , "1011"},
+	{'H' , "0111"},
+	{'D' , "1101"},
+	{'N' , "1111"},
+};
 
 sgrnascorer2::sgrnascorer2(ConfigManager cm) :
 	toolIsSelected(false),
@@ -17,54 +34,7 @@ sgrnascorer2::sgrnascorer2(ConfigManager cm) :
 	toolCount = cm.getConsensusToolCount();
 	consensusN = cm.getInt("consensus", "n");
 	scoreThreshold = cm.getFloat("sgrnascorer2", "score-threshold");
-
-	struct svm_parameter svmParameters;
-	struct svm_problem svmProblem;
-	struct svm_node* svmTrainingNodes;
-
-	svmProblem.l = (int)data.size();
-	//svmProblem.y = (double*)malloc((svmProblem.l) * sizeof(double));
-	svmProblem.y = &labels[0];
-	svmProblem.x = (struct svm_node**)malloc((svmProblem.l) * sizeof(struct svm_node*));
-	svmTrainingNodes = (struct svm_node*)malloc(((data[0].size() + 1) * svmProblem.l) * sizeof(struct svm_node));
-
-	int j = 0; 
-	for (int i = 0; i < svmProblem.l; i++)
-	{
-		svmProblem.x[i] = &svmTrainingNodes[j];
-		for (int k = 0; k < data[i].size(); k++, j++)
-		{
-			svmTrainingNodes[j].index = k + 1;
-			svmTrainingNodes[j].value = data[i][k];
-
-		}
-		svmTrainingNodes[j].index = -1;
-		j++;
-	}
-
-	svmParameters.svm_type = C_SVC;
-	svmParameters.kernel_type = LINEAR;
-	svmParameters.degree = 3;
-	svmParameters.gamma = 0.1;
-	svmParameters.coef0 = 0.0;
-	svmParameters.cache_size = 200.;
-	svmParameters.eps = 1e-9;
-	svmParameters.C = 1;
-	svmParameters.nr_weight = 0;
-	svmParameters.weight_label = NULL;
-	svmParameters.weight = NULL;
-	svmParameters.nu = 0.0;
-	svmParameters.p = 0.1;
-	svmParameters.shrinking = 1;
-	svmParameters.probability = 0;
-
-	sgRNAScorer2Model = svm_train(&svmProblem, &svmParameters);
-
-	for (int i = 0; i < svmProblem.l; i++)
-	{
-		free(svmProblem.x[i]);
-	}
-	free(svmTrainingNodes);
+	sgRNAScorer2Model = svm_load_model(cm.getCString("sgrnascorer2", "model"));
 }
 
 void sgrnascorer2::run(map<string, map<string, string>>& candidateGuides)

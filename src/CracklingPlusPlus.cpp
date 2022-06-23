@@ -17,6 +17,10 @@ int main(int argc, char** argv)
 	try
 	{
 		// Check input arguments
+		//if (argc < ) {
+		//	fprintf(stderr, "Usage: %s [Crackling Config File]\n", argv[0]);
+		//	exit(1);
+		//}
 
 		// Load config
 
