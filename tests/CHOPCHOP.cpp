@@ -41,7 +41,7 @@ TEST_CASE("G20" * doctest::description("Ensure that the G20 function is working 
     }
 }
 
-//TEST_CASE("CHOPCHOP Module" * doctest::description("Ensure CHOPCHOP module is behaving correctly") * doctest::timeout(5))
+//TEST_CASE("CHOPCHOP Module" * doctest::description("Ensure CHOPCHOP module is working correctly") * doctest::timeout(5))
 //{
 //    ConfigManager cm("data/test_config.ini");
 //    cm.set("general", "optimisation", "ultralow");
