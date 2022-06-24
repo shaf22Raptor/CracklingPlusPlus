@@ -54,5 +54,9 @@ void CHOPCHOP::run(std::map<std::string, std::map<std::string, std::string>>& ca
 
 bool CHOPCHOP::G20(std::string candidateGuide)
 {
+    if (candidateGuide.length() < 20)
+    {
+        throw std::runtime_error("CHOPCHOP G20: Input lenght must be >= 20!");
+    }
 	return candidateGuide[19] == 'G';
 }
