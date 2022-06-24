@@ -40,5 +40,14 @@ add_executable (testmm10db mm10db.cpp $<TARGET_OBJECTS:testMain>)
 # Link Libraries 
 target_link_libraries (testmm10db mm10db)
 
-# Add CHOPCHOP test
+# Add mm10db test
 add_test (NAME testmm10db COMMAND testmm10db)
+
+# Add sgrnascorer2 tests excutable
+add_executable (testsgrnascorer2 sgrnascorer2.cpp $<TARGET_OBJECTS:testMain>)
+
+# Link Libraries 
+target_link_libraries (testsgrnascorer2 sgrnascorer2)
+
+# Add mm10db test
+add_test (NAME testsgrnascorer2 COMMAND testsgrnascorer2)
