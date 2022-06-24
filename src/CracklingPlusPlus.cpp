@@ -18,7 +18,7 @@ int main(int argc, char** argv)
 	{
 		// Check input arguments
 		if (argc != 2) {
-			fprintf(stderr, "Usage: %s [Crackling Config File]\n", argv[0]);
+			std::cout << "Usage: " << argv[0] << "[Crackling Config File]\n";
 			exit(1);
 		}
 
