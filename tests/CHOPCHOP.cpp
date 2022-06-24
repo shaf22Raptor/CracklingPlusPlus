@@ -1,4 +1,3 @@
-#pragma once
 #include <CHOPCHOP.hpp>
 #include <doctest.h>
 

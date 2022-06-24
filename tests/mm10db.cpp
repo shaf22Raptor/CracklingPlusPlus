@@ -1,4 +1,3 @@
-#pragma once
 #include <mm10db.hpp>
 #include <doctest.h>
 #include <fstream>
