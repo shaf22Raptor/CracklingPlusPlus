@@ -54,5 +54,5 @@ void CHOPCHOP::run(std::map<std::string, std::map<std::string, std::string>>& ca
 
 bool CHOPCHOP::G20(std::string candidateGuide)
 {
-	return candidateGuide[19] == 'G' || candidateGuide[19] == 'g';
+	return candidateGuide[19] == 'G';
 }

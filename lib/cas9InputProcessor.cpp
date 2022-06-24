@@ -65,14 +65,14 @@ list<string> cas9InputProcessor::processInput(list<string> filesToProcess, int b
 			seq = {};
 			while (std::getline(inFile, inputLine)) 
 			{
-				inputLine = inputLine.substr(0, inputLine.find("\n"));
+				inputLine = trim(inputLine);
 				if (inputLine[0] == '>')
 				{
 					if (recordedSequences.find(seqHeader) == recordedSequences.end())
 					{
 						recordedSequences.insert(seqHeader);
 						string concatanatedSeq;
-						for (string seqFragment : seq) { concatanatedSeq += seqFragment; }
+						for (string seqFragment : seq) { concatanatedSeq += makeUpper(seqFragment); }
 
 						std::regex_iterator<string::iterator> regexItr(concatanatedSeq.begin(), concatanatedSeq.end(), patternForward);
 						std::regex_iterator<string::iterator> regexItrEnd;
@@ -143,7 +143,7 @@ list<string> cas9InputProcessor::processInput(list<string> filesToProcess, int b
 			{
 				recordedSequences.insert(seqHeader);
 				string concatanatedSeq;
-				for (string seqFragment : seq) { concatanatedSeq += seqFragment; }
+				for (string seqFragment : seq) { concatanatedSeq += makeUpper(seqFragment); }
 
 				std::regex_iterator<string::iterator> regexItr(concatanatedSeq.begin(), concatanatedSeq.end(), patternForward);
 				std::regex_iterator<string::iterator> regexItrEnd;

@@ -6,7 +6,7 @@ using std::map;
 using std::array;
 using std::list;
 
-array<char, 4> atArray = { 'a', 't', 'A', 'T' };
+array<char, 2> atArray = { 'A', 'T' };
 
 mm10db::mm10db(ConfigManager& cm) : 
 	toolIsSelected(false), 
@@ -313,15 +313,15 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& cand
 
 bool mm10db::leadingT(std::string candidateGuide)
 {
-	return	( (candidateGuide[0] == 'T' || candidateGuide[0] == 't') && (candidateGuide.substr(candidateGuide.length() - 2, 2) == "GG" || candidateGuide.substr(candidateGuide.length() - 2, 2) == "gg") ) ||
-			( (candidateGuide[candidateGuide.length() -1] == 'A' || candidateGuide[candidateGuide.length() - 1] == 'a') && (candidateGuide.substr(0, 2) == "CC" || candidateGuide.substr(0, 2) == "cc"));
+	return	((candidateGuide[0] == 'T') && (candidateGuide.substr(candidateGuide.length() - 2, 2) == "GG")) ||
+			(candidateGuide[candidateGuide.length() -1] == 'A') && (candidateGuide.substr(0, 2) == "CC");
 }
 
 float mm10db::AT_percentage(std::string candidateGuide)
 {
 	float total = 0.0f;
 	float length = candidateGuide.size();
-	array<char, 4>::iterator p;
+	array<char, 2>::iterator p;
 	for (int i = 0; i < candidateGuide.size(); i++)
 	{
 		// Check if the char at the current pos is present in the 'AT' array
@@ -339,7 +339,7 @@ bool mm10db::polyT(std::string candidateGuide)
 {
 	for (int i = 0; i < candidateGuide.size() - 4; i++)
 	{
-		if (candidateGuide.substr(i, 4) == "TTTT" || candidateGuide.substr(i, 4) == "tttt")
+		if (candidateGuide.substr(i, 4) == "TTTT")
 		{
 			return true;
 		};
@@ -350,7 +350,6 @@ bool mm10db::polyT(std::string candidateGuide)
 std::string mm10db::transToDNA(std::string RNA)
 {
 	// Swap U with T
-	std::replace(RNA.begin(), RNA.end(), 'u', 't');
 	std::replace(RNA.begin(), RNA.end(), 'U', 'T');
 	return RNA;
 }
