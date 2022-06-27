@@ -9,8 +9,8 @@ list<string> cas9InputProcessor::processInput(list<string> filesToProcess, int b
 	printer("Analysing files...");
 
 	// Guide searching
-	std::regex patternForward("[ATCG]{21}GG");
-	std::regex patternReverse("CC[ACGT]{21}");
+	std::regex patternForward("(?=([ATCG]{21}GG))");
+	std::regex patternReverse("(?=(CC[ACGT]{21}))");
 
 	// Formatting prints
 	char printingBuffer[1024];
@@ -143,13 +143,14 @@ list<string> cas9InputProcessor::processInput(list<string> filesToProcess, int b
 				string concatanatedSeq;
 				for (string seqFragment : seq) { concatanatedSeq += makeUpper(seqFragment); }
 
-				std::regex_iterator<string::iterator> regexItr(concatanatedSeq.begin(), concatanatedSeq.end(), patternForward);
-				std::regex_iterator<string::iterator> regexItrEnd;
-
-				while (regexItr != regexItrEnd) {
+				for (std::sregex_iterator regexItr = std::sregex_iterator(concatanatedSeq.begin(), concatanatedSeq.end(), patternForward);
+					regexItr != std::sregex_iterator();
+					regexItr++)
+				{
 					numIdentifiedGuides++;
-					string guide = regexItr->str();
-					int matchPos = regexItr->position();
+					std::smatch m = *regexItr;
+					string guide = m[1].str();
+					int matchPos = m.position();
 					if (candidateGuides.find(guide) == candidateGuides.end())
 					{
 						candidateGuides.insert(guide);
@@ -168,14 +169,16 @@ list<string> cas9InputProcessor::processInput(list<string> filesToProcess, int b
 						numDuplicateGuides++;
 						duplicateGuides.insert(guide);
 					}
-					regexItr++;
 				}
 
-				regexItr = std::regex_iterator<string::iterator>(concatanatedSeq.begin(), concatanatedSeq.end(), patternReverse);
-				while (regexItr != regexItrEnd) {
+				for (std::sregex_iterator regexItr = std::sregex_iterator(concatanatedSeq.begin(), concatanatedSeq.end(), patternReverse);
+					regexItr != std::sregex_iterator();
+					regexItr++)
+				{
 					numIdentifiedGuides++;
-					string guide = rc(regexItr->str());
-					int matchPos = regexItr->position();
+					std::smatch m = *regexItr;
+					string guide = rc(m[1].str());
+					int matchPos = m.position();
 					if (candidateGuides.find(guide) == candidateGuides.end())
 					{
 						candidateGuides.insert(guide);
@@ -187,15 +190,15 @@ list<string> cas9InputProcessor::processInput(list<string> filesToProcess, int b
 							outFile.open(outFileName);
 							guidesInBatch = 1;
 						}
-						outFile << guide << "," << seqHeader << "," << matchPos << "," << (matchPos + 23) << "," << "-" << "\n";
+						outFile << guide << "," << seqHeader << "," << matchPos << "," << (matchPos + 23) << "," << "+" << "\n";
 					}
 					else
 					{
 						numDuplicateGuides++;
 						duplicateGuides.insert(guide);
 					}
-					regexItr++;
 				}
+
 			}
 			outFile.close();
 		}
