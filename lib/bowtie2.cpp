@@ -11,6 +11,7 @@ bowtie2::bowtie2(ConfigManager cm) :
 	optimsationLevel(""),
 	toolCount(0),
 	consensusN(0),
+	threadCount(0),
 	bowtie2OutFile(""),
 	bowtie2InFile(""),
 	bowtie2Bin(""),
@@ -22,12 +23,12 @@ bowtie2::bowtie2(ConfigManager cm) :
 	optimsationLevel = cm.getString("general", "optimisation");
 	toolCount = cm.getConsensusToolCount();
 	consensusN = cm.getInt("consensus", "n");
+	threadCount = cm.getInt("bowtie2", "threads");
 	bowtie2OutFile = cm.getString("bowtie2", "output");
 	bowtie2InFile = cm.getString("bowtie2", "input");
 	bowtie2Bin = cm.getString("bowtie2", "binary");
 	bowtie2PageLength = cm.getInt("bowtie2", "page-length");
 	bowtie2Index = cm.getString("input", "bowtie2-index");
-	bowtie2Threads = cm.getInt("bowtie2", "threads");
 }
 
 void bowtie2::run(map<string, map<string, string>>& candidateGuides)
@@ -113,7 +114,7 @@ void bowtie2::run(map<string, map<string, string>>& candidateGuides)
 		printer(printingBuffer);
 
 		// Call bowtie2
-		snprintf(printingBuffer, 1024, "%s -x %s -p %d --reorder --no-hd -t -r -U %s -S %s", bowtie2Bin.c_str(), bowtie2Index.c_str(), bowtie2Threads, bowtie2InFile.c_str(), bowtie2OutFile.c_str());
+		snprintf(printingBuffer, 1024, "%s -x %s -p %d --reorder --no-hd -t -r -U %s -S %s", bowtie2Bin.c_str(), bowtie2Index.c_str(), threadCount, bowtie2InFile.c_str(), bowtie2OutFile.c_str());
 		runner(printingBuffer);
 
 		printer("\tStarting to process the Bowtie results.");

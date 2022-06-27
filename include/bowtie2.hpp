@@ -19,11 +19,11 @@ private:
 	std::string optimsationLevel;
 	int toolCount;
 	int consensusN;
+	int threadCount;
 	std::string bowtie2OutFile;
 	std::string bowtie2InFile;
 	std::string bowtie2Bin;
 	std::string bowtie2Index;
-	int bowtie2Threads;
 	int bowtie2PageLength;
 
 };
