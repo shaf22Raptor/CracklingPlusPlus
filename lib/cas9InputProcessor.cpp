@@ -77,8 +77,6 @@ list<string> cas9InputProcessor::processInput(list<string> filesToProcess, int b
 						std::regex_iterator<string::iterator> regexItr(concatanatedSeq.begin(), concatanatedSeq.end(), patternForward);
 						std::regex_iterator<string::iterator> regexItrEnd;
 
-
-
 						while (regexItr != regexItrEnd) {
 							numIdentifiedGuides++;
 							string guide = regexItr->str();
@@ -107,7 +105,7 @@ list<string> cas9InputProcessor::processInput(list<string> filesToProcess, int b
 						regexItr = std::regex_iterator<string::iterator>(concatanatedSeq.begin(), concatanatedSeq.end(), patternReverse);
 						while (regexItr != regexItrEnd) {
 							numIdentifiedGuides++;
-							string guide = regexItr->str();
+							string guide = rc(regexItr->str());
 							int matchPos = regexItr->position();
 							if (candidateGuides.find(guide) == candidateGuides.end())
 							{
@@ -147,6 +145,7 @@ list<string> cas9InputProcessor::processInput(list<string> filesToProcess, int b
 
 				std::regex_iterator<string::iterator> regexItr(concatanatedSeq.begin(), concatanatedSeq.end(), patternForward);
 				std::regex_iterator<string::iterator> regexItrEnd;
+
 				while (regexItr != regexItrEnd) {
 					numIdentifiedGuides++;
 					string guide = regexItr->str();
@@ -175,7 +174,7 @@ list<string> cas9InputProcessor::processInput(list<string> filesToProcess, int b
 				regexItr = std::regex_iterator<string::iterator>(concatanatedSeq.begin(), concatanatedSeq.end(), patternReverse);
 				while (regexItr != regexItrEnd) {
 					numIdentifiedGuides++;
-					string guide = regexItr->str();
+					string guide = rc(regexItr->str());
 					int matchPos = regexItr->position();
 					if (candidateGuides.find(guide) == candidateGuides.end())
 					{

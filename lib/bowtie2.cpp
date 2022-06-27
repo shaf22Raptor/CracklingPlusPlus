@@ -158,13 +158,13 @@ void bowtie2::run(map<string, map<string, string>>& candidateGuides)
 			{
 				std::cout << "Problem? " << read << std::endl;
 			}
-			if (seq.substr(seq.length()-2) == "GG")
+			if (seq.substr(seq.length() - 2) == "GG")
 			{
 				candidateGuides[seq]["bowtieChr"] = chr;
 				candidateGuides[seq]["bowtieStart"] = pos;
 				candidateGuides[seq]["bowtieEnd"] = pos + 22;
 			}
-			else if (rc(seq).substr(seq.length() - 2) == "CC")
+			else if ((rc(seq)).substr(0,2) == "CC")
 			{
 				candidateGuides[seq]["bowtieChr"] = chr;
 				candidateGuides[seq]["bowtieStart"] = pos;
