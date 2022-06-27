@@ -10,8 +10,7 @@ CHOPCHOP::CHOPCHOP(ConfigManager cm) :
     toolIsSelected(false),
     optimsationLevel("ultralow"),
     toolCount(0),
-    consensusN(0),
-    printingBuffer{"\0"}
+    consensusN(0)
 {
     toolIsSelected = cm.getBool("consensus", "chopchop");
     optimsationLevel = cm.getString("general", "optimisation");
@@ -21,6 +20,8 @@ CHOPCHOP::CHOPCHOP(ConfigManager cm) :
 
 void CHOPCHOP::run(std::map<std::string, std::map<std::string, std::string>>& candidateGuides)
 {
+    char printingBuffer[1024];
+
     if (!toolIsSelected)
     {
         printer("CHOPCHOP has been configured not to run. Skipping CHOPCHOP");

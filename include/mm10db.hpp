@@ -39,6 +39,4 @@ private:
 	float lowEnergyThreshold;
 	float highEnergyThreshold;
 	int RNAFoldPageLength;
-	char printingBuffer[1024];
-
 };

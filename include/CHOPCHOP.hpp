@@ -22,5 +22,4 @@ private:
 	std::string optimsationLevel;
 	int toolCount;
 	int consensusN;
-	char printingBuffer[1024];
 };

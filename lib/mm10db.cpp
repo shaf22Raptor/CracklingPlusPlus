@@ -19,8 +19,7 @@ mm10db::mm10db(ConfigManager& cm) :
 	RNAFoldBin(""),
 	RNAFoldPageLength(0),
 	lowEnergyThreshold(0.0f),
-	highEnergyThreshold(0.0f),
-	printingBuffer{"\0"}
+	highEnergyThreshold(0.0f)
 {
 	toolIsSelected = cm.getBool("consensus", "mm10db");
 	optimsationLevel = cm.getString("general", "optimisation");
@@ -37,6 +36,8 @@ mm10db::mm10db(ConfigManager& cm) :
 
 void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& candidateGuides)
 {
+	char printingBuffer[1024];
+
 	if (!toolIsSelected)
 	{
 		printer("mm10db has been configured not to run. Skipping mm10db");
