@@ -32,6 +32,7 @@ private:
 	std::string optimsationLevel;
 	int toolCount;
 	int consensusN;
+	int threadCount;
 	std::string RNAFoldOutFile;
 	std::string RNAFoldInFile;
 	std::string RNAFoldBin;

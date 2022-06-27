@@ -12,7 +12,8 @@ mm10db::mm10db(ConfigManager& cm) :
 	toolIsSelected(false), 
 	optimsationLevel(""), 
 	toolCount(0), 
-	consensusN(0), 
+	consensusN(0),
+	threadCount(0),
 	RNAFoldOutFile(""), 
 	RNAFoldInFile(""), 
 	RNAFoldBin(""),
@@ -25,6 +26,7 @@ mm10db::mm10db(ConfigManager& cm) :
 	optimsationLevel = cm.getString("general", "optimisation");
 	toolCount = cm.getConsensusToolCount();
 	consensusN = cm.getInt("consensus", "n");
+	threadCount = cm.getInt("rnafold", "threads");
 	RNAFoldOutFile = cm.getString("rnafold", "output");
 	RNAFoldInFile = cm.getString("rnafold", "input");
 	RNAFoldBin = cm.getString("rnafold", "binary");
@@ -168,7 +170,7 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& cand
 		printer(printingBuffer);
 
 		// Call RNAFold
-		snprintf(printingBuffer, 1024, "%s --noPS -j%d -i %s > %s", RNAFoldBin.c_str(), 1, RNAFoldInFile.c_str(), RNAFoldOutFile.c_str());
+		snprintf(printingBuffer, 1024, "%s --noPS -j%d -i %s > %s", RNAFoldBin.c_str(), threadCount, RNAFoldInFile.c_str(), RNAFoldOutFile.c_str());
 		runner(printingBuffer);
 
 		printer("\t\tStarting to process the RNAfold results.");
