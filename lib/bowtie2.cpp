@@ -161,14 +161,14 @@ void bowtie2::run(map<string, map<string, string>>& candidateGuides)
 			if (seq.substr(seq.length() - 2) == "GG")
 			{
 				candidateGuides[seq]["bowtieChr"] = chr;
-				candidateGuides[seq]["bowtieStart"] = pos;
-				candidateGuides[seq]["bowtieEnd"] = pos + 22;
+				candidateGuides[seq]["bowtieStart"] = std::to_string(pos);
+				candidateGuides[seq]["bowtieEnd"] = std::to_string(pos + 22);
 			}
 			else if ((rc(seq)).substr(0,2) == "CC")
 			{
 				candidateGuides[seq]["bowtieChr"] = chr;
-				candidateGuides[seq]["bowtieStart"] = pos;
-				candidateGuides[seq]["bowtieEnd"] = pos + 22;
+				candidateGuides[seq]["bowtieStart"] = std::to_string(pos);
+				candidateGuides[seq]["bowtieEnd"] = std::to_string(pos + 22);
 			}
 			else
 			{
@@ -181,7 +181,7 @@ void bowtie2::run(map<string, map<string, string>>& candidateGuides)
 				if (bowtie2Results[j].find("XM:i:0") != string::npos)
 				{
 					nb_occurences++;
-					if (bowtie2Results[j].find("XM:i:0") != string::npos) 
+					if (bowtie2Results[j].find("XS:i:0") != string::npos) 
 					{
 						nb_occurences++;
 					}
