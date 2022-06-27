@@ -16,8 +16,7 @@ bowtie2::bowtie2(ConfigManager cm) :
 	bowtie2InFile(""),
 	bowtie2Bin(""),
 	bowtie2PageLength(0),
-	bowtie2Index(""),
-	bowtie2Threads(0)
+	bowtie2Index("")
 {
 	toolIsSelected = cm.getBool("offtargetscore", "enabled");
 	optimsationLevel = cm.getString("general", "optimisation");
