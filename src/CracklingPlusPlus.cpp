@@ -14,6 +14,8 @@
 
 int main(int argc, char** argv)
 {
+	char printingBuffer[1024];
+
 	try
 	{
 		// Check input arguments
@@ -28,6 +30,9 @@ int main(int argc, char** argv)
 		// Create logger objects
 		Logger coutLogger(std::cout, cm.getString("output", "log"));
 		Logger cerrLogger(std::cerr, cm.getString("output", "error"));
+
+		// Record start time
+		auto start = std::chrono::high_resolution_clock::now();
 
 		// Process input
 		cas9InputProcessor ip;
@@ -56,6 +61,9 @@ int main(int argc, char** argv)
 		// Start of pipeline
 		for (std::string fileName : batchFiles)
 		{
+			// Record start time
+			auto batchStart = std::chrono::high_resolution_clock::now();
+
 			std::map <std::string, std::map<std::string, std::string>> candidateGuides;
 			std::ifstream inFile;
 			inFile.open(fileName);
@@ -109,7 +117,7 @@ int main(int argc, char** argv)
 				if (std::stoi(candidateGuides[target23]["consensusCount"]) < cm.getInt("consensus", "n")) { failedCount++; }
 				testedCount++;
 			}
-			char printingBuffer[1024];
+			
 			snprintf(printingBuffer, 1024, "\t%d of %d failed here.", failedCount, testedCount);
 			printer(printingBuffer);
 
@@ -155,8 +163,33 @@ int main(int argc, char** argv)
 			snprintf(printingBuffer, 1024, "%d guides evaluated.", (int)candidateGuides.size());
 			printer(printingBuffer);
 
+			// Record stop time
+			auto batchStop = std::chrono::high_resolution_clock::now();
+			auto totalSeconds = std::chrono::duration_cast<std::chrono::seconds>(batchStop - batchStart);
+
+			int days = totalSeconds.count() / 86400;
+			int hours = (totalSeconds.count() % 86400) / 3600;
+			int minutes = ((totalSeconds.count() % 86400) % 3600) / 60;
+			int seconds = ((totalSeconds.count() % 86400) % 3600) % 60;
+
+			snprintf(printingBuffer, 1024, "This batch ran in %02d %02d:%02d:%02d (dd hh:mm:ss) or %d seconds", days, hours, minutes, seconds, (int)totalSeconds.count());
+			printer(printingBuffer);
+
 		}
 
+		// Record stop time
+		auto stop = std::chrono::high_resolution_clock::now();
+		
+		auto totalSeconds = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
+
+		int days = totalSeconds.count() / 86400;
+		int hours = (totalSeconds.count() % 86400) / 3600;
+		int minutes = ((totalSeconds.count() % 86400) % 3600) / 60;
+		int seconds = ((totalSeconds.count() % 86400) % 3600) % 60;
+
+
+		snprintf(printingBuffer, 1024, "Total run time %02d %02d:%02d:%02d (dd hh:mm:ss) or %d seconds", days, hours, minutes, seconds, (int)totalSeconds.count());
+		printer(printingBuffer);
 
 		// Clean up
 		coutLogger.close();
