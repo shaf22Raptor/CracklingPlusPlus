@@ -98,7 +98,8 @@ ConfigManager::ConfigManager(string configFilePath)
 	}
 	portablePclose(stdoutStream);
 
-	if (resultOutput != "Usage: isslscoreofftargets.exe [issltable] [query file] [max distance] [score-threshold] [score-method]\n") 
+	snprintf(printingBuffer, 1024, "Usage: %s [issltable] [query file] [max distance] [score-threshold] [score-method]\n", getCString("offtargetscore", "binary"));
+	if (resultOutput != printingBuffer)
 	{ 
 		throw std::runtime_error("Could not find Off-target scoring binary");
 	}
