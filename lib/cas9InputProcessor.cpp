@@ -8,6 +8,14 @@ void cas9InputProcessor::processInput(list<string> filesToProcess, int batchSize
 {
 	printer("Analysing files...");
 
+	int totalSizeBytes = 0;
+	int completedSizeBytes = 0;
+	double completedPercent = 0.0;
+	for (string file : filesToProcess)
+	{
+		totalSizeBytes += std::filesystem::file_size(std::filesystem::path(file));
+	}
+
 	// Guide searching
 	std::regex patternForward("(?=([ATCG]{21}GG))");
 	std::regex patternReverse("(?=(CC[ACGT]{21}))");
@@ -204,8 +212,10 @@ void cas9InputProcessor::processInput(list<string> filesToProcess, int batchSize
 			outFile.close();
 		}
 		// TODO: Other file formats here
+		completedSizeBytes += std::filesystem::file_size(std::filesystem::path(file));
+		completedPercent = completedSizeBytes / totalSizeBytes * 100.0;
 
-		snprintf(printingBuffer, 1024, "\tExtracted from %d%% of input.", numDuplicateGuides);
+		snprintf(printingBuffer, 1024, "\tProcessed %.2f%% of input.", completedPercent);
 		printer(printingBuffer);
 
 	}
