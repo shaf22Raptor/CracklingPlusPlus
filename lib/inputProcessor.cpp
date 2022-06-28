@@ -6,3 +6,8 @@ list<string> inputProcessor::processInput(list<string>& filesToProcess, int batc
 {
 	throw std::logic_error("Function not yet implemented");
 }
+
+void inputProcessor::cleanUp()
+{
+	throw std::logic_error("Function not yet implemented");
+}

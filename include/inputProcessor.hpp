@@ -9,4 +9,5 @@ class inputProcessor
 public:
 	virtual std::list<std::string> processInput(std::list<std::string>& filesToProcess, int batchSize);
 
+	virtual void cleanUp();
 };
