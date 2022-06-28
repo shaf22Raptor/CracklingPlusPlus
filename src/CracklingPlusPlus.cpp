@@ -14,8 +14,6 @@
 
 int main(int argc, char** argv)
 {
-	char printingBuffer[1024];
-
 	try
 	{
 		// Check input arguments
@@ -23,6 +21,8 @@ int main(int argc, char** argv)
 			std::cout << "Usage: " << argv[0] << "[Crackling Config File]\n";
 			exit(1);
 		}
+
+		char printingBuffer[1024];
 
 		// Load config
 		ConfigManager cm(argv[1]);
@@ -61,7 +61,7 @@ int main(int argc, char** argv)
 		// Start of pipeline
 		for (std::string fileName : batchFiles)
 		{
-			// Record start time
+			// Record batch start time
 			auto batchStart = std::chrono::high_resolution_clock::now();
 
 			std::map <std::string, std::map<std::string, std::string>> candidateGuides;
@@ -163,9 +163,7 @@ int main(int argc, char** argv)
 			snprintf(printingBuffer, 1024, "%d guides evaluated.", (int)candidateGuides.size());
 			printer(printingBuffer);
 
-			// Record stop time
-			auto batchStop = std::chrono::high_resolution_clock::now();
-			auto totalSeconds = std::chrono::duration_cast<std::chrono::seconds>(batchStop - batchStart);
+			auto totalSeconds = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - batchStart);
 
 			int days = totalSeconds.count() / 86400;
 			int hours = (totalSeconds.count() % 86400) / 3600;
@@ -176,11 +174,8 @@ int main(int argc, char** argv)
 			printer(printingBuffer);
 
 		}
-
-		// Record stop time
-		auto stop = std::chrono::high_resolution_clock::now();
 		
-		auto totalSeconds = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
+		auto totalSeconds = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start);
 
 		int days = totalSeconds.count() / 86400;
 		int hours = (totalSeconds.count() % 86400) / 3600;
