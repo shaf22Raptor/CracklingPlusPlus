@@ -271,7 +271,8 @@ string ConfigManager::getString(string section, string key)
 	return this->configMap[section][key];
 }
 
-const char* ConfigManager::getCString(string section, string key) {
+const char* ConfigManager::getCString(string section, string key) 
+{
 	return this->configMap[section][key].c_str();
 }
 
@@ -292,6 +293,7 @@ path ConfigManager::getPath(string section, string key)
 	return path(this->configMap[section][key]);
 }
 
-list<string> ConfigManager::getFilesToProcess() {
+list<string> ConfigManager::getFilesToProcess() 
+{
 	return this->filesToProcess;
 }

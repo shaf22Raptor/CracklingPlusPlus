@@ -23,7 +23,6 @@
 class ConfigManager
 {
 public:
-	
 	ConfigManager(std::string configFilePath);
 	
 	int getConsensusToolCount();
