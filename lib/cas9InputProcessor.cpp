@@ -4,7 +4,7 @@ using std::string;
 using std::list;
 using std::set;
 
-list<string> cas9InputProcessor::processInput(list<string> filesToProcess, int batchSize)
+void cas9InputProcessor::processInput(list<string> filesToProcess, int batchSize)
 {
 	printer("Analysing files...");
 
@@ -23,7 +23,6 @@ list<string> cas9InputProcessor::processInput(list<string> filesToProcess, int b
 	std::ofstream outFile;
 	std::filesystem::path outFileName;
 	int guidesInBatch = 0;
-	list<string> batchFiles;
 
 	// File processing
 	string seqHeader;
@@ -210,6 +209,7 @@ list<string> cas9InputProcessor::processInput(list<string> filesToProcess, int b
 		printer(printingBuffer);
 
 	}
+
 	float duplicatePercent = ((float)numDuplicateGuides / (float)numIdentifiedGuides) * 100.0f;
 	snprintf(printingBuffer, 1024, "\tIdentified %d possible target sites.", numIdentifiedGuides);
 	printer(printingBuffer);
@@ -220,5 +220,20 @@ list<string> cas9InputProcessor::processInput(list<string> filesToProcess, int b
 	snprintf(printingBuffer, 1024, "\t%d distinct guides were identified.", (int)candidateGuides.size());
 	printer(printingBuffer);
 
+	return;
+}
+
+list<string> cas9InputProcessor::getBatchFiles()
+{
 	return batchFiles;
+}
+
+bool cas9InputProcessor::isDuplicateGuide(std::string guide)
+{
+	return duplicateGuides.find(guide) != duplicateGuides.end();
+}
+
+void cas9InputProcessor::cleanUp()
+{
+	std::filesystem::remove_all(std::filesystem::path(std::filesystem::temp_directory_path() / "Crackling"));
 }

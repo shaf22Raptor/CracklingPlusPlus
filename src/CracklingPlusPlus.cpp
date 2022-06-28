@@ -36,7 +36,7 @@ int main(int argc, char** argv)
 
 		// Process input
 		cas9InputProcessor ip;
-		std::list<std::string> batchFiles = ip.processInput(cm.getFilesToProcess(), cm.getInt("input", "batch-size"));
+		ip.processInput(cm.getFilesToProcess(), cm.getInt("input", "batch-size"));
 
 		// Create pipeline objects
 		CHOPCHOP CHOPCHOPModule(cm);
@@ -59,7 +59,7 @@ int main(int argc, char** argv)
 		outFile.close();
 
 		// Start of pipeline
-		for (std::string fileName : batchFiles)
+		for (std::string fileName : ip.getBatchFiles())
 		{
 			// Record batch start time
 			auto batchStart = std::chrono::high_resolution_clock::now();
@@ -81,7 +81,7 @@ int main(int argc, char** argv)
 
 				candidateGuides[guideInfo[0]] = DEFAULT_GUIDE_PROPERTIES;
 				candidateGuides[guideInfo[0]]["seq"] = guideInfo[0];
-				if (ip.duplicateGuides.find(guideInfo[0]) != ip.duplicateGuides.end())
+				if (ip.isDuplicateGuide(guideInfo[0]))
 				{
 					candidateGuides[guideInfo[0]]["header"] = CODE_AMBIGUOUS;
 					candidateGuides[guideInfo[0]]["start"] = CODE_AMBIGUOUS;
@@ -190,6 +190,8 @@ int main(int argc, char** argv)
 		coutLogger.close();
 		cerrLogger.close();
 		
+
+
 		return 0;
 	}
 	catch (const std::exception& error)

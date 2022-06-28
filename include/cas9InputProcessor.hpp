@@ -11,7 +11,15 @@
 class cas9InputProcessor : public inputProcessor
 {
 public:
-	std::set<std::string> duplicateGuides;
+	void processInput(std::list<std::string> filesToProcess, int batchSize);
 
-	std::list<std::string> processInput(std::list<std::string> filesToProcess, int batchSize);
+	std::list<std::string> getBatchFiles();
+
+	bool isDuplicateGuide(std::string guide);
+
+	void cleanUp();
+
+private:
+	std::set<std::string> duplicateGuides;
+	std::list<std::string> batchFiles;
 };
