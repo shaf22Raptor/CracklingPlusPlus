@@ -5,9 +5,12 @@ using std::string;
 using std::list;
 using std::set;
 using std::regex;
+using std::smatch;
+using std::sregex_iterator;
 using std::ifstream;
 using std::ofstream;
 using std::filesystem::path;
+using std::runtime_error;
 
 // Guide searching
 regex patternForward("(?=([ATCG]{21}GG))");
@@ -51,7 +54,7 @@ void cas9InputProcessor::processInput(list<string> filesToProcess, int batchSize
 	// Setup temp working dir
 	path systemTempDir = std::filesystem::temp_directory_path();
 	if (std::filesystem::is_directory(systemTempDir / "Crackling")) { std::filesystem::remove_all(systemTempDir / "Crackling"); }
-	if (!std::filesystem::create_directory(systemTempDir / "Crackling")) { throw std::runtime_error("Unable to create temp working dir!"); }
+	if (!std::filesystem::create_directory(systemTempDir / "Crackling")) { throw runtime_error("Unable to create temp working dir!"); }
 	path tempWorkingDir(systemTempDir / "Crackling");
 
 	snprintf(printingBuffer, 1024, "Storing batch files in: %s", tempWorkingDir.string().c_str());
@@ -191,12 +194,12 @@ void cas9InputProcessor::processSeqeunce(
 	)
 {
 
-	for (std::sregex_iterator regexItr = std::sregex_iterator(seqeunce.begin(), seqeunce.end(), patternForward);
-		regexItr != std::sregex_iterator();
+	for (sregex_iterator regexItr = sregex_iterator(seqeunce.begin(), seqeunce.end(), patternForward);
+		regexItr != sregex_iterator();
 		regexItr++)
 	{
 		numIdentifiedGuides++;
-		std::smatch m = *regexItr;
+		smatch m = *regexItr;
 		string guide = m[1].str();
 		int matchPos = m.position();
 		if (candidateGuides.find(guide) == candidateGuides.end())
@@ -219,12 +222,12 @@ void cas9InputProcessor::processSeqeunce(
 		}
 	}
 
-	for (std::sregex_iterator regexItr = std::sregex_iterator(seqeunce.begin(), seqeunce.end(), patternReverse);
-		regexItr != std::sregex_iterator();
+	for (sregex_iterator regexItr = sregex_iterator(seqeunce.begin(), seqeunce.end(), patternReverse);
+		regexItr != sregex_iterator();
 		regexItr++)
 	{
 		numIdentifiedGuides++;
-		std::smatch m = *regexItr;
+		smatch m = *regexItr;
 		string guide = rc(m[1].str());
 		int matchPos = m.position();
 		if (candidateGuides.find(guide) == candidateGuides.end())
@@ -246,6 +249,7 @@ void cas9InputProcessor::processSeqeunce(
 			duplicateGuides.insert(guide);
 		}
 	}
+	return;
 }
 
 list<string> cas9InputProcessor::getBatchFiles()
@@ -253,7 +257,7 @@ list<string> cas9InputProcessor::getBatchFiles()
 	return batchFiles;
 }
 
-bool cas9InputProcessor::isDuplicateGuide(std::string guide)
+bool cas9InputProcessor::isDuplicateGuide(string guide)
 {
 	return duplicateGuides.find(guide) != duplicateGuides.end();
 }
@@ -261,4 +265,5 @@ bool cas9InputProcessor::isDuplicateGuide(std::string guide)
 void cas9InputProcessor::cleanUp()
 {
 	std::filesystem::remove_all(path(std::filesystem::temp_directory_path() / "Crackling"));
+	return;
 }
