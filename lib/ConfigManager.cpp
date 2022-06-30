@@ -31,7 +31,7 @@ ConfigManager::ConfigManager(string configFilePath)
 	std::smatch match;
 	std::regex expression("\\[.*\\]");
 	// Open config file
-	std::ifstream configFile(configFilePath);
+	std::ifstream configFile(configFilePath, std::ios::binary);
 	// Readlines untill EOF
 	for (string currentLine; std::getline(configFile, currentLine);)
 	{
@@ -61,6 +61,7 @@ ConfigManager::ConfigManager(string configFilePath)
 		}
 	}
 
+	configFile.close();
 
 	/*
 		Normalise all paths

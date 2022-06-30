@@ -55,14 +55,14 @@ void cas9InputProcessor::processInput(list<string> filesToProcess, int batchSize
 	// Create first batch file
 	outFileName = tempWorkingDir / (std::to_string(batchFiles.size()) + "_batchFile.txt");
 	batchFiles.push_back(outFileName.string());
-	outFile.open(outFileName);
+	outFile.open(outFileName, std::ios::binary);
 
 	for (const string& file : filesToProcess)
 	{
 		snprintf(printingBuffer, 1024, "Identifying possible target sites in : %s", file.c_str());
 		printer(printingBuffer);
 
-		inFile.open(file);
+		inFile.open(file, std::ios::binary);
 		std::getline(inFile, inputLine);
 
 		// file is Fasta formatted
@@ -97,7 +97,7 @@ void cas9InputProcessor::processInput(list<string> filesToProcess, int batchSize
 									outFile.close();
 									outFileName = tempWorkingDir / (std::to_string(batchFiles.size()) + "_batchFile.txt");
 									batchFiles.push_back(outFileName.string());
-									outFile.open(outFileName);
+									outFile.open(outFileName, std::ios::binary);
 									guidesInBatch = 1;
 								}
 								outFile << guide << "," << seqHeader << "," << matchPos << "," << (matchPos + 23) << "," << "+" << "\n";
@@ -125,7 +125,7 @@ void cas9InputProcessor::processInput(list<string> filesToProcess, int batchSize
 									outFile.close();
 									outFileName = tempWorkingDir / (std::to_string(batchFiles.size()) + "_batchFile.txt");
 									batchFiles.push_back(outFileName.string());
-									outFile.open(outFileName);
+									outFile.open(outFileName, std::ios::binary);
 									guidesInBatch = 1;
 								}
 								outFile << guide << "," << seqHeader << "," << matchPos << "," << (matchPos + 23) << "," << "+" << "\n";
@@ -168,7 +168,7 @@ void cas9InputProcessor::processInput(list<string> filesToProcess, int batchSize
 							outFile.close();
 							outFileName = tempWorkingDir / (std::to_string(batchFiles.size()) + "_batchFile.txt");
 							batchFiles.push_back(outFileName.string());
-							outFile.open(outFileName);
+							outFile.open(outFileName, std::ios::binary);
 							guidesInBatch = 1;
 						}
 						outFile << guide << "," << seqHeader << "," << matchPos << "," << (matchPos + 23) << "," << "+" << "\n";
@@ -196,7 +196,7 @@ void cas9InputProcessor::processInput(list<string> filesToProcess, int batchSize
 							outFile.close();
 							outFileName = tempWorkingDir / (std::to_string(batchFiles.size()) + "_batchFile.txt");
 							batchFiles.push_back(outFileName.string());
-							outFile.open(outFileName);
+							outFile.open(outFileName, std::ios::binary);
 							guidesInBatch = 1;
 						}
 						outFile << guide << "," << seqHeader << "," << matchPos << "," << (matchPos + 23) << "," << "+" << "\n";

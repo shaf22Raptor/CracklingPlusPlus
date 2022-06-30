@@ -55,7 +55,7 @@ Logger::Logger(ostream& logSource, string outFile)
     origSrcBuffer = logSource.rdbuf();
 
     // Open file stream
-    outputFileStream = ofstream(outFile);
+    outputFileStream = ofstream(outFile, std::ios::binary);
 
     // Create custom logBuffer
     customBuffer = logBuffer(*origOutputStream, outputFileStream);

@@ -72,7 +72,7 @@ void offTargetScoring::run(map<string, map<string, string>>& candidateGuides)
 		printer("\tConstructing the Off-target scoring input file.");
 		// Open input file (Opening in binary to avoid CR+LF on windows)
 		std::ofstream inFile;
-		inFile.open(offTargetScoreInFile, std::ios_base::binary | std::ios_base::out);
+		inFile.open(offTargetScoreInFile, std::ios_base::binary);
 
 		guidesInPage = 0;
 		for (paginatorIterator; paginatorIterator != pageEnd; paginatorIterator++)
@@ -117,7 +117,7 @@ void offTargetScoring::run(map<string, map<string, string>>& candidateGuides)
 
 		// Open output file 
 		std::ifstream outFile;
-		outFile.open(offTargetScoreOutFile);
+		outFile.open(offTargetScoreOutFile, std::ios::binary);
 
 
 		for (string line; std::getline(outFile, line); )

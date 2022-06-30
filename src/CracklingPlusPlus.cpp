@@ -66,7 +66,7 @@ int main(int argc, char** argv)
 
 			std::map <std::string, std::map<std::string, std::string>> candidateGuides;
 			std::ifstream inFile;
-			inFile.open(fileName);
+			inFile.open(fileName, std::ios::binary);
 
 			for (std::string line; std::getline(inFile, line);)
 				//while (std::getline(inFile, inputLine))

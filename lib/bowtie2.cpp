@@ -70,7 +70,7 @@ void bowtie2::run(map<string, map<string, string>>& candidateGuides)
 		map<string, string> tempTargetDict_offset;
 		// Open input file 
 		std::ofstream inFile;
-		inFile.open(bowtie2InFile);
+		inFile.open(bowtie2InFile, std::ios::binary);
 
 		guidesInPage = 0;
 		for (paginatorIterator; paginatorIterator != pageEnd; paginatorIterator++)
@@ -120,7 +120,7 @@ void bowtie2::run(map<string, map<string, string>>& candidateGuides)
 		
 		// Open output file 
 		std::ifstream outFile;
-		outFile.open(bowtie2OutFile);
+		outFile.open(bowtie2OutFile, std::ios::binary);
 
 		vector<string> bowtie2Results;
 

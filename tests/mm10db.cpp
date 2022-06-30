@@ -172,7 +172,7 @@ TEST_CASE("transToDNA" * doctest::description("Ensure that the transToDNA functi
 //
 //    std::vector<std::string> result;
 //
-//    std::ofstream outFile("input.txt");
+//    std::ofstream outFile("input.txt", std::ios::binary);
 //
 //    outFile << "GCTCCTCATGCTGGACATTCGUUUUAGAGCUAGAAAUAGCAAGUUAAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAAGUGGCACCGAGUCGGUGCUUUU\n"
 //            << "GTTCTGGTTCCTAGTATATCGUUUUAGAGCUAGAAAUAGCAAGUUAAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAAGUGGCACCGAGUCGGUGCUUUU\n"
@@ -182,7 +182,7 @@ TEST_CASE("transToDNA" * doctest::description("Ensure that the transToDNA functi
 //
 //    system("RNAfold --noPS -j16 -i input.txt > output.txt");
 //
-//    std::ifstream inFile("output.txt");
+//    std::ifstream inFile("output.txt", std::ios::binary);
 //
 //    for (std::string line; std::getline(inFile, line);)
 //    {

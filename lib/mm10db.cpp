@@ -151,7 +151,7 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& cand
 
 		// Open input file 
 		std::ofstream out;
-		out.open(RNAFoldInFile);
+		out.open(RNAFoldInFile, std::ios::binary);
 
 		guidesInPage = 0;
 		for (paginatorIterator; paginatorIterator != pageEnd; paginatorIterator++)
@@ -177,7 +177,7 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& cand
 		printer("\t\tStarting to process the RNAfold results.");
 		// Open output file
 		std::ifstream in;
-		in.open(RNAFoldOutFile);
+		in.open(RNAFoldOutFile, std::ios::binary);
 
 		map<string, list<string>> RNAstructures;
 		int i = 0;
