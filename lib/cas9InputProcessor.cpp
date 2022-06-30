@@ -144,7 +144,7 @@ void cas9InputProcessor::processInput(list<string> filesToProcess, int batchSize
 
 				processSeqeunce(
 					inputLine,
-					"",
+					file,
 					outFile,
 					tempWorkingDir,
 					numIdentifiedGuides,
