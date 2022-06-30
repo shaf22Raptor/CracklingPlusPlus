@@ -62,8 +62,10 @@ void cas9InputProcessor::processInput(list<string> filesToProcess, int batchSize
 	batchFiles.push_back(outFileName.string());
 	outFile.open(outFileName, std::ios::binary);
 
+	// Begin processing files
 	for (const string& file : filesToProcess)
 	{
+		// Identify file format
 		snprintf(printingBuffer, 1024, "Identifying possible target sites in : %s", file.c_str());
 		printer(printingBuffer);
 
@@ -129,7 +131,30 @@ void cas9InputProcessor::processInput(list<string> filesToProcess, int batchSize
 			}
 			outFile.close();
 		}
-		// TODO: Other file formats here
+		// file is plain text, assume one sequence per line
+		else
+		{
+			do
+			{
+				// Clean up input line
+				inputLine = makeUpper(trim(inputLine));
+
+				processSeqeunce(
+					inputLine,
+					"",
+					outFile,
+					tempWorkingDir,
+					numIdentifiedGuides,
+					numDuplicateGuides,
+					candidateGuides,
+					recordedSequences,
+					guidesInBatch,
+					batchSize
+				);
+
+			} while (std::getline(inFile, inputLine));
+
+		}
 
 		// Report overall progress before processing next file
 		completedSizeBytes += std::filesystem::file_size(path(file));
