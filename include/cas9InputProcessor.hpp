@@ -1,3 +1,4 @@
+// cas9InputProcessor.hpp
 #pragma once
 #include <list>
 #include <string>
@@ -22,4 +23,17 @@ public:
 private:
 	std::set<std::string> duplicateGuides;
 	std::list<std::string> batchFiles;
+
+	void processSeqeunce(
+		const std::string& seqeunce,
+		const std::string& seqHeader,
+		std::ofstream& outFile,
+		std::filesystem::path& tempWorkingDir,
+		int& numIdentifiedGuides,
+		int& numDuplicateGuides,
+		std::set<std::string>& candidateGuides,
+		std::set<std::string>& recordedSequences,
+		int& guidesInBatch,
+		const int& batchSize
+	);
 };
