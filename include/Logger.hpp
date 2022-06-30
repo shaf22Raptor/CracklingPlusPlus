@@ -8,7 +8,7 @@
 class logBuffer : public std::streambuf
 {
 public:
-    logBuffer() = default;
+    logBuffer();
 
     logBuffer(std::ostream& stdOut ,std::ostream& destFile);
 

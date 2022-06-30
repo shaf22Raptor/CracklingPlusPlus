@@ -5,25 +5,33 @@ using std::string;
 using std::ostream;
 using std::ofstream;
 
+logBuffer::logBuffer() : isAtStartOfLine(true), fileBuf(NULL), stdBuf(NULL) {};
 
-logBuffer::logBuffer(ostream& stdOut, ostream& destFile)
+logBuffer::logBuffer(ostream& stdOut, ostream& destFile) :
+    isAtStartOfLine(true),
+    fileBuf(NULL),
+    stdBuf(NULL)
 {
+    // Record output stream buffers
     isAtStartOfLine = true;
     fileBuf = destFile.rdbuf();
     stdBuf = stdOut.rdbuf();
 }
 
 int logBuffer::sync() {
+    // Call sync for both output streams and buffers
     return stdBuf->pubsync() & fileBuf->pubsync();
 }
 
 int logBuffer::underflow(int c)
 {
+    // Do nothing, return EOF
     return EOF;
 }
 
 int logBuffer::overflow(int c)
 {
+    // Insert Timestamp
     if (isAtStartOfLine) {
         time_t rawtime = time(0);
         struct tm* timeinfo = localtime(&rawtime);
@@ -32,8 +40,11 @@ int logBuffer::overflow(int c)
         stdBuf->sputn(timestampBuffer, strlen(timestampBuffer));
         fileBuf->sputn(timestampBuffer, strlen(timestampBuffer));
     }
+    // Check for new line
     isAtStartOfLine = c == '\n';
-    if (isAtStartOfLine) { stdBuf->sputc(c)& fileBuf->sputc(c); }
+    // Add extra newline
+    if (isAtStartOfLine) { stdBuf->sputc(c) & fileBuf->sputc(c); }
+    // Pass 'c' to output buffers
     return stdBuf->sputc(c) & fileBuf->sputc(c);
 }
 
