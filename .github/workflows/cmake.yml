@@ -30,6 +30,10 @@ jobs:
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
+    - name: Test DIR
+      # Build your program with the given configuration
+      run: pwd && ls -la
+
     - name: Test
       working-directory: ${{github.workspace}}/build/tests
       # Execute tests defined by the CMake configuration.  
