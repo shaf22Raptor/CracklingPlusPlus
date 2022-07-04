@@ -32,7 +32,7 @@ jobs:
 
     - name: Test DIR
       # Build your program with the given configuration
-      run: pwd && ls -la
+      run: echo ${{github.workspace}} && pwd && ls -la && cd tests && ls -la && ctest -C ${{env.BUILD_TYPE}}
 
     - name: Test
       working-directory: ${{github.workspace}}/build/tests
