@@ -1,7 +1,7 @@
 ﻿# CMakeList.txt : CMake project for CracklingPlusPlus
 cmake_minimum_required (VERSION 3.8)
 
-set (CMAKE_CXX_STANDARD 17)
+set (CMAKE_CXX_STANDARD 20)
 
 # Project name, version and description
 project ("CracklingPlusPlus" VERSION 1.0.0 DESCRIPTION "C++ version of Crackling")
@@ -26,7 +26,3 @@ add_subdirectory (${CMAKE_SOURCE_DIR}/tests)
 
 # Copy testing data
 file(COPY ${CMAKE_SOURCE_DIR}/tests/data/ DESTINATION data/)
-
-set_target_properties(${PROJECT_NAME} PROPERTIES 
-    VS_DEBUGGER_COMMAND ${PROJECT_NAME}
-    VS_DEBUGGER_COMMAND_ARGUMENTS "data/test_config.ini")

@@ -9,31 +9,34 @@
 #include <inputProcessor.hpp>
 #include <Helpers.hpp>
 
+#include <format>
+
 class cas9InputProcessor : public inputProcessor
 {
 public:
-	void processInput(std::list<std::string> filesToProcess, int batchSize);
+	void process(std::list<std::string> const & filesToProcess, int const & batchSize) final;
 
 	std::list<std::string> getBatchFiles();
 
 	bool isDuplicateGuide(std::string guide);
 
-	void cleanUp();
+	void cleanUp() final;
+
+	~cas9InputProcessor() final = default;
 
 private:
-	std::set<std::string> duplicateGuides;
+	std::set<std::string, std::less<>> duplicateGuides;
 	std::list<std::string> batchFiles;
+	int numDuplicateGuides;
+	int numIdentifiedGuides;
+	int guidesInBatch;
 
 	void processSeqeunce(
-		const std::string& seqeunce,
-		const std::string& seqHeader,
+		std::string_view seqeunce,
+		std::string_view seqHeader,
 		std::ofstream& outFile,
-		std::filesystem::path& tempWorkingDir,
-		int& numIdentifiedGuides,
-		int& numDuplicateGuides,
-		std::set<std::string>& candidateGuides,
-		std::set<std::string>& recordedSequences,
-		int& guidesInBatch,
+		std::filesystem::path const& tempWorkingDir,
+		std::set<std::string, std::less<>>& candidateGuides,
 		const int& batchSize
 	);
 };

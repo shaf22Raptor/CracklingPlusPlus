@@ -36,7 +36,7 @@ int main(int argc, char** argv)
 
 		// Process input
 		cas9InputProcessor ip;
-		ip.processInput(cm.getFilesToProcess(), cm.getInt("input", "batch-size"));
+		ip.process(cm.getFilesToProcess(), cm.getInt("input", "batch-size"));
 
 		// Create pipeline objects
 		CHOPCHOP CHOPCHOPModule(cm);

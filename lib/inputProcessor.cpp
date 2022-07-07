@@ -4,12 +4,18 @@ using std::string;
 using std::list;
 using std::logic_error;
 
-list<string> inputProcessor::processInput(list<string>& filesToProcess, int batchSize)
+class NotImplemented : public std::logic_error
 {
-	throw logic_error("Function not yet implemented");
+public:
+	NotImplemented() : std::logic_error("Function not yet implemented") { };
+};
+
+void inputProcessor::process(list<string> const & filesToProcess, int const & batchSize)
+{
+	throw NotImplemented();
 }
 
 void inputProcessor::cleanUp()
 {
-	throw logic_error("Function not yet implemented");
-}
+	throw NotImplemented();
+}	
