@@ -165,7 +165,7 @@ void errPrinter(string_view formattedString)
 	std::cerr << formattedString << std::endl;
 }
 
-void runner(char* args)
+void runner(const char* args)
 {
 
 	printer(std::format("| Calling: {}", args));

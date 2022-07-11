@@ -26,13 +26,13 @@ std::string trim(const std::string& s);
 
 std::string rc(std::string DNA);
 
-bool filterCandidateGuides(std::map<std::string, std::string, std::less<>> candidateGuideResultMap, std::string_view selectedModule, std::string_view optimisation, int consensusN, int toolCount);
+bool filterCandidateGuides(std::map<std::string, std::string, std::less<>> candidateGuideResultMap, std::string_view selectedModule, std::string_view optimisation, const int& consensusN, const int& toolCount);
 
 void printer(std::string_view formattedString);
 
 void errPrinter(std::string_view formattedString);
 
-void runner(char* args);
+void runner(const char* args);
 
 class ReturnCode : public std::logic_error
 {
