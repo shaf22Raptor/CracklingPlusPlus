@@ -18,7 +18,7 @@ public:
 
 	//TODO: Custom deconstructor to properly handle pointer destruction
 
-	void run(std::map<std::string,std::map<std::string,std::string>>& candidateGuides);
+	void run(std::map<std::string,std::map<std::string,std::string,std::less<>>>& candidateGuides);
 
 private:
 	bool toolIsSelected;

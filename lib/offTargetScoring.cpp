@@ -32,7 +32,7 @@ offTargetScoring::offTargetScoring(ConfigManager cm) :
 	offTargetScorePageLength = cm.getInt("offtargetscore", "page-length");
 }
 
-void offTargetScoring::run(map<string, map<string, string>>& candidateGuides)
+void offTargetScoring::run(map<string, map<string, string, std::less<>>>& candidateGuides)
 {
 	if (!toolIsSelected)
 	{
@@ -46,9 +46,9 @@ void offTargetScoring::run(map<string, map<string, string>>& candidateGuides)
 	int failedCount = 0;
 	int pgIdx = 1;
 	int guidesInPage = 0;
-	map<string, map<string, string>>::iterator paginatorIterator = candidateGuides.begin();
-	map<string, map<string, string>>::iterator pageStart = candidateGuides.begin();
-	map<string, map<string, string>>::iterator pageEnd = candidateGuides.begin();
+	auto paginatorIterator = candidateGuides.begin();
+	auto pageStart = candidateGuides.begin();
+	auto pageEnd = candidateGuides.begin();
 
 	// Outer loop deals with changing iterator start and end points (Pagination)
 	while (pageEnd != candidateGuides.end())
@@ -78,7 +78,7 @@ void offTargetScoring::run(map<string, map<string, string>>& candidateGuides)
 		for (paginatorIterator; paginatorIterator != pageEnd; paginatorIterator++)
 		{
 			string target23 = paginatorIterator->first;
-			map<string, string> resultsMap = paginatorIterator->second;
+			map<string, string, std::less<>> resultsMap = paginatorIterator->second;
 			// Run time filtering
 			if (!filterCandidateGuides(resultsMap, MODULE_SPECIFICITY, optimsationLevel, consensusN, toolCount)) {
 				// Advance page end for each filtered out guide

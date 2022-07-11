@@ -17,7 +17,7 @@ class mm10db
 public:
 	mm10db(ConfigManager& cm);
 
-	void run(std::map<std::string, std::map<std::string, std::string>>& candidateGuides);
+	void run(std::map<std::string, std::map<std::string, std::string, std::less<>>>& candidateGuides);
 
 	bool static leadingT(std::string candidateGuide);
 

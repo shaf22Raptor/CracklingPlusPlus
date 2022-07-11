@@ -30,7 +30,7 @@ bowtie2::bowtie2(ConfigManager cm) :
 	bowtie2Index = cm.getString("input", "bowtie2-index");
 }
 
-void bowtie2::run(map<string, map<string, string>>& candidateGuides)
+void bowtie2::run(map<string, map<string, string, std::less<>>>& candidateGuides)
 {
 	if (!toolIsSelected)
 	{
@@ -44,9 +44,9 @@ void bowtie2::run(map<string, map<string, string>>& candidateGuides)
 	int testedCount = 0;
 	int pgIdx = 1;
 	int guidesInPage = 0;
-	map<string, map<string, string>>::iterator paginatorIterator = candidateGuides.begin();
-	map<string, map<string, string>>::iterator pageStart = candidateGuides.begin();
-	map<string, map<string, string>>::iterator pageEnd = candidateGuides.begin();
+	map<string, map<string, string, std::less<>>>::iterator paginatorIterator = candidateGuides.begin();
+	map<string, map<string, string, std::less<>>>::iterator pageStart = candidateGuides.begin();
+	map<string, map<string, string, std::less<>>>::iterator pageEnd = candidateGuides.begin();
 
 
 	// Outer loop deals with changing iterator start and end points (Pagination)
@@ -76,7 +76,7 @@ void bowtie2::run(map<string, map<string, string>>& candidateGuides)
 		for (paginatorIterator; paginatorIterator != pageEnd; paginatorIterator++)
 		{
 			string target23 = paginatorIterator->first;
-			map<string, string> resultsMap = paginatorIterator->second;
+			map<string, string, std::less<>> resultsMap = paginatorIterator->second;
 			// Run time filtering
 			if (!filterCandidateGuides(resultsMap, MODULE_SPECIFICITY, optimsationLevel, consensusN, toolCount)) { 
 				// Advance page end

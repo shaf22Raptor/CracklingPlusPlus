@@ -16,7 +16,7 @@ const std::string MODULE_CHOPCHOP = "chopchop";
 const std::string MODULE_CONSENSUS = "consensus";
 const std::string MODULE_SPECIFICITY = "specificity";
 
-const std::map < std::string, std::string> DEFAULT_GUIDE_PROPERTIES = {
+const std::map < std::string, std::string, std::less<>> DEFAULT_GUIDE_PROPERTIES = {
     {"seq"                      , ""},
     {"header"                   , ""},
     {"isUnique"                 , CODE_ACCEPTED},

@@ -37,7 +37,7 @@ sgrnascorer2::sgrnascorer2(ConfigManager cm) :
 	sgRNAScorer2Model = svm_load_model(cm.getCString("sgrnascorer2", "model"));
 }
 
-void sgrnascorer2::run(map<string, map<string, string>>& candidateGuides)
+void sgrnascorer2::run(map<string, map<string, string, std::less<>>>& candidateGuides)
 {
 
 	if (!toolIsSelected)

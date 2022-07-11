@@ -64,7 +64,7 @@ int main(int argc, char** argv)
 			// Record batch start time
 			auto batchStart = std::chrono::high_resolution_clock::now();
 
-			std::map <std::string, std::map<std::string, std::string>> candidateGuides;
+			std::map <std::string, std::map<std::string, std::string, std::less<>>> candidateGuides;
 			std::ifstream inFile;
 			inFile.open(fileName, std::ios::binary);
 
@@ -135,7 +135,7 @@ int main(int argc, char** argv)
 			std::ofstream outFile(cm.getString("output", "file"), std::ios_base::app | std::ios_base::binary);
 			std::string headerLine;
 
-			for (std::map<std::string, std::map<std::string, std::string>>::iterator iter = candidateGuides.begin(); iter != candidateGuides.end(); iter++)
+			for (auto iter = candidateGuides.begin(); iter != candidateGuides.end(); iter++)
 			{
 				std::string target23 = iter->first;
 				std::string line;

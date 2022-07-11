@@ -34,7 +34,7 @@ mm10db::mm10db(ConfigManager& cm) :
 	highEnergyThreshold = cm.getFloat("rnafold", "high_energy_threshold");
 }
 
-void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& candidateGuides)
+void mm10db::run(std::map<std::string, std::map<std::string, std::string, std::less<>>>& candidateGuides)
 {
 	char printingBuffer[1024];
 
@@ -125,9 +125,9 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& cand
 	int notFoundCount = 0;
 	int guidesInPage = 0;
 	int pgIdx = 1;
-	map<string, map<string, string>>::iterator paginatorIterator = candidateGuides.begin();
-	map<string, map<string, string>>::iterator pageStart = candidateGuides.begin();
-	map<string, map<string, string>>::iterator pageEnd = candidateGuides.begin();
+	map<string, map<string, string, std::less<>>>::iterator paginatorIterator = candidateGuides.begin();
+	map<string, map<string, string, std::less<>>>::iterator pageStart = candidateGuides.begin();
+	map<string, map<string, string, std::less<>>>::iterator pageEnd = candidateGuides.begin();
 	
 
 	// Outer loop deals with changing iterator start and end points (Pagination)
@@ -157,7 +157,7 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& cand
 		for (paginatorIterator; paginatorIterator != pageEnd; paginatorIterator++)
 		{
 			string target23 = paginatorIterator->first;
-			map<string, string> resultsMap = paginatorIterator->second;
+			map<string, string, std::less<>> resultsMap = paginatorIterator->second;
 			// Run time filtering
 			if (!filterCandidateGuides(resultsMap, MODULE_MM10DB, optimsationLevel, consensusN, toolCount)) { continue; }
 			
@@ -206,7 +206,7 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string>>& cand
 
 			string target23 = paginatorIterator->first;
 			string key = target23.substr(1, 19);
-			map<string, string> resultsMap = paginatorIterator->second;
+			map<string, string, std::less<>> resultsMap = paginatorIterator->second;
 
 			// Run time filtering
 			if (!filterCandidateGuides(resultsMap, MODULE_MM10DB, optimsationLevel, consensusN, toolCount)) { continue; }

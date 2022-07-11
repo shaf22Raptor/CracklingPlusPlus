@@ -11,7 +11,7 @@ class CHOPCHOP
 public:
 	CHOPCHOP(ConfigManager cm);
 
-	void run(std::map<std::string, std::map<std::string, std::string>>& candidateGuides);
+	void run(std::map<std::string, std::map<std::string, std::string, std::less<>>>& candidateGuides);
 	
 	bool static G20(std::string candidateGuide);
 

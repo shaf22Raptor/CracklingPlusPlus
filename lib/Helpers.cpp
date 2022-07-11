@@ -6,27 +6,28 @@ using std::array;
 using std::map;
 using std::stoi;
 using std::vector;
+using std::string_view;
 
-array<char, 24> nulceotideArray = { 'a', 'c', 'g', 't', 'r', 'y', 'm', 'k', 'b', 'd', 'h', 'v', 'A', 'C', 'G', 'T', 'R', 'Y', 'M', 'K', 'B', 'D', 'H', 'V' };
-array<char, 24> complementArray = { 't', 'g', 'c', 'a', 'y', 'r', 'k', 'm', 'v', 'h', 'd', 'b', 'T', 'G', 'C', 'A', 'Y', 'R', 'K', 'M', 'V', 'H', 'D', 'B' };
+const array<char, 24> nulceotideArray = { 'a', 'c', 'g', 't', 'r', 'y', 'm', 'k', 'b', 'd', 'h', 'v', 'A', 'C', 'G', 'T', 'R', 'Y', 'M', 'K', 'B', 'D', 'H', 'V' };
+const array<char, 24> complementArray = { 't', 'g', 'c', 'a', 'y', 'r', 'k', 'm', 'v', 'h', 'd', 'b', 'T', 'G', 'C', 'A', 'Y', 'R', 'K', 'M', 'V', 'H', 'D', 'B' };
 const string WHITESPACE = " \n\r\t\f\v";
 
 
-string makeUpper(string s)
+string makeUpper(const string& s)
 {
 	string upper = s;
 	std::transform(upper.begin(), upper.end(), upper.begin(), [](unsigned char c) { return std::toupper(c); });
 	return upper;
 }
 
-string makeLower(string s)
+string makeLower(const string& s)
 {
 	string lower = s;
 	std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) { return std::tolower(c); });
 	return lower;
 }
 
-vector<string> split(string s, string delimiter)
+vector<string> split(string& s, string_view delimiter)
 {
 	vector<string> splitLine;
 
@@ -41,18 +42,18 @@ vector<string> split(string s, string delimiter)
 }
 
 
-string rtrim(const string& s)
+string rtrim(string_view s)
 {
 	size_t end = s.find_last_not_of(WHITESPACE);
 	if (end == string::npos) { return ""; }
-	return s.substr(0, end + 1);
+	return { s.begin(), s.begin() + end + 1 };
 }
 
-string ltrim(const string& s)
+string ltrim(string_view s)
 {
 	size_t start = s.find_first_not_of(WHITESPACE);
 	if (start == string::npos) { return ""; }
-	return s.substr(start);
+	return { s.begin() + start, s.end()};
 }
 
 string trim(const string& s)
@@ -75,17 +76,18 @@ string rc(string DNA)
 	// Reverse the input seqeuence 
 	std::reverse(DNA.begin(), DNA.end());
 	// Convert each character to the complement
-	for (int i = 0; i < DNA.size(); i++)
-	{
-		array<char, 24>::iterator nulceotidePos = std::find(nulceotideArray.begin(), nulceotideArray.end(), DNA[i]);
-		int complementPos = std::distance(nulceotideArray.begin(), nulceotidePos);
-		DNA[i] = complementArray[complementPos];
-	}
+	std::for_each(DNA.begin(), DNA.end(), [](char& c) { 
+		auto nulceotidePos = std::find(nulceotideArray.begin(), nulceotideArray.end(), c);
+		long long complementPos = std::distance(nulceotideArray.begin(), nulceotidePos);
+		c = complementArray[complementPos];
+		}
+	);
+
 	// Return reverse compliment
 	return DNA;
 }
 
-bool filterCandidateGuides(map<string, string> candidateGuideResultMap, string selectedModule, string optimisation, int consensusN, int toolCount)
+bool filterCandidateGuides(map<string, string, std::less<>> candidateGuideResultMap, string_view selectedModule, string_view optimisation, int consensusN, int toolCount)
 {
 	// Ultralow optimisation, process all guides
 	if (optimisation == "ultralow") { return true; }
@@ -145,21 +147,20 @@ bool filterCandidateGuides(map<string, string> candidateGuideResultMap, string s
 	return true;
 }
 
-void printer(string formattedString)
+void printer(string_view formattedString)
 {
 	std::cout << formattedString << std::endl;
 }
 
-void errPrinter(string formattedString)
+void errPrinter(string_view formattedString)
 {
 	std::cerr << formattedString << std::endl;
 }
 
 void runner(char* args)
 {
-	char buffer[1024];
-	snprintf(buffer, 1024, "| Calling: %s", args);
-	printer(buffer);
+
+	printer((std::format("| Calling: {}", args)));
 	try 
 	{
 		int returnCode = system(args);
@@ -168,11 +169,11 @@ void runner(char* args)
 			throw std::runtime_error("Runtime Error, returned a normal 0 value!");
 		}
 	}
-	catch (string error)
+	catch (std::exception e)
 	{
-		errPrinter(error);
+		errPrinter(string_view(e.what()));
 		return;
 	}
-    printer("| Finished");
+    printer(string_view("| Finished"));
 	return;
 }

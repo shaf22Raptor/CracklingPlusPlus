@@ -8,26 +8,28 @@
 #include <ctime>
 #include <map>
 #include <vector>
+#include <format>
+ 
 #include <Constants.hpp>
 
-std::string makeUpper(std::string s);
+std::string makeUpper(const std::string& s);
 
-std::string makeLower(std::string s);
+std::string makeLower(const std::string& s);
 
-std::vector<std::string> split(std::string s, std::string delimiter);
+std::vector<std::string> split(std::string& s, std::string_view delimiter);
 
-std::string rtrim(const std::string& s);
+std::string rtrim(std::string_view s);
 
-std::string ltrim(const std::string& s);
+std::string ltrim(std::string_view s);
 
 std::string trim(const std::string& s);
 
 std::string rc(std::string DNA);
 
-bool filterCandidateGuides(std::map<std::string, std::string> candidateGuideResultMap, std::string selectedModule, std::string optimisation, int consensusN, int toolCount);
+bool filterCandidateGuides(std::map<std::string, std::string, std::less<>> candidateGuideResultMap, std::string_view selectedModule, std::string_view optimisation, int consensusN, int toolCount);
 
-void printer(std::string formattedString);
+void printer(std::string_view formattedString);
 
-void errPrinter(std::string formattedString);
+void errPrinter(std::string_view formattedString);
 
 void runner(char* args);

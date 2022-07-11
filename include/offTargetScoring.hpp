@@ -12,7 +12,7 @@ class offTargetScoring
 public:
 	offTargetScoring(ConfigManager cm);
 
-	void run(std::map<std::string, std::map<std::string, std::string>>& candidateGuides);
+	void run(std::map<std::string, std::map<std::string, std::string, std::less<>>>& candidateGuides);
 
 private:
 	bool toolIsSelected;
