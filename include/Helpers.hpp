@@ -33,3 +33,9 @@ void printer(std::string_view formattedString);
 void errPrinter(std::string_view formattedString);
 
 void runner(char* args);
+
+class ReturnCode : public std::logic_error
+{
+public:
+	ReturnCode() : std::logic_error("The externally called program returned a non-zero value") { };
+};

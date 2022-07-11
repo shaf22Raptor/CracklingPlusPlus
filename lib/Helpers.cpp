@@ -16,14 +16,14 @@ const string WHITESPACE = " \n\r\t\f\v";
 string makeUpper(const string& s)
 {
 	string upper = s;
-	std::transform(upper.begin(), upper.end(), upper.begin(), [](unsigned char c) { return std::toupper(c); });
+	std::ranges::transform(upper.begin(), upper.end(), upper.begin(), [](unsigned char c) { return std::toupper(c); });
 	return upper;
 }
 
 string makeLower(const string& s)
 {
 	string lower = s;
-	std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) { return std::tolower(c); });
+	std::ranges::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) { return std::tolower(c); });
 	return lower;
 }
 
@@ -53,7 +53,7 @@ string ltrim(string_view s)
 {
 	size_t start = s.find_first_not_of(WHITESPACE);
 	if (start == string::npos) { return ""; }
-	return { s.begin() + start, s.end()};
+	return { s.begin() + start, s.end() };
 }
 
 string trim(const string& s)
@@ -74,10 +74,10 @@ string rc(string DNA)
 		throw std::length_error("Type Error, Seqeunce length must be less than 1024!");
 	}
 	// Reverse the input seqeuence 
-	std::reverse(DNA.begin(), DNA.end());
+	std::ranges::reverse(DNA.begin(), DNA.end());
 	// Convert each character to the complement
-	std::for_each(DNA.begin(), DNA.end(), [](char& c) { 
-		auto nulceotidePos = std::find(nulceotideArray.begin(), nulceotideArray.end(), c);
+	std::ranges::for_each(DNA.begin(), DNA.end(), [](char& c) {
+		auto nulceotidePos = std::ranges::find(nulceotideArray.begin(), nulceotideArray.end(), c);
 		long long complementPos = std::distance(nulceotideArray.begin(), nulceotidePos);
 		c = complementArray[complementPos];
 		}
@@ -93,39 +93,47 @@ bool filterCandidateGuides(map<string, string, std::less<>> candidateGuideResult
 	if (optimisation == "ultralow") { return true; }
 
 	// For all modules
-	if (optimisation == "low" || optimisation == "medium" || optimisation == "high")
-	{	
+	if (
+		(optimisation == "low" || optimisation == "medium" || optimisation == "high") &&
+		(candidateGuideResultMap["isUnique"] == CODE_REJECTED)
+	)
+	{
 		// Reject all guides that have been seen more than once
-		if (candidateGuideResultMap["isUnique"] == CODE_REJECTED) { return false; }
+		return false;
 	}
 
 	// mm10db filtering
-	if ( (selectedModule == MODULE_MM10DB) && (optimisation == "medium" || optimisation == "high") )
-	{
-		// Reject if any mm10db test has failed
-		if (candidateGuideResultMap["passedAvoidLeadingT"] == CODE_REJECTED ||
+	if (
+		(selectedModule == MODULE_MM10DB) && 
+		(optimisation == "medium" || optimisation == "high") &&
+		(
+			candidateGuideResultMap["passedAvoidLeadingT"] == CODE_REJECTED ||
 			candidateGuideResultMap["passedATPercent"] == CODE_REJECTED ||
 			candidateGuideResultMap["passedTTTT"] == CODE_REJECTED ||
 			candidateGuideResultMap["passedSecondaryStructure"] == CODE_REJECTED ||
-			candidateGuideResultMap["acceptedByMm10db"] == CODE_REJECTED)
-		{
+			candidateGuideResultMap["acceptedByMm10db"] == CODE_REJECTED
+		)
+	)
+	{
+		// Reject if any mm10db test has failed
 			return false;
-		}
 	}
 
 	// For all consensus scoring tools
-	if ( (selectedModule == MODULE_CHOPCHOP || selectedModule == MODULE_MM10DB || selectedModule == MODULE_SGRNASCORER2) && 
-		(optimisation == "high") )
+	if (
+		(selectedModule == MODULE_CHOPCHOP || selectedModule == MODULE_MM10DB || selectedModule == MODULE_SGRNASCORER2) && 
+		(optimisation == "high")
+	)
 	{
-		int countAlreadyAccepted = 
-			(candidateGuideResultMap["acceptedByMm10db"] == CODE_ACCEPTED) + 
-			(candidateGuideResultMap["passedG20"] == CODE_ACCEPTED) +
-			(candidateGuideResultMap["acceptedBySgRnaScorer"] == CODE_ACCEPTED);
+		int countAlreadyAccepted =
+			(int)(candidateGuideResultMap["acceptedByMm10db"] == CODE_ACCEPTED) +
+			(int)(candidateGuideResultMap["passedG20"] == CODE_ACCEPTED) +
+			(int)(candidateGuideResultMap["acceptedBySgRnaScorer"] == CODE_ACCEPTED);
 
-		int countAlreadyAssessed = 
-			(candidateGuideResultMap["acceptedByMm10db"] != CODE_UNTESTED) +
-			(candidateGuideResultMap["passedG20"] != CODE_UNTESTED) +
-			(candidateGuideResultMap["acceptedBySgRnaScorer"] != CODE_UNTESTED);
+		int countAlreadyAssessed =
+			(int)(candidateGuideResultMap["acceptedByMm10db"] != CODE_UNTESTED) +
+			(int)(candidateGuideResultMap["passedG20"] != CODE_UNTESTED) +
+			(int)(candidateGuideResultMap["acceptedBySgRnaScorer"] != CODE_UNTESTED);
 
 		// Reject if the consensus has already been passed
 		if (countAlreadyAccepted >= consensusN) { return false; }
@@ -161,19 +169,19 @@ void runner(char* args)
 {
 
 	printer((std::format("| Calling: {}", args)));
-	try 
+	try
 	{
 		int returnCode = system(args);
 		if (returnCode != 0)
 		{
-			throw std::runtime_error("Runtime Error, returned a normal 0 value!");
+			throw ReturnCode();
 		}
 	}
-	catch (std::exception e)
+	catch (const ReturnCode& e)
 	{
 		errPrinter(string_view(e.what()));
 		return;
 	}
-    printer(string_view("| Finished"));
+	printer(string_view("| Finished"));
 	return;
 }
