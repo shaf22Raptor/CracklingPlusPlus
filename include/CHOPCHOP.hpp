@@ -9,11 +9,11 @@
 class CHOPCHOP
 {
 public:
-	CHOPCHOP(ConfigManager cm);
+	explicit CHOPCHOP(ConfigManager& cm);
 
-	void run(std::map<std::string, std::map<std::string, std::string, std::less<>>>& candidateGuides);
+	void run(std::map<std::string, std::map<std::string, std::string, std::less<>>, std::less<>>& candidateGuides);
 	
-	bool static G20(std::string candidateGuide);
+	bool static G20(std::string_view candidateGuide);
 
 private:
 	int testedCount;
@@ -22,4 +22,10 @@ private:
 	std::string optimsationLevel;
 	int toolCount;
 	int consensusN;
+};
+
+class G20Input : public std::logic_error
+{
+public:
+	G20Input() : std::logic_error("CHOPCHOP G20: Input lenght must be >= 20!") { };
 };
