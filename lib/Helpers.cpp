@@ -87,7 +87,7 @@ string rc(string DNA)
 	return DNA;
 }
 
-bool filterCandidateGuides(map<string, string, std::less<>> candidateGuideResultMap, string_view selectedModule, string_view optimisation, int consensusN, int toolCount)
+bool filterCandidateGuides(map<string, string, std::less<>> candidateGuideResultMap, string_view selectedModule, string_view optimisation, const int& consensusN, const int& toolCount)
 {
 	// Ultralow optimisation, process all guides
 	if (optimisation == "ultralow") { return true; }
@@ -168,7 +168,7 @@ void errPrinter(string_view formattedString)
 void runner(char* args)
 {
 
-	printer((std::format("| Calling: {}", args)));
+	printer(std::format("| Calling: {}", args));
 	try
 	{
 		int returnCode = system(args);
@@ -179,9 +179,9 @@ void runner(char* args)
 	}
 	catch (const ReturnCode& e)
 	{
-		errPrinter(string_view(e.what()));
+		errPrinter(e.what());
 		return;
 	}
-	printer(string_view("| Finished"));
+	printer("| Finished");
 	return;
 }
