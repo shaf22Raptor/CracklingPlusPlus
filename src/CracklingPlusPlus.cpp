@@ -18,11 +18,9 @@ int main(int argc, char** argv)
 	{
 		// Check input arguments
 		if (argc != 2) {
-			std::cout << "Usage: " << argv[0] << "[Crackling Config File]\n";
+			std::cout << std::format("Usage: {} [Crackling Config File]\n", argv[0]);
 			exit(1);
 		}
-
-		char printingBuffer[1024];
 
 		// Load config
 		ConfigManager cm(argv[1]);
@@ -64,14 +62,13 @@ int main(int argc, char** argv)
 			// Record batch start time
 			auto batchStart = std::chrono::high_resolution_clock::now();
 
-			std::map <std::string, std::map<std::string, std::string, std::less<>>> candidateGuides;
+			std::map <std::string, std::map<std::string, std::string, std::less<>>, std::less<>> candidateGuides;
 			std::ifstream inFile;
 			inFile.open(fileName, std::ios::binary);
 
 			for (std::string line; std::getline(inFile, line);)
-				//while (std::getline(inFile, inputLine))
 			{
-				std::string guideInfo[5];
+				std::array<std::string, 5> guideInfo;
 				for (int i = 0; i < 5; i++)
 				{
 					size_t pos = line.find(',');
@@ -100,10 +97,8 @@ int main(int argc, char** argv)
 
 			CHOPCHOPModule.run(candidateGuides);
 
-
 			mm10dbModule.run(candidateGuides);
 
-			
 			sgRNAScorer2Module.run(candidateGuides);
 
 			printer("Evaluating efficiency via consensus approach.");
@@ -111,43 +106,34 @@ int main(int argc, char** argv)
 			int testedCount = 0;
 			for (auto const& [target23, resultsMap] : candidateGuides)
 			{
-				candidateGuides[target23]["consensusCount"] = std::to_string((candidateGuides[target23]["acceptedByMm10db"] == CODE_ACCEPTED) +
-					(candidateGuides[target23]["acceptedBySgRnaScorer"] == CODE_ACCEPTED) +
-					(candidateGuides[target23]["passedG20"] == CODE_ACCEPTED));
+				candidateGuides[target23]["consensusCount"] = std::to_string((int)(candidateGuides[target23]["acceptedByMm10db"] == CODE_ACCEPTED) +
+					(int)(candidateGuides[target23]["acceptedBySgRnaScorer"] == CODE_ACCEPTED) +
+					(int)(candidateGuides[target23]["passedG20"] == CODE_ACCEPTED));
 				if (std::stoi(candidateGuides[target23]["consensusCount"]) < cm.getInt("consensus", "n")) { failedCount++; }
 				testedCount++;
 			}
 			
-			snprintf(printingBuffer, 1024, "\t%d of %d failed here.", failedCount, testedCount);
-			printer(printingBuffer);
+			printer(std::format("\t{} of {} failed here.", failedCount, testedCount));
 
 			bowtie2Module.run(candidateGuides);
 
-
-
 			otsModule.run(candidateGuides);
-
-
 
 			printer("Writing results to file.");
 
+			std::ofstream resultsFile(cm.getString("output", "file"), std::ios_base::app | std::ios_base::binary);
 
-			std::ofstream outFile(cm.getString("output", "file"), std::ios_base::app | std::ios_base::binary);
-			std::string headerLine;
-
-			for (auto iter = candidateGuides.begin(); iter != candidateGuides.end(); iter++)
-			{
-				std::string target23 = iter->first;
+			for (auto const& [target23, resultsMap] : candidateGuides) {
 				std::string line;
 				for (std::string guideProperty : DEFAULT_GUIDE_PROPERTIES_ORDER)
 				{
 					line += candidateGuides[target23][guideProperty] + ",";
 				}
 				line = line.substr(0, line.length() - 1) + "\n";
-				outFile << line;
+				resultsFile << line;
 			}
 
-			outFile.close();
+			resultsFile.close();
 
 			printer("Cleaning auxiliary files.");
 
@@ -160,31 +146,28 @@ int main(int argc, char** argv)
 
 			printer("Done.");
 
-			snprintf(printingBuffer, 1024, "%d guides evaluated.", (int)candidateGuides.size());
-			printer(printingBuffer);
+			printer(std::format("{} guides evaluated.", (int)candidateGuides.size()));
 
 			auto totalSeconds = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - batchStart);
 
-			int days = totalSeconds.count() / 86400;
+			int days = (int)totalSeconds.count() / 86400;
 			int hours = (totalSeconds.count() % 86400) / 3600;
 			int minutes = ((totalSeconds.count() % 86400) % 3600) / 60;
 			int seconds = ((totalSeconds.count() % 86400) % 3600) % 60;
 
-			snprintf(printingBuffer, 1024, "This batch ran in %02d %02d:%02d:%02d (dd hh:mm:ss) or %d seconds", days, hours, minutes, seconds, (int)totalSeconds.count());
-			printer(printingBuffer);
+			printer(std::format("This batch ran in {} {}:{}:{} (dd hh:mm:ss) or {} seconds", days, hours, minutes, seconds, (int)totalSeconds.count()));
 
 		}
 		
 		auto totalSeconds = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start);
 
-		int days = totalSeconds.count() / 86400;
+		int days = (int)totalSeconds.count() / 86400;
 		int hours = (totalSeconds.count() % 86400) / 3600;
 		int minutes = ((totalSeconds.count() % 86400) % 3600) / 60;
 		int seconds = ((totalSeconds.count() % 86400) % 3600) % 60;
 
 
-		snprintf(printingBuffer, 1024, "Total run time %02d %02d:%02d:%02d (dd hh:mm:ss) or %d seconds", days, hours, minutes, seconds, (int)totalSeconds.count());
-		printer(printingBuffer);
+		printer(std::format("Total run time {} {}:{}:{} (dd hh:mm:ss) or {} seconds", days, hours, minutes, seconds, (int)totalSeconds.count()));
 
 		// Clean up
 		coutLogger.close();
