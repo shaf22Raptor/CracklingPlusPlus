@@ -137,12 +137,19 @@ void mm10db::run(map<string, map<string, string, std::less<>>, std::less<>>& can
 		out.open(RNAFoldInFile, std::ios::binary);
 
 		guidesInPage = 0;
-		while(paginatorIterator != pageEnd)
+		while (paginatorIterator != pageEnd)
 		{
 			string target23 = paginatorIterator->first;
 			// Run time filtering
-			if (!filterCandidateGuides(paginatorIterator->second, MODULE_MM10DB, optimsationLevel, consensusN, toolCount)) { continue; }
-
+			if (!filterCandidateGuides(paginatorIterator->second, MODULE_SPECIFICITY, optimsationLevel, consensusN, toolCount)) {
+				// Advance page end
+				if (pageEnd != candidateGuides.end())
+				{
+					pageEnd++;
+				}
+				paginatorIterator++;
+				continue;
+			}
 			out << "G" << target23.substr(1, 19) << guide << "\n";
 			guidesInPage++;
 			paginatorIterator++;
@@ -192,7 +199,10 @@ void mm10db::run(map<string, map<string, string, std::less<>>, std::less<>>& can
 			string key = target23.substr(1, 19);
 
 			// Run time filtering
-			if (!filterCandidateGuides(paginatorIterator->second, MODULE_MM10DB, optimsationLevel, consensusN, toolCount)) { continue; }
+			if (!filterCandidateGuides(paginatorIterator->second, MODULE_SPECIFICITY, optimsationLevel, consensusN, toolCount)) {
+				paginatorIterator++;
+				continue;
+			}
 
 			if (!RNAstructures.contains(key))
 			{
@@ -200,6 +210,7 @@ void mm10db::run(map<string, map<string, string, std::less<>>, std::less<>>& can
 				notFoundCount++;
 				continue;
 			}
+
 			auto listIt = RNAstructures[key].begin();
 			L1 = *listIt;
 			listIt++;

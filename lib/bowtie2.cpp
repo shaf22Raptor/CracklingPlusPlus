@@ -70,6 +70,7 @@ void bowtie2::run(map<string, map<string, string, std::less<>>, std::less<>>& ca
 				{
 					pageEnd++;
 				}
+				paginatorIterator++;
 				continue;
 			}
 

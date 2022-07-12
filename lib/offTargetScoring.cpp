@@ -70,6 +70,7 @@ void offTargetScoring::run(map<string, map<string, string, std::less<>>, std::le
 				{
 					pageEnd++;
 				}
+				paginatorIterator++;
 				continue;
 			}
 
@@ -171,8 +172,8 @@ void offTargetScoring::run(map<string, map<string, string, std::less<>>, std::le
 					}
 					else { candidateGuides[target23]["passedOffTargetScore"] = CODE_ACCEPTED; }
 				}
+				testedCount++;
 			}
-			testedCount++;
 			paginatorIterator++;
 		}
 		printer(std::format("\t{} of {} failed here.", failedCount, testedCount));
