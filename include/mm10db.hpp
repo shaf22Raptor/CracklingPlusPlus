@@ -15,15 +15,15 @@
 class mm10db
 {
 public:
-	mm10db(ConfigManager& cm);
+	explicit mm10db(ConfigManager& cm);
 
-	void run(std::map<std::string, std::map<std::string, std::string, std::less<>>>& candidateGuides);
+	void run(std::map<std::string, std::map<std::string, std::string, std::less<>>, std::less<>>& candidateGuides);
 
-	bool static leadingT(std::string candidateGuide);
+	bool static leadingT(std::string_view candidateGuide);
 
-	float static AT_percentage(std::string candidateGuide);
+	float static AT_percentage(std::string_view candidateGuide);
 
-	bool static polyT(std::string candidateGuide);
+	bool static polyT(std::string_view candidateGuide);
 
 	std::string static transToDNA(std::string RNA);
 

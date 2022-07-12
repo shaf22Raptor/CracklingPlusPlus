@@ -6,37 +6,24 @@ using std::map;
 using std::array;
 using std::list;
 
-array<char, 2> atArray = { 'A', 'T' };
+const array<char, 2> atArray = { 'A', 'T' };
 
-mm10db::mm10db(ConfigManager& cm) : 
-	toolIsSelected(false), 
-	optimsationLevel(""), 
-	toolCount(0), 
-	consensusN(0),
-	threadCount(0),
-	RNAFoldOutFile(""), 
-	RNAFoldInFile(""), 
-	RNAFoldBin(""),
-	RNAFoldPageLength(0),
-	lowEnergyThreshold(0.0f),
-	highEnergyThreshold(0.0f)
-{
-	toolIsSelected = cm.getBool("consensus", "mm10db");
-	optimsationLevel = cm.getString("general", "optimisation");
-	toolCount = cm.getConsensusToolCount();
-	consensusN = cm.getInt("consensus", "n");
-	threadCount = cm.getInt("rnafold", "threads");
-	RNAFoldOutFile = cm.getString("rnafold", "output");
-	RNAFoldInFile = cm.getString("rnafold", "input");
-	RNAFoldBin = cm.getString("rnafold", "binary");
-	RNAFoldPageLength = cm.getInt("rnafold", "page-length");
-	lowEnergyThreshold = cm.getFloat("rnafold", "low_energy_threshold");
-	highEnergyThreshold = cm.getFloat("rnafold", "high_energy_threshold");
-}
+mm10db::mm10db(ConfigManager& cm) :
+	toolIsSelected(cm.getBool("consensus", "mm10db")),
+	optimsationLevel(cm.getString("general", "optimisation")),
+	toolCount(cm.getConsensusToolCount()),
+	consensusN(cm.getInt("consensus", "n")),
+	threadCount(cm.getInt("rnafold", "threads")),
+	RNAFoldOutFile(cm.getString("rnafold", "output")),
+	RNAFoldInFile(cm.getString("rnafold", "input")),
+	RNAFoldBin(cm.getString("rnafold", "binary")),
+	lowEnergyThreshold(cm.getFloat("rnafold", "low_energy_threshold")),
+	highEnergyThreshold(cm.getFloat("rnafold", "high_energy_threshold")),
+	RNAFoldPageLength(cm.getInt("rnafold", "page-length"))
+{}
 
-void mm10db::run(std::map<std::string, std::map<std::string, std::string, std::less<>>>& candidateGuides)
+void mm10db::run(map<string, map<string, string, std::less<>>, std::less<>>& candidateGuides)
 {
-	char printingBuffer[1024];
 
 	if (!toolIsSelected)
 	{
@@ -60,12 +47,11 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string, std::l
 		else
 		{
 			candidateGuides[target23]["passedAvoidLeadingT"] = CODE_ACCEPTED;
-			
+
 		}
 		testedCount++;
 	}
-	snprintf(printingBuffer, 1024, "\t%d of %d failed here.", failedCount, testedCount);
-	printer(printingBuffer);
+	printer(std::format("\t{} of {} failed here.", failedCount, testedCount));
 
 	printer("mm10db - remove based on AT percent.");
 	failedCount = 0;
@@ -75,7 +61,7 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string, std::l
 		// Run time filtering
 		if (!filterCandidateGuides(resultsMap, MODULE_MM10DB, optimsationLevel, consensusN, toolCount)) { continue; }
 
-		float AT = AT_percentage(target23.substr(0,20));
+		float AT = AT_percentage(std::string_view(target23).substr(0, 20));
 		if (AT < 20.0f || AT > 65.0f)
 		{
 			candidateGuides[target23]["passedATPercent"] = CODE_REJECTED;
@@ -90,8 +76,7 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string, std::l
 		candidateGuides[target23]["AT"] = converstionStream.str();
 		testedCount++;
 	}
-	snprintf(printingBuffer, 1024, "\t%d of %d failed here.", failedCount, testedCount);
-	printer(printingBuffer);
+	printer(std::format("\t{} of {} failed here.", failedCount, testedCount));
 
 	printer("mm10db - remove all targets that contain TTTT.");
 	failedCount = 0;
@@ -112,8 +97,7 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string, std::l
 		}
 		testedCount++;
 	}
-	snprintf(printingBuffer, 1024, "\t%d of %d failed here.", failedCount, testedCount);
-	printer(printingBuffer);
+	printer(std::format("\t{} of {} failed here.", failedCount, testedCount));
 
 	printer("mm10db - check secondary structure.");
 	string guide = "GUUUUAGAGCUAGAAAUAGCAAGUUAAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAAGUGGCACCGAGUCGGUGCUUUU";
@@ -125,10 +109,10 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string, std::l
 	int notFoundCount = 0;
 	int guidesInPage = 0;
 	int pgIdx = 1;
-	map<string, map<string, string, std::less<>>>::iterator paginatorIterator = candidateGuides.begin();
-	map<string, map<string, string, std::less<>>>::iterator pageStart = candidateGuides.begin();
-	map<string, map<string, string, std::less<>>>::iterator pageEnd = candidateGuides.begin();
-	
+	auto paginatorIterator = candidateGuides.begin();
+	auto pageStart = candidateGuides.begin();
+	auto pageEnd = candidateGuides.begin();
+
 
 	// Outer loop deals with changing iterator start and end points (Pagination)
 	while (pageEnd != candidateGuides.end())
@@ -136,12 +120,11 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string, std::l
 		if (RNAFoldPageLength > 0)
 		{
 			// Advance the pageEnd pointer
-			std::advance(pageEnd, std::min( (int)std::distance(pageEnd, candidateGuides.end()), RNAFoldPageLength));
+			std::advance(pageEnd, std::min((int)std::distance(pageEnd, candidateGuides.end()), RNAFoldPageLength));
 			// Record page start
 			pageStart = paginatorIterator;
 			// Print page information
-			snprintf(printingBuffer, 1024, "\tProcessing page %d (%d per page).", pgIdx, RNAFoldPageLength);
-			printer(printingBuffer);
+			printer(std::format("\tProcessing page {} ({} per page).", pgIdx, RNAFoldPageLength));
 		}
 		else {
 			// Process all guides at once
@@ -154,35 +137,35 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string, std::l
 		out.open(RNAFoldInFile, std::ios::binary);
 
 		guidesInPage = 0;
-		for (paginatorIterator; paginatorIterator != pageEnd; paginatorIterator++)
+		while(paginatorIterator != pageEnd)
 		{
 			string target23 = paginatorIterator->first;
-			map<string, string, std::less<>> resultsMap = paginatorIterator->second;
 			// Run time filtering
-			if (!filterCandidateGuides(resultsMap, MODULE_MM10DB, optimsationLevel, consensusN, toolCount)) { continue; }
-			
+			if (!filterCandidateGuides(paginatorIterator->second, MODULE_MM10DB, optimsationLevel, consensusN, toolCount)) { continue; }
+
 			out << "G" << target23.substr(1, 19) << guide << "\n";
 			guidesInPage++;
+			paginatorIterator++;
 		}
 
 		out.close();
 
-		snprintf(printingBuffer, 1024, "\t\t%d guides in this page.", guidesInPage);
-		printer(printingBuffer);
+		printer(std::format("\t\t{} guides in this page.", guidesInPage));
 
 		// Call RNAFold
-		snprintf(printingBuffer, 1024, "%s --noPS -j%d -i %s > %s", RNAFoldBin.c_str(), threadCount, RNAFoldInFile.c_str(), RNAFoldOutFile.c_str());
-		runner(printingBuffer);
+		runner(std::format("{} --noPS -j{} -i {} > {}", RNAFoldBin, threadCount, RNAFoldInFile, RNAFoldOutFile).c_str());
 
 		printer("\t\tStarting to process the RNAfold results.");
 		// Open output file
 		std::ifstream in;
 		in.open(RNAFoldOutFile, std::ios::binary);
 
-		map<string, list<string>> RNAstructures;
+		map<string, list<string>, std::less<>> RNAstructures;
 		int i = 0;
-		string L1, L2, target;
-		for (string line; std::getline(in, line); i++)
+		string L1;
+		string L2;
+		string target;
+		for (string line; std::getline(in, line);)
 		{
 			if (i % 2 == 0)
 			{
@@ -196,43 +179,42 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string, std::l
 				L2 = rtrim(line);
 				RNAstructures[transToDNA(target.substr(1, 19))] = { L1, L2, target };
 			}
+			i++;
 		}
 
 		// Reset paginatorIterator to page start
 		paginatorIterator = pageStart;
 
-		for (paginatorIterator; paginatorIterator != pageEnd; paginatorIterator++)
+		while (paginatorIterator != pageEnd)
 		{
 
 			string target23 = paginatorIterator->first;
 			string key = target23.substr(1, 19);
-			map<string, string, std::less<>> resultsMap = paginatorIterator->second;
 
 			// Run time filtering
-			if (!filterCandidateGuides(resultsMap, MODULE_MM10DB, optimsationLevel, consensusN, toolCount)) { continue; }
+			if (!filterCandidateGuides(paginatorIterator->second, MODULE_MM10DB, optimsationLevel, consensusN, toolCount)) { continue; }
 
-			if (RNAstructures.find(key) == RNAstructures.end())
+			if (!RNAstructures.contains(key))
 			{
-				snprintf(printingBuffer, 1024, "Could not find: %s", key.c_str());
-				printer(printingBuffer);
+				printer(std::format("Could not find: {}", key));
 				notFoundCount++;
 				continue;
 			}
-			list<string>::iterator listIt = RNAstructures[key].begin();
+			auto listIt = RNAstructures[key].begin();
 			L1 = *listIt;
 			listIt++;
 			L2 = *listIt;
 			listIt++;
 			target = *listIt;
-			string structure = L2.substr(0, L2.find(" "));
-			string energy = L2.substr(L2.find(" ")+2, L2.length() - L2.find(" ") - 3);
+			string ssStructure = L2.substr(0, L2.find(" "));
+			string ssEnergy = L2.substr(L2.find(" ") + 2, L2.length() - L2.find(" ") - 3);
 			candidateGuides[target23]["ssL1"] = L1;
-			candidateGuides[target23]["ssStructure"] = structure;
-			candidateGuides[target23]["ssEnergy"] = energy;
+			candidateGuides[target23]["ssStructure"] = ssStructure;
+			candidateGuides[target23]["ssEnergy"] = ssEnergy;
 
-			if ( (transToDNA(target) != target23.substr(0, 20)) && 
-				 ((transToDNA("C" + target.substr(1))) != target23.substr(0, 20)) && 
-				 ((transToDNA("A" + target.substr(1))) != target23.substr(0, 20)) )
+			if ((transToDNA(target) != target23.substr(0, 20)) &&
+				((transToDNA("C" + target.substr(1))) != target23.substr(0, 20)) &&
+				((transToDNA("A" + target.substr(1))) != target23.substr(0, 20)))
 			{
 				candidateGuides[target23]["passedSecondaryStructure"] = CODE_ERROR;
 				errorCount++;
@@ -242,7 +224,7 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string, std::l
 			std::smatch match_structure;
 			std::smatch match_energy;
 			if (std::regex_search(L2, match_structure, pattern_RNAstructure))
-			{ 
+			{
 				float energy = std::stof(match_structure[1].str());
 				if (energy < lowEnergyThreshold)
 				{
@@ -268,23 +250,21 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string, std::l
 				}
 			}
 			testedCount++;
+			paginatorIterator++;
 		}
 
 		// Advance paginatorIterator to page end for next loop
 		paginatorIterator = pageEnd;
 		pgIdx++;
 	}
-	snprintf(printingBuffer, 1024, "\t%d of %d failed here.", failedCount, testedCount);
-	printer(printingBuffer);
-	if (errorCount > 0) 
+	printer(std::format("\t{} of {} failed here.", failedCount, testedCount));
+	if (errorCount > 0)
 	{
-		snprintf(printingBuffer, 1024, "\t%d of %d errored here.", errorCount, testedCount);
-		printer(printingBuffer);
+		printer(std::format("\t{} of {} errored here.", errorCount, testedCount));
 	}
 	if (notFoundCount > 0)
 	{
-		snprintf(printingBuffer, 1024, "\t%d of %d not found in RNAfold output.", notFoundCount, testedCount);
-		printer(printingBuffer);
+		printer(std::format("\t{} of {} not found in RNAfold output.", notFoundCount, testedCount));
 	}
 
 	printer("Calculating mm10db final result.");
@@ -306,53 +286,46 @@ void mm10db::run(std::map<std::string, std::map<std::string, std::string, std::l
 			failedCount++;
 		}
 	}
-
-	snprintf(printingBuffer, 1024, "\t%d accepted.", acceptedCount);
-	printer(printingBuffer);
-	snprintf(printingBuffer, 1024, "\t%d rejected.", failedCount);
-	printer(printingBuffer);
-
+	printer(std::format("\t{} accepted.\n\t{}rejected", acceptedCount, failedCount));
 }
 
-bool mm10db::leadingT(std::string candidateGuide)
+bool mm10db::leadingT(std::string_view candidateGuide)
 {
-	return	((candidateGuide[0] == 'T') && (candidateGuide.substr(candidateGuide.length() - 2, 2) == "GG")) ||
-			(candidateGuide[candidateGuide.length() -1] == 'A') && (candidateGuide.substr(0, 2) == "CC");
+	return	(candidateGuide.starts_with("T") && candidateGuide.ends_with("GG")) ||
+		(candidateGuide.ends_with("A") && candidateGuide.starts_with("CC"));
 }
 
-float mm10db::AT_percentage(std::string candidateGuide)
+float mm10db::AT_percentage(std::string_view candidateGuide)
 {
 	float total = 0.0f;
-	float length = candidateGuide.size();
-	array<char, 2>::iterator p;
-	for (int i = 0; i < candidateGuide.size(); i++)
-	{
-		// Check if the char at the current pos is present in the 'AT' array
-		p = std::find(atArray.begin(), atArray.end(), candidateGuide[i]);
-		if (p != atArray.end())
+	float length = (float)candidateGuide.size();
+
+	for (char c : candidateGuide) {
+		// Check if the char is present in the 'AT' array
+		if (std::ranges::find(atArray.begin(), atArray.end(), c) != atArray.end())
 		{
-			total++;
+			total += 1.0f;
 		}
 	}
 
 	return (100.0f * total / length);
 }
 
-bool mm10db::polyT(std::string candidateGuide)
+bool mm10db::polyT(std::string_view candidateGuide)
 {
 	for (int i = 0; i < candidateGuide.size() - 4; i++)
 	{
 		if (candidateGuide.substr(i, 4) == "TTTT")
 		{
 			return true;
-		};
+		}
 	}
 	return false;
 }
 
-std::string mm10db::transToDNA(std::string RNA)
+string mm10db::transToDNA(string RNA)
 {
 	// Swap U with T
-	std::replace(RNA.begin(), RNA.end(), 'U', 'T');
+	std::ranges::replace(RNA.begin(), RNA.end(), 'U', 'T');
 	return RNA;
 }
