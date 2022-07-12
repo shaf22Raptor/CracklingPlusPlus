@@ -14,11 +14,11 @@ class sgrnascorer2
 public:
 	//TODO: add rule of 5(6) to round out this class
 
-	sgrnascorer2(ConfigManager cm);
+	explicit sgrnascorer2(ConfigManager& cm);
 
 	//TODO: Custom deconstructor to properly handle pointer destruction
 
-	void run(std::map<std::string,std::map<std::string,std::string,std::less<>>>& candidateGuides);
+	void run(std::map<std::string, std::map<std::string, std::string, std::less<>>, std::less<>>& candidateGuides) const;
 
 private:
 	bool toolIsSelected;

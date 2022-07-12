@@ -4,7 +4,7 @@ using std::string;
 using std::map;
 using std::array;
 
-map <char, string> encoding = {
+const map <char, string> encoding = {
 	{'A' , "0001"},
 	{'C' , "0010"},
 	{'T' , "0100"},
@@ -22,22 +22,16 @@ map <char, string> encoding = {
 	{'N' , "1111"},
 };
 
-sgrnascorer2::sgrnascorer2(ConfigManager cm) :
-	toolIsSelected(false),
-	optimsationLevel(""),
-	toolCount(0),
-	consensusN(0),
-	scoreThreshold(0.0f)
-{
-	toolIsSelected = cm.getBool("consensus", "mm10db");
-	optimsationLevel = cm.getString("general", "optimisation");
-	toolCount = cm.getConsensusToolCount();
-	consensusN = cm.getInt("consensus", "n");
-	scoreThreshold = cm.getFloat("sgrnascorer2", "score-threshold");
-	sgRNAScorer2Model = svm_load_model(cm.getCString("sgrnascorer2", "model"));
-}
+sgrnascorer2::sgrnascorer2(ConfigManager& cm) :
+	toolIsSelected(cm.getBool("consensus", "mm10db")),
+	optimsationLevel(cm.getString("general", "optimisation")),
+	toolCount(cm.getConsensusToolCount()),
+	consensusN(cm.getInt("consensus", "n")),
+	scoreThreshold(cm.getFloat("sgrnascorer2", "score-threshold")),
+	sgRNAScorer2Model(svm_load_model(cm.getCString("sgrnascorer2", "model")))
+{}
 
-void sgrnascorer2::run(map<string, map<string, string, std::less<>>>& candidateGuides)
+void sgrnascorer2::run(map<string, map<string, string, std::less<>>, std::less<>>& candidateGuides) const
 {
 
 	if (!toolIsSelected)
@@ -63,26 +57,25 @@ void sgrnascorer2::run(map<string, map<string, string, std::less<>>>& candidateG
 		{
 			for (int j = 0; j < 4; j++)
 			{
-				encodedSeq[(i*4)+j] = (double)encoding[seqUpper[i]][j] - 48;
+				encodedSeq[(i*4)+j] = (double)encoding.at(seqUpper[i])[j] - 48;
 			}
 		}
 
-		struct svm_node* nodeToTest = (struct svm_node*)malloc((encodedSeq.size() + 1) * sizeof(struct svm_node));
+		// Dynamic memory allocation
+		auto nodeToTest = std::make_unique<struct svm_node>();
 
 		int j = 0;
 		for (int k = 0; k < encodedSeq.size(); k++, j++)
 		{
-			nodeToTest[j].index = k + 1; //index of value
-			nodeToTest[j].value = encodedSeq[k]; //value
+			nodeToTest.get()[j].index = k + 1; //index of value
+			nodeToTest.get()[j].value = encodedSeq[k]; //value
 
 		}
-		nodeToTest[j].index = -1;//state the end of data vector
+		nodeToTest.get()[j].index = -1;//state the end of data vector
 
 		double predictedValue;
 
-		svm_predict_values(sgRNAScorer2Model, nodeToTest, &predictedValue);
-
-		free(nodeToTest);
+		svm_predict_values(sgRNAScorer2Model, nodeToTest.get(), &predictedValue);
 
 		candidateGuides[target23]["sgrnascorer2score"] = std::to_string(predictedValue);
 
@@ -97,8 +90,7 @@ void sgrnascorer2::run(map<string, map<string, string, std::less<>>>& candidateG
 		}
 		testedCount++;
 	}
-	char printingBuffer[1024];
-	snprintf(printingBuffer, 1024, "\t%d of %d failed here.", failedCount, testedCount);
-	printer(printingBuffer);
+	printer(std::format("\t{} of {} failed here.", failedCount, testedCount));
+	return;
 }
 
