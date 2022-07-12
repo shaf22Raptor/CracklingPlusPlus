@@ -10,9 +10,9 @@
 class bowtie2
 {
 public:
-	bowtie2(ConfigManager cm);
+	explicit bowtie2(ConfigManager& cm);
 
-	void run(std::map<std::string, std::map<std::string, std::string, std::less<>>>& candidateGuides);
+	void run(std::map<std::string, std::map<std::string, std::string, std::less<>>, std::less<>>& candidateGuides);
 
 private:
 	bool toolIsSelected;

@@ -6,47 +6,35 @@ using std::map;
 using std::vector;
 
 
-bowtie2::bowtie2(ConfigManager cm) :
-	toolIsSelected(false),
-	optimsationLevel(""),
-	toolCount(0),
-	consensusN(0),
-	threadCount(0),
-	bowtie2OutFile(""),
-	bowtie2InFile(""),
-	bowtie2Bin(""),
-	bowtie2PageLength(0),
-	bowtie2Index("")
-{
-	toolIsSelected = cm.getBool("offtargetscore", "enabled");
-	optimsationLevel = cm.getString("general", "optimisation");
-	toolCount = cm.getConsensusToolCount();
-	consensusN = cm.getInt("consensus", "n");
-	threadCount = cm.getInt("bowtie2", "threads");
-	bowtie2OutFile = cm.getString("bowtie2", "output");
-	bowtie2InFile = cm.getString("bowtie2", "input");
-	bowtie2Bin = cm.getString("bowtie2", "binary");
-	bowtie2PageLength = cm.getInt("bowtie2", "page-length");
-	bowtie2Index = cm.getString("input", "bowtie2-index");
-}
+bowtie2::bowtie2(ConfigManager& cm) :
+	toolIsSelected(cm.getBool("offtargetscore", "enabled")),
+	optimsationLevel(cm.getString("general", "optimisation")),
+	toolCount(cm.getConsensusToolCount()),
+	consensusN(cm.getInt("consensus", "n")),
+	threadCount(cm.getInt("bowtie2", "threads")),
+	bowtie2OutFile(cm.getString("bowtie2", "output")),
+	bowtie2InFile(cm.getString("bowtie2", "input")),
+	bowtie2Bin(cm.getString("bowtie2", "binary")),
+	bowtie2Index(cm.getString("input", "bowtie2-index")),
+	bowtie2PageLength(cm.getInt("bowtie2", "page-length"))
+{}
 
-void bowtie2::run(map<string, map<string, string, std::less<>>>& candidateGuides)
+void bowtie2::run(map<string, map<string, string, std::less<>>, std::less<>>& candidateGuides)
 {
 	if (!toolIsSelected)
 	{
 		printer("bowtie2 has been configured not to run. Skipping bowtie2");
 		return;
-	}	
+	}
 
 	printer("Bowtie analysis.");
-	char printingBuffer[1024];
 	int failedCount = 0;
 	int testedCount = 0;
 	int pgIdx = 1;
 	int guidesInPage = 0;
-	map<string, map<string, string, std::less<>>>::iterator paginatorIterator = candidateGuides.begin();
-	map<string, map<string, string, std::less<>>>::iterator pageStart = candidateGuides.begin();
-	map<string, map<string, string, std::less<>>>::iterator pageEnd = candidateGuides.begin();
+	auto paginatorIterator = candidateGuides.begin();
+	auto pageStart = candidateGuides.begin();
+	auto pageEnd = candidateGuides.begin();
 
 
 	// Outer loop deals with changing iterator start and end points (Pagination)
@@ -59,35 +47,33 @@ void bowtie2::run(map<string, map<string, string, std::less<>>>& candidateGuides
 			// Record page start
 			pageStart = paginatorIterator;
 			// Print page information
-			snprintf(printingBuffer, 1024, "\tProcessing page %d (%d per page).", pgIdx, bowtie2PageLength);
-			printer(printingBuffer);
+			printer(std::format("\tProcessing page {} ({} per page).", pgIdx, bowtie2PageLength));
 		}
 		else {
 			// Process all guides at once
 			pageEnd = candidateGuides.end();
 		}
 		printer("\t\tConstructing the Bowtie input file.");
-		map<string, string> tempTargetDict_offset;
+		map<string, string, std::less<>> tempTargetDict_offset;
 		// Open input file 
 		std::ofstream inFile;
 		inFile.open(bowtie2InFile, std::ios::binary);
 
 		guidesInPage = 0;
-		for (paginatorIterator; paginatorIterator != pageEnd; paginatorIterator++)
+		while (paginatorIterator != pageEnd)
 		{
 			string target23 = paginatorIterator->first;
-			map<string, string, std::less<>> resultsMap = paginatorIterator->second;
 			// Run time filtering
-			if (!filterCandidateGuides(resultsMap, MODULE_SPECIFICITY, optimsationLevel, consensusN, toolCount)) { 
+			if (!filterCandidateGuides(paginatorIterator->second, MODULE_SPECIFICITY, optimsationLevel, consensusN, toolCount)) {
 				// Advance page end
 				if (pageEnd != candidateGuides.end())
 				{
 					pageEnd++;
 				}
-				continue; 
+				continue;
 			}
 
-			vector<string> similarTargets ({
+			for (vector<string> similarTargets = {
 				target23.substr(0, 20) + "AGG",
 				target23.substr(0, 20) + "CGG",
 				target23.substr(0, 20) + "GGG",
@@ -96,28 +82,26 @@ void bowtie2::run(map<string, map<string, string, std::less<>>>& candidateGuides
 				target23.substr(0, 20) + "CAG",
 				target23.substr(0, 20) + "GAG",
 				target23.substr(0, 20) + "TAG"
-			});
-
-			for (string bowtieTarget : similarTargets)
+				};
+				string bowtieTarget : similarTargets)
 			{
 				inFile << bowtieTarget << "\n";
 				tempTargetDict_offset[bowtieTarget] = target23;
 			}
 
 			guidesInPage++;
+			paginatorIterator++;
 		}
 
 		inFile.close();
 
-		snprintf(printingBuffer, 1024, "\t\t%d guides in this page.", guidesInPage);
-		printer(printingBuffer);
+		printer(std::format("\t\t{} guides in this page.", guidesInPage));
 
 		// Call bowtie2
-		snprintf(printingBuffer, 1024, "%s -x %s -p %d --reorder --no-hd -t -r -U %s -S %s", bowtie2Bin.c_str(), bowtie2Index.c_str(), threadCount, bowtie2InFile.c_str(), bowtie2OutFile.c_str());
-		runner(printingBuffer);
+		runner(std::format("{} -x {} -p {} --reorder --no-hd -t -r -U {} -S {}", bowtie2Bin, bowtie2Index, threadCount, bowtie2InFile, bowtie2OutFile).c_str());
 
 		printer("\tStarting to process the Bowtie results.");
-		
+
 		// Open output file 
 		std::ifstream outFile;
 		outFile.open(bowtie2OutFile, std::ios::binary);
@@ -133,7 +117,7 @@ void bowtie2::run(map<string, map<string, string, std::less<>>>& candidateGuides
 		{
 			int nb_occurences = 0;
 			bowtie2Results[i] = rtrim(bowtie2Results[i]);
-			
+
 			vector<string> line;
 
 			size_t tabPos = 0;
@@ -146,11 +130,11 @@ void bowtie2::run(map<string, map<string, string, std::less<>>>& candidateGuides
 			int pos = stoi(line[3]);
 			string read = line[9];
 			string seq = "";
-			if (tempTargetDict_offset.find(read) != tempTargetDict_offset.end())
+			if (tempTargetDict_offset.contains(read))
 			{
 				seq = tempTargetDict_offset[read];
 			}
-			else if (tempTargetDict_offset.find(rc(read)) != tempTargetDict_offset.end())
+			else if (tempTargetDict_offset.contains(rc(read)))
 			{
 				seq = tempTargetDict_offset[rc(read)];
 			}
@@ -158,13 +142,13 @@ void bowtie2::run(map<string, map<string, string, std::less<>>>& candidateGuides
 			{
 				std::cout << "Problem? " << read << std::endl;
 			}
-			if (seq.substr(seq.length() - 2) == "GG")
+			if (seq.ends_with("GG"))
 			{
 				candidateGuides[seq]["bowtieChr"] = chr;
 				candidateGuides[seq]["bowtieStart"] = std::to_string(pos);
 				candidateGuides[seq]["bowtieEnd"] = std::to_string(pos + 22);
 			}
-			else if ((rc(seq)).substr(0,2) == "CC")
+			else if (rc(seq).ends_with("CC"))
 			{
 				candidateGuides[seq]["bowtieChr"] = chr;
 				candidateGuides[seq]["bowtieStart"] = std::to_string(pos);
@@ -181,14 +165,13 @@ void bowtie2::run(map<string, map<string, string, std::less<>>>& candidateGuides
 				if (bowtie2Results[j].find("XM:i:0") != string::npos)
 				{
 					nb_occurences++;
-					if (bowtie2Results[j].find("XS:i:0") != string::npos) 
+					if (bowtie2Results[j].find("XS:i:0") != string::npos)
 					{
 						nb_occurences++;
 					}
 				}
 			}
 
-			//TODO: Check if this logic makes sense. Later result could undo recorded failure
 			if (nb_occurences > 1)
 			{
 				if (candidateGuides[seq]["passedBowtie"] != CODE_REJECTED)
@@ -197,7 +180,7 @@ void bowtie2::run(map<string, map<string, string, std::less<>>>& candidateGuides
 				}
 				candidateGuides[seq]["passedBowtie"] = CODE_REJECTED;
 			}
-			else 
+			else
 			{
 				candidateGuides[seq]["passedBowtie"] = CODE_ACCEPTED;
 			}
@@ -208,7 +191,6 @@ void bowtie2::run(map<string, map<string, string, std::less<>>>& candidateGuides
 		paginatorIterator = pageEnd;
 		pgIdx++;
 	}
-	snprintf(printingBuffer, 1024, "\t%d of %d failed here.", failedCount, testedCount);
-	printer(printingBuffer);
-
+	printer(std::format("\t{} of {} failed here.", failedCount, testedCount));
+	return;
 }
