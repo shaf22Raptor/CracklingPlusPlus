@@ -62,20 +62,19 @@ void sgrnascorer2::run(map<string, map<string, string, std::less<>>, std::less<>
 		}
 
 		// Dynamic memory allocation
-		auto nodeToTest = std::make_unique<struct svm_node>();
-
+		auto nodeToTest = std::make_unique<array<svm_node, encodedSeq.size() + 1>>();
 		int j = 0;
 		for (int k = 0; k < encodedSeq.size(); k++, j++)
 		{
-			nodeToTest.get()[j].index = k + 1; //index of value
-			nodeToTest.get()[j].value = encodedSeq[k]; //value
+			(*nodeToTest.get())[j].index = k + 1; //index of value
+			(*nodeToTest.get())[j].value = encodedSeq[k]; //value
 
 		}
-		nodeToTest.get()[j].index = -1;//state the end of data vector
+		(*nodeToTest.get())[j].index = -1;//state the end of data vector
 
 		double predictedValue;
 
-		svm_predict_values(sgRNAScorer2Model, nodeToTest.get(), &predictedValue);
+		svm_predict_values(sgRNAScorer2Model, (const struct svm_node*)nodeToTest.get(), &predictedValue);
 
 		candidateGuides[target23]["sgrnascorer2score"] = std::to_string(predictedValue);
 
