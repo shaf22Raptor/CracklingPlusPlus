@@ -12,6 +12,7 @@ const array<char, 24> nulceotideArray = { 'a', 'c', 'g', 't', 'r', 'y', 'm', 'k'
 const array<char, 24> complementArray = { 't', 'g', 'c', 'a', 'y', 'r', 'k', 'm', 'v', 'h', 'd', 'b', 'T', 'G', 'C', 'A', 'Y', 'R', 'K', 'M', 'V', 'H', 'D', 'B' };
 const string WHITESPACE = " \n\r\t\f\v";
 
+std::locale comma_locale(std::locale(), new comma_numpunct());
 
 string makeUpper(const string& s)
 {
@@ -153,6 +154,23 @@ bool filterCandidateGuides(map<string, string, std::less<>> candidateGuideResult
 
 	// Given none of the failure conditions have been meet, return true
 	return true;
+}
+
+std::string commaify(int value)
+{
+	string s;
+	int cnt = 0;
+	do
+	{
+		s.insert(0, 1, char('0' + value % 10));
+		value /= 10;
+		if (++cnt == 3 && value)
+		{
+			s.insert(0, 1, ',');
+			cnt = 0;
+		}
+	} while (value);
+	return s;
 }
 
 void printer(string_view formattedString)

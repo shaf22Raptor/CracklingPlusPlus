@@ -47,7 +47,7 @@ void bowtie2::run(map<string, map<string, string, std::less<>>, std::less<>>& ca
 			// Record page start
 			pageStart = paginatorIterator;
 			// Print page information
-			printer(std::format("\tProcessing page {} ({} per page).", pgIdx, bowtie2PageLength));
+			printer(std::format("\tProcessing page {} ({} per page).", commaify(pgIdx), commaify(bowtie2PageLength)));
 		}
 		else {
 			// Process all guides at once
@@ -96,7 +96,7 @@ void bowtie2::run(map<string, map<string, string, std::less<>>, std::less<>>& ca
 
 		inFile.close();
 
-		printer(std::format("\t\t{} guides in this page.", guidesInPage));
+		printer(std::format("\t\t{} guides in this page.", commaify(guidesInPage)));
 
 		// Call bowtie2
 		runner(std::format("{} -x {} -p {} --reorder --no-hd -t -r -U {} -S {}", bowtie2Bin, bowtie2Index, threadCount, bowtie2InFile, bowtie2OutFile).c_str());
@@ -192,6 +192,6 @@ void bowtie2::run(map<string, map<string, string, std::less<>>, std::less<>>& ca
 		paginatorIterator = pageEnd;
 		pgIdx++;
 	}
-	printer(std::format("\t{} of {} failed here.", failedCount, testedCount));
+	printer(std::format("\t{} of {} failed here.", commaify(failedCount), commaify(testedCount)));
 	return;
 }

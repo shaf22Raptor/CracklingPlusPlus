@@ -16,9 +16,9 @@ class cas9InputProcessor : public inputProcessor
 public:
 	void process(std::list<std::string> const & filesToProcess, int const & batchSize) final;
 
-	std::list<std::string> getBatchFiles();
+	const std::list<std::string>& getBatchFiles() const;
 
-	bool isDuplicateGuide(std::string guide);
+	bool isDuplicateGuide(std::string_view guide) const ;
 
 	void cleanUp() final;
 
@@ -39,4 +39,10 @@ private:
 		std::set<std::string, std::less<>>& candidateGuides,
 		const int& batchSize
 	);
+};
+
+class FileSystemError : public std::runtime_error
+{
+public:
+	FileSystemError() : std::runtime_error("Unable to create temp working dir") { };
 };

@@ -9,6 +9,9 @@
 #include <map>
 #include <vector>
 #include <format>
+#include <locale>
+#include <iomanip>
+#include <sstream>
  
 #include <Constants.hpp>
 
@@ -38,4 +41,20 @@ class ReturnCode : public std::logic_error
 {
 public:
 	ReturnCode() : std::logic_error("The externally called program returned a non-zero value") { };
+};
+
+std::string commaify(int);
+
+class comma_numpunct : public std::numpunct<char>
+{
+protected:
+    char do_thousands_sep() const final
+    {
+        return ',';
+    }
+
+    std::string do_grouping() const final
+    {
+        return "\03";
+    }
 };

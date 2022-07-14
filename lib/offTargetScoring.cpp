@@ -46,7 +46,7 @@ void offTargetScoring::run(map<string, map<string, string, std::less<>>, std::le
 			// Record page start
 			pageStart = paginatorIterator;
 			// Print page information
-			printer(std::format("\tProcessing page {} ({} per page).", pgIdx, offTargetScorePageLength));
+			printer(std::format("\tProcessing page {} ({} per page).", commaify(pgIdx), commaify(offTargetScorePageLength)));
 		}
 		else {
 			// Process all guides at once
@@ -82,7 +82,7 @@ void offTargetScoring::run(map<string, map<string, string, std::less<>>, std::le
 
 		inFile.close();
 
-		printer(std::format("\t\t{} guides in this page.", guidesInPage));
+		printer(std::format("\t\t{} guides in this page.", commaify(guidesInPage)));
 
 		// Call scoring method
 		runner(std::format("{} {} {} {} {} {} > {}",
@@ -176,7 +176,7 @@ void offTargetScoring::run(map<string, map<string, string, std::less<>>, std::le
 			}
 			paginatorIterator++;
 		}
-		printer(std::format("\t{} of {} failed here.", failedCount, testedCount));
+		printer(std::format("\t{} of {} failed here.", commaify(failedCount), commaify(testedCount)));
 	}
 
 }

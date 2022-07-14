@@ -42,7 +42,7 @@ void CHOPCHOP::run(map<string, map<string, string, std::less<>>, std::less<>>& c
         testedCount++;
     }
 
-    printer(std::format("\t{} of {} failed here.", failedCount, testedCount));
+    printer(std::format("\t{} of {} failed here.", commaify(failedCount), commaify(testedCount)));
     return;
 }
 

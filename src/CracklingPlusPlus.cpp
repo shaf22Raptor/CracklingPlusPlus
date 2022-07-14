@@ -44,27 +44,26 @@ int main(int argc, char** argv)
 		offTargetScoring otsModule(cm);
 
 		// Add header line to output file
-		std::ofstream outFile(cm.getString("output", "file"), std::ios_base::binary);
+		std::ofstream outFile(cm.getString("output", "file"), std::ios_base::binary | std::ios_base::out);
 		std::string headerLine;
-		for (std::string guideProperty : DEFAULT_GUIDE_PROPERTIES_ORDER)
+		for (const std::string& guideProperty : DEFAULT_GUIDE_PROPERTIES_ORDER)
 		{
 			headerLine += guideProperty + ",";
 		}
-		headerLine = headerLine.substr(0, headerLine.length() - 1) + "\n";
 
-		outFile << headerLine;
+		outFile << headerLine.substr(0, headerLine.length() - 1) + "\n";;
 
 		outFile.close();
 
 		// Start of pipeline
-		for (std::string fileName : ip.getBatchFiles())
+		for (const std::string& fileName : ip.getBatchFiles())
 		{
 			// Record batch start time
 			auto batchStart = std::chrono::high_resolution_clock::now();
 
 			std::map <std::string, std::map<std::string, std::string, std::less<>>, std::less<>> candidateGuides;
 			std::ifstream inFile;
-			inFile.open(fileName, std::ios::binary);
+			inFile.open(fileName, std::ios::binary | std::ios_base::in);
 
 			for (std::string line; std::getline(inFile, line);)
 			{
@@ -113,7 +112,7 @@ int main(int argc, char** argv)
 				testedCount++;
 			}
 			
-			printer(std::format("\t{} of {} failed here.", failedCount, testedCount));
+			printer(std::format("\t{} of {} failed here.", commaify(failedCount), commaify(testedCount)));
 
 			bowtie2Module.run(candidateGuides);
 
@@ -146,7 +145,7 @@ int main(int argc, char** argv)
 
 			printer("Done.");
 
-			printer(std::format("{} guides evaluated.", (int)candidateGuides.size()));
+			printer(std::format("{} guides evaluated.", commaify((int)candidateGuides.size())));
 
 			auto totalSeconds = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - batchStart);
 

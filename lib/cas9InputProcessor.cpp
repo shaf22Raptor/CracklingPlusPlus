@@ -56,7 +56,7 @@ void cas9InputProcessor::process(list<string> const & filesToProcess, int const 
 	// Setup temp working dir
 	path systemTempDir = std::filesystem::temp_directory_path();
 	if (std::filesystem::is_directory(systemTempDir / "Crackling")) { std::filesystem::remove_all(systemTempDir / "Crackling"); }
-	if (!std::filesystem::create_directory(systemTempDir / "Crackling")) { throw runtime_error("Unable to create temp working dir!"); }
+	if (!std::filesystem::create_directory(systemTempDir / "Crackling")) { throw FileSystemError(); }
 	path tempWorkingDir(systemTempDir / "Crackling");
 
 	
@@ -116,7 +116,7 @@ void cas9InputProcessor::process(list<string> const & filesToProcess, int const 
 			{
 				recordedSequences.insert(seqHeader);
 				string concatanatedSeq;
-				for (string seqFragment : seq) { concatanatedSeq += makeUpper(seqFragment); }
+				for (const string& seqFragment : seq) { concatanatedSeq += makeUpper(seqFragment); }
 
 				processSeqeunce(
 					concatanatedSeq,
@@ -154,8 +154,7 @@ void cas9InputProcessor::process(list<string> const & filesToProcess, int const 
 		completedSizeBytes += std::filesystem::file_size(path(file));
 		completedPercent = completedSizeBytes / totalSizeBytes * 100.0;
 
-		std::cout.precision(2);
-		printer(std::format("\tProcessed {}% of input.", completedPercent));
+		printer(std::format("\tProcessed {:.2f}% of input.", completedPercent));
 
 	}
 
@@ -165,9 +164,15 @@ void cas9InputProcessor::process(list<string> const & filesToProcess, int const 
 	printer(std::format(
 		"\tIdentified {} possible target sites.\n"
 		"\tOf these, {} are not unique. These sites occur a total of {} times.\n"
-		"\t{} of {} ({}%) of guides will be ignored for optimisation levels over ultralow.\n"
+		"\t{} of {} ({:.2f}%) of guides will be ignored for optimisation levels over ultralow.\n"
 		"\t{} distinct guides were identified.",
-		numIdentifiedGuides, (int)duplicateGuides.size(), numDuplicateGuides, numDuplicateGuides, numIdentifiedGuides, duplicatePercent, (int)candidateGuides.size())
+		commaify(numIdentifiedGuides),
+		commaify((int)duplicateGuides.size()),
+		commaify(numDuplicateGuides),
+		commaify(numDuplicateGuides),
+		commaify(numIdentifiedGuides),
+		duplicatePercent,
+		commaify((int)candidateGuides.size()))
 	);
 
 	return;
@@ -177,7 +182,7 @@ void cas9InputProcessor::processSeqeunce(
 	string_view seqeunce, 
 	string_view seqHeader,
 	ofstream& outFile,
-	path const& tempWorkingDir,
+	const path& tempWorkingDir,
 	set<string, std::less<>>& candidateGuides,
 	const int& batchSize
 	)
@@ -206,7 +211,7 @@ void cas9InputProcessor::processSeqeunce(
 		}
 		else
 		{
-			numIdentifiedGuides++;
+			numDuplicateGuides++;
 			duplicateGuides.insert(guide);
 		}
 	}
@@ -241,12 +246,12 @@ void cas9InputProcessor::processSeqeunce(
 	return;
 }
 
-list<string> cas9InputProcessor::getBatchFiles()
+const list<string>& cas9InputProcessor::getBatchFiles() const
 {
 	return batchFiles;
 }
 
-bool cas9InputProcessor::isDuplicateGuide(string guide)
+bool cas9InputProcessor::isDuplicateGuide(string_view guide) const
 {
 	return duplicateGuides.contains(guide);
 }
