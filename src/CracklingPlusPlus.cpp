@@ -155,7 +155,7 @@ int main(int argc, char** argv)
 			int minutes = ((totalSeconds.count() % 86400) % 3600) / 60;
 			int seconds = ((totalSeconds.count() % 86400) % 3600) % 60;
 
-			printer(std::format("This batch ran in {} {}:{}:{} (dd hh:mm:ss) or {} seconds", days, hours, minutes, seconds, (int)totalSeconds.count()));
+			printer(std::format("This batch ran in {:02} {:02}:{:02}:{:02} (dd hh:mm:ss) or {} seconds", days, hours, minutes, seconds, (int)totalSeconds.count()));
 
 		}
 		
@@ -167,7 +167,7 @@ int main(int argc, char** argv)
 		int seconds = ((totalSeconds.count() % 86400) % 3600) % 60;
 
 
-		printer(std::format("Total run time {} {}:{}:{} (dd hh:mm:ss) or {} seconds", days, hours, minutes, seconds, (int)totalSeconds.count()));
+		printer(std::format("Total run time {:02} {:02}:{:02}:{:02} (dd hh:mm:ss) or {} seconds", days, hours, minutes, seconds, (int)totalSeconds.count()));
 
 		// Clean up
 		coutLogger.close();
