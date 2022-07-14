@@ -141,7 +141,7 @@ void mm10db::run(map<string, map<string, string, std::less<>>, std::less<>>& can
 		{
 			string target23 = paginatorIterator->first;
 			// Run time filtering
-			if (!filterCandidateGuides(paginatorIterator->second, MODULE_SPECIFICITY, optimsationLevel, consensusN, toolCount)) {
+			if (!filterCandidateGuides(paginatorIterator->second, MODULE_MM10DB, optimsationLevel, consensusN, toolCount)) {
 				// Advance page end
 				if (pageEnd != candidateGuides.end())
 				{
@@ -199,7 +199,7 @@ void mm10db::run(map<string, map<string, string, std::less<>>, std::less<>>& can
 			string key = target23.substr(1, 19);
 
 			// Run time filtering
-			if (!filterCandidateGuides(paginatorIterator->second, MODULE_SPECIFICITY, optimsationLevel, consensusN, toolCount)) {
+			if (!filterCandidateGuides(paginatorIterator->second, MODULE_MM10DB, optimsationLevel, consensusN, toolCount)) {
 				paginatorIterator++;
 				continue;
 			}
