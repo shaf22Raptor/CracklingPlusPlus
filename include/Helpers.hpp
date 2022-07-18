@@ -27,9 +27,9 @@ std::string ltrim(std::string_view s);
 
 std::string trim(const std::string& s);
 
-bool startsWith(string_view targetString, string_view prefix);
+bool startsWith(std::string_view targetString, std::string_view prefix);
 
-bool endsWith(string_view targetString, string_view suffix);
+bool endsWith(std::string_view targetString, std::string_view suffix);
 
 std::string rc(std::string DNA);
 
