@@ -313,7 +313,7 @@ float mm10db::AT_percentage(std::string_view candidateGuide)
 
 	for (char c : candidateGuide) {
 		// Check if the char is present in the 'AT' array
-		if (std::ranges::find(atArray.begin(), atArray.end(), c) != atArray.end())
+		if (std:find(atArray.begin(), atArray.end(), c) != atArray.end())
 		{
 			total += 1.0f;
 		}
@@ -337,6 +337,6 @@ bool mm10db::polyT(std::string_view candidateGuide)
 string mm10db::transToDNA(string RNA)
 {
 	// Swap U with T
-	std::ranges::replace(RNA.begin(), RNA.end(), 'U', 'T');
+	std:replace(RNA.begin(), RNA.end(), 'U', 'T');
 	return RNA;
 }

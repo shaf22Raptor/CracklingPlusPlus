@@ -17,14 +17,14 @@ const std::locale comma_locale(std::locale(), new comma_numpunct());
 string makeUpper(const string& s)
 {
 	string upper = s;
-	std::ranges::transform(upper.begin(), upper.end(), upper.begin(), [](unsigned char c) { return std::toupper(c); });
+	std::transform(upper.begin(), upper.end(), upper.begin(), [](unsigned char c) { return std::toupper(c); });
 	return upper;
 }
 
 string makeLower(const string& s)
 {
 	string lower = s;
-	std::ranges::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) { return std::tolower(c); });
+	std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) { return std::tolower(c); });
 	return lower;
 }
 
@@ -75,10 +75,10 @@ string rc(string DNA)
 		throw std::length_error("Type Error, Seqeunce length must be less than 1024!");
 	}
 	// Reverse the input seqeuence 
-	std::ranges::reverse(DNA.begin(), DNA.end());
+	std:reverse(DNA.begin(), DNA.end());
 	// Convert each character to the complement
-	std::ranges::for_each(DNA.begin(), DNA.end(), [](char& c) {
-		auto nulceotidePos = std::ranges::find(nulceotideArray.begin(), nulceotideArray.end(), c);
+	std:for_each(DNA.begin(), DNA.end(), [](char& c) {
+		auto nulceotidePos = std:find(nulceotideArray.begin(), nulceotideArray.end(), c);
 		long long complementPos = std::distance(nulceotideArray.begin(), nulceotidePos);
 		c = complementArray[complementPos];
 		}
