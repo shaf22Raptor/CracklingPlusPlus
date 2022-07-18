@@ -41,7 +41,7 @@ TEST_CASE("G20" * doctest::description("Ensure that the G20 function is working 
     }
     SUBCASE("Test G20 on short seq (length < 20)")
     {
-        CHECK_THROWS_WITH_AS(CHOPCHOP::G20("TTTGTGTCAT"), "CHOPCHOP G20: Input lenght must be >= 20!", std::runtime_error);
+        CHECK_THROWS_WITH_AS(CHOPCHOP::G20("TTTGTGTCAT"), "CHOPCHOP G20: Input lenght must be >= 20!", G20Input);
     }
     SUBCASE("Test G20 on long seq (length > 20) with G @ pos 20")
     {
