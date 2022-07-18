@@ -15,8 +15,8 @@ using std::runtime_error;
 
 
 // Guide searching
-const regex patternForward("(?=([ATCG]{21}GG))");
-const regex patternReverse("(?=(CC[ACGT]{21}))");
+const regex patternForward("(?=([ATCG]{21}GG))", std::regex::optimize);
+const regex patternReverse("(?=(CC[ACGT]{21}))", std::regex::optimize);
 
 void cas9InputProcessor::process(list<string> const & filesToProcess, int const & batchSize)
 {
@@ -45,7 +45,7 @@ void cas9InputProcessor::process(list<string> const & filesToProcess, int const 
 
 	// File processing
 	string seqHeader;
-	list<string> seq;
+	std::vector<string> seq;
 
 	// Duplicate tracking
 	set<string, std::less<>> candidateGuides;
@@ -60,7 +60,7 @@ void cas9InputProcessor::process(list<string> const & filesToProcess, int const 
 	path tempWorkingDir(systemTempDir / "Crackling");
 
 	
-	printer(std::format("Storing batch files in: {0}", tempWorkingDir.string()));
+	printer(std::format("Storing batch files in: {}", tempWorkingDir.string()));
 
 
 	// Create first batch file
@@ -68,11 +68,13 @@ void cas9InputProcessor::process(list<string> const & filesToProcess, int const 
 	batchFiles.push_back(outFileName.string());
 	outFile.open(outFileName, std::ios::binary);
 
+	int seqLength = 0;
+
 	// Begin processing files
 	for (const string& file : filesToProcess)
 	{
 		// Identify file format
-		printer(std::format("Identifying possible target sites in : {0}", file));
+		printer(std::format("Identifying possible target sites in : {}", file));
 
 
 		inFile.open(file, std::ios::binary);
@@ -81,7 +83,7 @@ void cas9InputProcessor::process(list<string> const & filesToProcess, int const 
 		// file is Fasta formatted
 		if (inputLine[0] == '>')
 		{
-			seqHeader = inputLine.substr(1);
+			seqHeader = trim(inputLine).substr(1);
 			seq = {};
 			while (std::getline(inFile, inputLine)) 
 			{
@@ -91,8 +93,7 @@ void cas9InputProcessor::process(list<string> const & filesToProcess, int const 
 					if (!recordedSequences.contains(seqHeader))
 					{
 						recordedSequences.insert(seqHeader);
-						string concatanatedSeq;
-						for (string seqFragment : seq) { concatanatedSeq += makeUpper(seqFragment); }
+						string concatanatedSeq = makeUpper(std::accumulate(seq.begin(), seq.end(), std::string{}));
 
 						processSeqeunce(
 							concatanatedSeq,
@@ -109,14 +110,14 @@ void cas9InputProcessor::process(list<string> const & filesToProcess, int const 
 				else
 				{
 					seq.push_back(inputLine);
+					seqLength += inputLine.length();
 				}
 			}
 			// EOF process last seq
 			if (!recordedSequences.contains(seqHeader))
 			{
 				recordedSequences.insert(seqHeader);
-				string concatanatedSeq;
-				for (const string& seqFragment : seq) { concatanatedSeq += makeUpper(seqFragment); }
+				string concatanatedSeq = makeUpper(std::accumulate(seq.begin(), seq.end(), std::string{}));
 
 				processSeqeunce(
 					concatanatedSeq,
@@ -179,7 +180,7 @@ void cas9InputProcessor::process(list<string> const & filesToProcess, int const 
 }
 
 void cas9InputProcessor::processSeqeunce(
-	string_view seqeunce, 
+	string_view seqeunce,
 	string_view seqHeader,
 	ofstream& outFile,
 	const path& tempWorkingDir,
@@ -187,7 +188,6 @@ void cas9InputProcessor::processSeqeunce(
 	const int& batchSize
 	)
 {
-
 	for (auto regexItr = regex_iterator<string_view::const_iterator>(seqeunce.begin(), seqeunce.end(), patternForward);
 		regexItr != regex_iterator<string_view::const_iterator>();
 		regexItr++)
@@ -235,7 +235,7 @@ void cas9InputProcessor::processSeqeunce(
 				outFile.open(outFileName, std::ios::binary);
 				guidesInBatch = 1;
 			}
-			outFile << guide << "," << seqHeader << "," << matchPos << "," << (matchPos + 23) << "," << "+" << "\n";
+			outFile << guide << "," << seqHeader << "," << matchPos << "," << (matchPos + 23) << "," << "-" << "\n";
 		}
 		else
 		{

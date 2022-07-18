@@ -6,6 +6,7 @@
 #include <set>
 #include <regex>
 #include <filesystem>
+#include <numeric>
 #include <inputProcessor.hpp>
 #include <Helpers.hpp>
 
