@@ -77,8 +77,8 @@ string rc(string DNA)
 	// Reverse the input seqeuence 
 	std:reverse(DNA.begin(), DNA.end());
 	// Convert each character to the complement
-	std:for_each(DNA.begin(), DNA.end(), [](char& c) {
-		auto nulceotidePos = std:find(nulceotideArray.begin(), nulceotideArray.end(), c);
+	std::for_each(DNA.begin(), DNA.end(), [](char& c) {
+		auto nulceotidePos = std::find(nulceotideArray.begin(), nulceotideArray.end(), c);
 		long long complementPos = std::distance(nulceotideArray.begin(), nulceotidePos);
 		c = complementArray[complementPos];
 		}

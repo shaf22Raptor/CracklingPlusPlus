@@ -313,7 +313,7 @@ float mm10db::AT_percentage(std::string_view candidateGuide)
 
 	for (char c : candidateGuide) {
 		// Check if the char is present in the 'AT' array
-		if (std:find(atArray.begin(), atArray.end(), c) != atArray.end())
+		if (std::find(atArray.begin(), atArray.end(), c) != atArray.end())
 		{
 			total += 1.0f;
 		}
