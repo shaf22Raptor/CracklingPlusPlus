@@ -136,7 +136,7 @@ void bowtie2::run(map<string, map<string, string, std::less<>>, std::less<>>& ca
 			{
 				seq = tempTargetDict_offset[read];
 			}
-			else if (tempTargetDict_offset.find(read) != tempTargetDict_offset.end())
+			else if (tempTargetDict_offset.find(rc(read)) != tempTargetDict_offset.end())
 			{
 				seq = tempTargetDict_offset[rc(read)];
 			}
