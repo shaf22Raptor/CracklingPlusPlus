@@ -74,7 +74,7 @@ void bowtie2::run(map<string, map<string, string, std::less<>>, std::less<>>& ca
 				continue;
 			}
 
-			for (vector<string> similarTargets = {
+			vector<string> similarTargets = {
 				target23.substr(0, 20) + "AGG",
 				target23.substr(0, 20) + "CGG",
 				target23.substr(0, 20) + "GGG",
@@ -83,8 +83,9 @@ void bowtie2::run(map<string, map<string, string, std::less<>>, std::less<>>& ca
 				target23.substr(0, 20) + "CAG",
 				target23.substr(0, 20) + "GAG",
 				target23.substr(0, 20) + "TAG"
-				};
-				string bowtieTarget : similarTargets)
+			};
+
+			for (string bowtieTarget : similarTargets)
 			{
 				inFile << bowtieTarget << "\n";
 				tempTargetDict_offset[bowtieTarget] = target23;
@@ -143,13 +144,13 @@ void bowtie2::run(map<string, map<string, string, std::less<>>, std::less<>>& ca
 			{
 				std::cout << "Problem? " << read << std::endl;
 			}
-			if (seq.ends_with("GG"))
+			if (endsWith(seq, "GG"))
 			{
 				candidateGuides[seq]["bowtieChr"] = chr;
 				candidateGuides[seq]["bowtieStart"] = std::to_string(pos);
 				candidateGuides[seq]["bowtieEnd"] = std::to_string(pos + 22);
 			}
-			else if (rc(seq).ends_with("CC"))
+			else if (endsWith(rc(seq), "CC"))
 			{
 				candidateGuides[seq]["bowtieChr"] = chr;
 				candidateGuides[seq]["bowtieStart"] = std::to_string(pos);
