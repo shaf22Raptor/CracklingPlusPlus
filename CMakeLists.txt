@@ -1,15 +1,14 @@
 ﻿# CMakeList.txt : CMake project for CracklingPlusPlus
 cmake_minimum_required (VERSION 3.8)
 
-set (CMAKE_CXX_FLAGS_RELEASE "-O2")
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 
 # Project name, version and description
 project ("CracklingPlusPlus" VERSION 1.0.0 DESCRIPTION "C++ version of Crackling")
 
 # Add source to this project's executable.
 add_executable (${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/src/CracklingPlusPlus.cpp)
-
-set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
 
 # Add include directory 
 include_directories (${CMAKE_SOURCE_DIR}/include)
