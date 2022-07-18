@@ -90,7 +90,7 @@ void cas9InputProcessor::process(list<string> const & filesToProcess, int const 
 				inputLine = trim(inputLine);
 				if (inputLine[0] == '>')
 				{
-					if (!recordedSequences.contains(seqHeader))
+					if (recordedSequences.find(seqHeader) == recordedSequences.end())
 					{
 						recordedSequences.insert(seqHeader);
 						string concatanatedSeq = makeUpper(std::accumulate(seq.begin(), seq.end(), std::string{}));
@@ -114,7 +114,7 @@ void cas9InputProcessor::process(list<string> const & filesToProcess, int const 
 				}
 			}
 			// EOF process last seq
-			if (!recordedSequences.contains(seqHeader))
+			if (recordedSequences.find(seqHeader) == recordedSequences.end())
 			{
 				recordedSequences.insert(seqHeader);
 				string concatanatedSeq = makeUpper(std::accumulate(seq.begin(), seq.end(), std::string{}));
@@ -196,7 +196,7 @@ void cas9InputProcessor::processSeqeunce(
 		match_results<string_view::const_iterator> m = *regexItr;
 		string guide = m[1].str();
 		long long matchPos = m.position();
-		if (!candidateGuides.contains(guide))
+		if (candidateGuides.find(guide) == candidateGuides.end())
 		{
 			candidateGuides.insert(guide);
 			if (++guidesInBatch > batchSize)
@@ -224,7 +224,7 @@ void cas9InputProcessor::processSeqeunce(
 		match_results<string_view::const_iterator> m = *regexItr;
 		string guide = rc(m[1].str());
 		long long matchPos = m.position();
-		if (!candidateGuides.contains(guide))
+		if (candidateGuides.find(guide) == candidateGuides.end())
 		{
 			candidateGuides.insert(guide);
 			if (++guidesInBatch > batchSize)
@@ -253,7 +253,7 @@ const list<string>& cas9InputProcessor::getBatchFiles() const
 
 bool cas9InputProcessor::isDuplicateGuide(string_view guide) const
 {
-	return duplicateGuides.contains(guide);
+	return duplicateGuides.find(guide) != duplicateGuides.end();
 }
 
 void cas9InputProcessor::cleanUp()

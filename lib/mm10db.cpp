@@ -204,7 +204,7 @@ void mm10db::run(map<string, map<string, string, std::less<>>, std::less<>>& can
 				continue;
 			}
 
-			if (!RNAstructures.contains(key))
+			if (RNAstructures.find(key) == RNAstructures.end())
 			{
 				printer(fmt::format("Could not find: {}", key));
 				notFoundCount++;

@@ -131,11 +131,11 @@ void bowtie2::run(map<string, map<string, string, std::less<>>, std::less<>>& ca
 			int pos = stoi(line[3]);
 			string read = line[9];
 			string seq = "";
-			if (tempTargetDict_offset.contains(read))
+			if (tempTargetDict_offset.find(read) != tempTargetDict_offset.end())
 			{
 				seq = tempTargetDict_offset[read];
 			}
-			else if (tempTargetDict_offset.contains(rc(read)))
+			else if (tempTargetDict_offset.find(read) != tempTargetDict_offset.end())
 			{
 				seq = tempTargetDict_offset[rc(read)];
 			}
