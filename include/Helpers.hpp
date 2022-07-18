@@ -27,6 +27,10 @@ std::string ltrim(std::string_view s);
 
 std::string trim(const std::string& s);
 
+bool startsWith(string_view targetString, string_view prefix);
+
+bool endsWith(string_view targetString, string_view suffix);
+
 std::string rc(std::string DNA);
 
 bool filterCandidateGuides(std::map<std::string, std::string, std::less<>> candidateGuideResultMap, std::string_view selectedModule, std::string_view optimisation, const int& consensusN, const int& toolCount);

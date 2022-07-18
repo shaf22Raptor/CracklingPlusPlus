@@ -42,7 +42,6 @@ vector<string> split(string& s, string_view delimiter)
 	return splitLine;
 }
 
-
 string rtrim(string_view s)
 {
 	size_t end = s.find_last_not_of(WHITESPACE);
@@ -62,6 +61,16 @@ string trim(const string& s)
 	return ltrim(rtrim(s));
 }
 
+bool startsWith(string_view targetString, string_view prefix)
+{
+	return targetString.substr(0, prefix.length()) == prefix;
+}
+
+bool endsWith(string_view targetString, string_view suffix)
+{
+	return targetString.substr(targetString.length() - suffix.length()) == suffix;
+}
+
 string rc(string DNA)
 {
 	// Ensure input lenght is greater than 0
@@ -75,7 +84,7 @@ string rc(string DNA)
 		throw std::length_error("Type Error, Seqeunce length must be less than 1024!");
 	}
 	// Reverse the input seqeuence 
-	std:reverse(DNA.begin(), DNA.end());
+	std::reverse(DNA.begin(), DNA.end());
 	// Convert each character to the complement
 	std::for_each(DNA.begin(), DNA.end(), [](char& c) {
 		auto nulceotidePos = std::find(nulceotideArray.begin(), nulceotideArray.end(), c);
