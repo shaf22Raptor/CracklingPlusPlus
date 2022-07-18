@@ -12,7 +12,7 @@ const array<char, 24> nulceotideArray = { 'a', 'c', 'g', 't', 'r', 'y', 'm', 'k'
 const array<char, 24> complementArray = { 't', 'g', 'c', 'a', 'y', 'r', 'k', 'm', 'v', 'h', 'd', 'b', 'T', 'G', 'C', 'A', 'Y', 'R', 'K', 'M', 'V', 'H', 'D', 'B' };
 const string WHITESPACE = " \n\r\t\f\v";
 
-std::locale comma_locale(std::locale(), new comma_numpunct());
+const std::locale comma_locale(std::locale(), new comma_numpunct());
 
 string makeUpper(const string& s)
 {
@@ -186,7 +186,7 @@ void errPrinter(string_view formattedString)
 void runner(const char* args)
 {
 
-	printer(std::format("| Calling: {}", args));
+	printer(fmt::format("| Calling: {}", args));
 	try
 	{
 		int returnCode = system(args);

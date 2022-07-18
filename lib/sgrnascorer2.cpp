@@ -89,7 +89,7 @@ void sgrnascorer2::run(map<string, map<string, string, std::less<>>, std::less<>
 		}
 		testedCount++;
 	}
-	printer(std::format("\t{} of {} failed here.", commaify(failedCount), commaify(testedCount)));
+	printer(fmt::format("\t{} of {} failed here.", commaify(failedCount), commaify(testedCount)));
 	return;
 }
 

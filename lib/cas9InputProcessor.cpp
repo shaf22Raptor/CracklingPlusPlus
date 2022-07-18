@@ -60,7 +60,7 @@ void cas9InputProcessor::process(list<string> const & filesToProcess, int const 
 	path tempWorkingDir(systemTempDir / "Crackling");
 
 	
-	printer(std::format("Storing batch files in: {}", tempWorkingDir.string()));
+	printer(fmt::format("Storing batch files in: {}", tempWorkingDir.string()));
 
 
 	// Create first batch file
@@ -74,7 +74,7 @@ void cas9InputProcessor::process(list<string> const & filesToProcess, int const 
 	for (const string& file : filesToProcess)
 	{
 		// Identify file format
-		printer(std::format("Identifying possible target sites in : {}", file));
+		printer(fmt::format("Identifying possible target sites in : {}", file));
 
 
 		inFile.open(file, std::ios::binary);
@@ -155,14 +155,14 @@ void cas9InputProcessor::process(list<string> const & filesToProcess, int const 
 		completedSizeBytes += std::filesystem::file_size(path(file));
 		completedPercent = completedSizeBytes / totalSizeBytes * 100.0;
 
-		printer(std::format("\tProcessed {:.2f}% of input.", completedPercent));
+		printer(fmt::format("\tProcessed {:.2f}% of input.", completedPercent));
 
 	}
 
 	// Finished processing files, report results
 	float duplicatePercent = ((float)numDuplicateGuides / (float)numIdentifiedGuides) * 100.0f;
 
-	printer(std::format(
+	printer(fmt::format(
 		"\tIdentified {} possible target sites.\n"
 		"\tOf these, {} are not unique. These sites occur a total of {} times.\n"
 		"\t{} of {} ({:.2f}%) of guides will be ignored for optimisation levels over ultralow.\n"

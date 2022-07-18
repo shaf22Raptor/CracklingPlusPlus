@@ -51,7 +51,7 @@ void mm10db::run(map<string, map<string, string, std::less<>>, std::less<>>& can
 		}
 		testedCount++;
 	}
-	printer(std::format("\t{} of {} failed here.", commaify(failedCount), commaify(testedCount)));
+	printer(fmt::format("\t{} of {} failed here.", commaify(failedCount), commaify(testedCount)));
 
 	printer("mm10db - remove based on AT percent.");
 	failedCount = 0;
@@ -76,7 +76,7 @@ void mm10db::run(map<string, map<string, string, std::less<>>, std::less<>>& can
 		candidateGuides[target23]["AT"] = converstionStream.str();
 		testedCount++;
 	}
-	printer(std::format("\t{} of {} failed here.", commaify(failedCount), commaify(testedCount)));
+	printer(fmt::format("\t{} of {} failed here.", commaify(failedCount), commaify(testedCount)));
 
 	printer("mm10db - remove all targets that contain TTTT.");
 	failedCount = 0;
@@ -97,7 +97,7 @@ void mm10db::run(map<string, map<string, string, std::less<>>, std::less<>>& can
 		}
 		testedCount++;
 	}
-	printer(std::format("\t{} of {} failed here.", commaify(failedCount), commaify(testedCount)));
+	printer(fmt::format("\t{} of {} failed here.", commaify(failedCount), commaify(testedCount)));
 
 	printer("mm10db - check secondary structure.");
 	string guide = "GUUUUAGAGCUAGAAAUAGCAAGUUAAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAAGUGGCACCGAGUCGGUGCUUUU";
@@ -124,7 +124,7 @@ void mm10db::run(map<string, map<string, string, std::less<>>, std::less<>>& can
 			// Record page start
 			pageStart = paginatorIterator;
 			// Print page information
-			printer(std::format("\tProcessing page {} ({} per page).", commaify(pgIdx), commaify(RNAFoldPageLength)));
+			printer(fmt::format("\tProcessing page {} ({} per page).", commaify(pgIdx), commaify(RNAFoldPageLength)));
 		}
 		else {
 			// Process all guides at once
@@ -157,10 +157,10 @@ void mm10db::run(map<string, map<string, string, std::less<>>, std::less<>>& can
 
 		out.close();
 
-		printer(std::format("\t\t{} guides in this page.", commaify(guidesInPage)));
+		printer(fmt::format("\t\t{} guides in this page.", commaify(guidesInPage)));
 
 		// Call RNAFold
-		runner(std::format("{} --noPS -j{} -i {} > {}", RNAFoldBin, threadCount, RNAFoldInFile, RNAFoldOutFile).c_str());
+		runner(fmt::format("{} --noPS -j{} -i {} > {}", RNAFoldBin, threadCount, RNAFoldInFile, RNAFoldOutFile).c_str());
 
 		printer("\t\tStarting to process the RNAfold results.");
 		// Open output file
@@ -206,7 +206,7 @@ void mm10db::run(map<string, map<string, string, std::less<>>, std::less<>>& can
 
 			if (!RNAstructures.contains(key))
 			{
-				printer(std::format("Could not find: {}", key));
+				printer(fmt::format("Could not find: {}", key));
 				notFoundCount++;
 				continue;
 			}
@@ -268,14 +268,14 @@ void mm10db::run(map<string, map<string, string, std::less<>>, std::less<>>& can
 		paginatorIterator = pageEnd;
 		pgIdx++;
 	}
-	printer(std::format("\t{} of {} failed here.", commaify(failedCount), commaify(testedCount)));
+	printer(fmt::format("\t{} of {} failed here.", commaify(failedCount), commaify(testedCount)));
 	if (errorCount > 0)
 	{
-		printer(std::format("\t{} of {} errored here.", commaify(errorCount), commaify(testedCount)));
+		printer(fmt::format("\t{} of {} errored here.", commaify(errorCount), commaify(testedCount)));
 	}
 	if (notFoundCount > 0)
 	{
-		printer(std::format("\t{} of {} not found in RNAfold output.", commaify(notFoundCount), commaify(testedCount)));
+		printer(fmt::format("\t{} of {} not found in RNAfold output.", commaify(notFoundCount), commaify(testedCount)));
 	}
 
 	printer("Calculating mm10db final result.");
@@ -297,7 +297,7 @@ void mm10db::run(map<string, map<string, string, std::less<>>, std::less<>>& can
 			failedCount++;
 		}
 	}
-	printer(std::format("\t{} accepted.\n\t{} rejected", commaify(acceptedCount), commaify(failedCount)));
+	printer(fmt::format("\t{} accepted.\n\t{} rejected", commaify(acceptedCount), commaify(failedCount)));
 }
 
 bool mm10db::leadingT(std::string_view candidateGuide)

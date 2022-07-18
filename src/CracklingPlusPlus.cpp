@@ -18,7 +18,7 @@ int main(int argc, char** argv)
 	{
 		// Check input arguments
 		if (argc != 2) {
-			std::cout << std::format("Usage: {} [Crackling Config File]\n", argv[0]);
+			std::cout << fmt::format("Usage: {} [Crackling Config File]\n", argv[0]);
 			exit(1);
 		}
 
@@ -91,6 +91,7 @@ int main(int argc, char** argv)
 					candidateGuides[guideInfo[0]]["start"] = guideInfo[2];
 					candidateGuides[guideInfo[0]]["end"] = guideInfo[3];
 					candidateGuides[guideInfo[0]]["strand"] = guideInfo[4];
+					candidateGuides[guideInfo[0]]["isUnique"] = CODE_ACCEPTED;
 				}
 			}
 
@@ -112,7 +113,7 @@ int main(int argc, char** argv)
 				testedCount++;
 			}
 			
-			printer(std::format("\t{} of {} failed here.", commaify(failedCount), commaify(testedCount)));
+			printer(fmt::format("\t{} of {} failed here.", commaify(failedCount), commaify(testedCount)));
 
 			bowtie2Module.run(candidateGuides);
 
@@ -145,7 +146,7 @@ int main(int argc, char** argv)
 
 			printer("Done.");
 
-			printer(std::format("{} guides evaluated.", commaify((int)candidateGuides.size())));
+			printer(fmt::format("{} guides evaluated.", commaify((int)candidateGuides.size())));
 
 			auto totalSeconds = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - batchStart);
 
@@ -154,7 +155,7 @@ int main(int argc, char** argv)
 			int minutes = ((totalSeconds.count() % 86400) % 3600) / 60;
 			int seconds = ((totalSeconds.count() % 86400) % 3600) % 60;
 
-			printer(std::format("This batch ran in {:02} {:02}:{:02}:{:02} (dd hh:mm:ss) or {} seconds", days, hours, minutes, seconds, (int)totalSeconds.count()));
+			printer(fmt::format("This batch ran in {:02} {:02}:{:02}:{:02} (dd hh:mm:ss) or {} seconds", days, hours, minutes, seconds, (int)totalSeconds.count()));
 
 		}
 		
@@ -166,7 +167,7 @@ int main(int argc, char** argv)
 		int seconds = ((totalSeconds.count() % 86400) % 3600) % 60;
 
 
-		printer(std::format("Total run time {:02} {:02}:{:02}:{:02} (dd hh:mm:ss) or {} seconds", days, hours, minutes, seconds, (int)totalSeconds.count()));
+		printer(fmt::format("Total run time {:02} {:02}:{:02}:{:02} (dd hh:mm:ss) or {} seconds", days, hours, minutes, seconds, (int)totalSeconds.count()));
 
 		// Clean up
 		coutLogger.close();

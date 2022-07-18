@@ -8,11 +8,11 @@
 #include <ctime>
 #include <map>
 #include <vector>
-#include <format>
 #include <locale>
 #include <iomanip>
 #include <sstream>
- 
+#define FMT_HEADER_ONLY
+#include "fmt/format.h"
 #include <Constants.hpp>
 
 std::string makeUpper(const std::string& s);
