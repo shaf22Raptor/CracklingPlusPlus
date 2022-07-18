@@ -302,8 +302,8 @@ void mm10db::run(map<string, map<string, string, std::less<>>, std::less<>>& can
 
 bool mm10db::leadingT(std::string_view candidateGuide)
 {
-	return	(candidateGuide.starts_with("T") && candidateGuide.ends_with("GG")) ||
-		(candidateGuide.ends_with("A") && candidateGuide.starts_with("CC"));
+	return	(startsWith(candidateGuide, "T") && endsWith(candidateGuide, "GG")) ||
+		(startsWith(candidateGuide, "CC") && endsWith(candidateGuide, "A"));
 }
 
 float mm10db::AT_percentage(std::string_view candidateGuide)
@@ -337,6 +337,6 @@ bool mm10db::polyT(std::string_view candidateGuide)
 string mm10db::transToDNA(string RNA)
 {
 	// Swap U with T
-	std:replace(RNA.begin(), RNA.end(), 'U', 'T');
+	std::replace(RNA.begin(), RNA.end(), 'U', 'T');
 	return RNA;
 }
