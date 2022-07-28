@@ -1,7 +1,7 @@
 // CHOPCHOP.hpp
 #pragma once
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <ConfigManager.hpp>
 #include <Constants.hpp>
 #include <Helpers.hpp>
@@ -11,7 +11,7 @@ class CHOPCHOP
 public:
 	explicit CHOPCHOP(ConfigManager& cm);
 
-	void run(std::map<std::string, std::map<std::string, std::string, std::less<>>, std::less<>>& candidateGuides);
+	void run(std::unordered_map<std::string, std::unordered_map<std::string, std::string, std::less<>>, std::less<>>& candidateGuides);
 	
 	bool static G20(std::string_view candidateGuide);
 

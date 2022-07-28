@@ -2,7 +2,7 @@
 #include <CHOPCHOP.hpp>
 
 using std::string;
-using std::map;
+using std::unordered_map;
 
 CHOPCHOP::CHOPCHOP(ConfigManager& cm) :
     testedCount(),
@@ -13,7 +13,7 @@ CHOPCHOP::CHOPCHOP(ConfigManager& cm) :
     consensusN(cm.getInt("consensus", "n"))
 {}
 
-void CHOPCHOP::run(map<string, map<string, string, std::less<>>, std::less<>>& candidateGuides)
+void CHOPCHOP::run(unordered_map<string, unordered_map<string, string, std::less<>>, std::less<>>& candidateGuides)
 {
 
     if (!toolIsSelected)
