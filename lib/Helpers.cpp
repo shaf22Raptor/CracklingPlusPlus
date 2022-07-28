@@ -3,7 +3,7 @@
 
 using std::string;
 using std::array;
-using std::map;
+using std::unordered_map;
 using std::stoi;
 using std::vector;
 using std::string_view;
@@ -97,7 +97,7 @@ string rc(string DNA)
 	return DNA;
 }
 
-bool filterCandidateGuides(map<string, string, std::less<>> candidateGuideResultMap, string_view selectedModule, string_view optimisation, const int& consensusN, const int& toolCount)
+bool filterCandidateGuides(unordered_map<string, string, std::less<>> candidateGuideResultMap, string_view selectedModule, string_view optimisation, const int& consensusN, const int& toolCount)
 {
 	// Ultralow optimisation, process all guides
 	if (optimisation == "ultralow") { return true; }
