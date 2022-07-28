@@ -1,6 +1,6 @@
 // sgrnascorer2.hpp
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <array>
 #include <svm.h>
 #include <ConfigManager.hpp>
@@ -18,7 +18,7 @@ public:
 
 	//TODO: Custom deconstructor to properly handle pointer destruction
 
-	void run(std::map<std::string, std::map<std::string, std::string, std::less<>>, std::less<>>& candidateGuides) const;
+	void run(std::unordered_map<std::string, std::unordered_map<std::string, std::string, std::less<>>, std::less<>>& candidateGuides) const;
 
 private:
 	bool toolIsSelected;
