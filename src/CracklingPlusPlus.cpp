@@ -60,7 +60,7 @@ int main(int argc, char** argv)
 			// Record batch start time
 			auto batchStart = std::chrono::high_resolution_clock::now();
 
-			std::map <std::string, std::map<std::string, std::string, std::less<>>, std::less<>> candidateGuides;
+			std::unordered_map <std::string, std::unordered_map<std::string, std::string, std::less<>>, std::less<>> candidateGuides;
 			std::ifstream inFile;
 			inFile.open(fileName, std::ios::binary | std::ios_base::in);
 
