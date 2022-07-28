@@ -1,7 +1,7 @@
 // bowtie2.hpp
 #pragma once
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <vector>
 #include <ConfigManager.hpp>
 #include <Constants.hpp>
@@ -12,7 +12,7 @@ class bowtie2
 public:
 	explicit bowtie2(ConfigManager& cm);
 
-	void run(std::map<std::string, std::map<std::string, std::string, std::less<>>, std::less<>>& candidateGuides);
+	void run(std::unordered_map<std::string, std::unordered_map<std::string, std::string, std::less<>>, std::less<>>& candidateGuides);
 
 private:
 	bool toolIsSelected;
