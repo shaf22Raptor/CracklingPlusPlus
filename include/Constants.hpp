@@ -2,7 +2,7 @@
 #pragma once
 #include <string>
 #include <list>
-#include <map>
+#include <unordered_map>
 
 const std::string CODE_ACCEPTED = "1";
 const std::string CODE_REJECTED = "0";
@@ -16,7 +16,7 @@ const std::string MODULE_CHOPCHOP = "chopchop";
 const std::string MODULE_CONSENSUS = "consensus";
 const std::string MODULE_SPECIFICITY = "specificity";
 
-const std::map < std::string, std::string, std::less<>> DEFAULT_GUIDE_PROPERTIES = {
+const std::unordered_map < std::string, std::string, std::less<>> DEFAULT_GUIDE_PROPERTIES = {
     {"seq"                      , ""},
     {"header"                   , ""},
     {"isUnique"                 , CODE_ACCEPTED},
