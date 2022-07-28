@@ -1,7 +1,7 @@
 // mm10db.hpp
 #pragma once
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <array>
 #include <iterator>
 #include <fstream>
@@ -17,7 +17,7 @@ class mm10db
 public:
 	explicit mm10db(ConfigManager& cm);
 
-	void run(std::map<std::string, std::map<std::string, std::string, std::less<>>, std::less<>>& candidateGuides);
+	void run(std::unordered_map<std::string, std::unordered_map<std::string, std::string, std::less<>>, std::less<>>& candidateGuides);
 
 	bool static leadingT(std::string_view candidateGuide);
 
