@@ -93,7 +93,9 @@ void cas9InputProcessor::process(list<string> const & filesToProcess, int const 
 					if (recordedSequences.find(seqHeader) == recordedSequences.end())
 					{
 						recordedSequences.insert(seqHeader);
-						string concatanatedSeq = makeUpper(std::accumulate(seq.begin(), seq.end(), std::string{}));
+
+						string concatanatedSeq;
+						for (const string& s : seq) { concatanatedSeq.append(s); }
 
 						processSeqeunce(
 							concatanatedSeq,
@@ -117,7 +119,9 @@ void cas9InputProcessor::process(list<string> const & filesToProcess, int const 
 			if (recordedSequences.find(seqHeader) == recordedSequences.end())
 			{
 				recordedSequences.insert(seqHeader);
-				string concatanatedSeq = makeUpper(std::accumulate(seq.begin(), seq.end(), std::string{}));
+
+				string concatanatedSeq;
+				for (const string& s : seq) { concatanatedSeq.append(s); }
 
 				processSeqeunce(
 					concatanatedSeq,
