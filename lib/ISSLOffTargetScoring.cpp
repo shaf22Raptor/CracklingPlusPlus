@@ -1,7 +1,6 @@
 #include <ISSLOffTargetScoring.hpp>
 
 using std::string;
-using std::map;
 using std::vector;
 using std::pair;
 using std::unordered_map;
@@ -27,7 +26,7 @@ ISSLOffTargetScoring::ISSLOffTargetScoring(ConfigManager& cm) :
     offTargetScorePageLength(cm.getInt("offtargetscore", "page-length"))
 {}
 
-void ISSLOffTargetScoring::run(map<string, map<string, string, std::less<>>, std::less<>>& candidateGuides)
+void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, string>>& candidateGuides)
 {
     if (!toolIsSelected)
     {
