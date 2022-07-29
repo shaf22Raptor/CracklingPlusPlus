@@ -2,7 +2,7 @@
 #include <mm10db.hpp>
 
 using std::string;
-using std::unordered_map;
+using std::map;
 using std::array;
 using std::list;
 
@@ -22,7 +22,7 @@ mm10db::mm10db(ConfigManager& cm) :
 	RNAFoldPageLength(cm.getInt("rnafold", "page-length"))
 {}
 
-void mm10db::run(unordered_map<string, unordered_map<string, string>>& candidateGuides)
+void mm10db::run(map<string, map<string, string, std::less<>>, std::less<>>& candidateGuides)
 {
 
 	if (!toolIsSelected)
@@ -167,7 +167,7 @@ void mm10db::run(unordered_map<string, unordered_map<string, string>>& candidate
 		std::ifstream in;
 		in.open(RNAFoldOutFile, std::ios::binary);
 
-		unordered_map<string, list<string>> RNAstructures;
+		map<string, list<string>, std::less<>> RNAstructures;
 		int i = 0;
 		string L1;
 		string L2;

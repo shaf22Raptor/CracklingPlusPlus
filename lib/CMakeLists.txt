@@ -36,5 +36,5 @@ target_link_libraries (sgrnascorer2 libsvm)
 # Add bowtie2
 add_library(bowtie2 STATIC ${CMAKE_SOURCE_DIR}/lib/bowtie2.cpp ${CMAKE_SOURCE_DIR}/include/bowtie2.hpp)
 
-# Add ISSLOffTargetScoring
-add_library(ISSLOffTargetScoring STATIC ${CMAKE_SOURCE_DIR}/lib/ISSLOffTargetScoring.cpp ${CMAKE_SOURCE_DIR}/include/ISSLOffTargetScoring.hpp)
+# Add offTargetScoring
+add_library(offTargetScoring STATIC ${CMAKE_SOURCE_DIR}/lib/offTargetScoring.cpp ${CMAKE_SOURCE_DIR}/include/offTargetScoring.hpp)

@@ -1,4 +1,4 @@
-// bowtie2.hpp
+// offTargetScoring.hpp
 #pragma once
 #include <string>
 #include <map>
@@ -7,10 +7,10 @@
 #include <Constants.hpp>
 #include <Helpers.hpp>
 
-class bowtie2
+class offTargetScoring
 {
 public:
-	explicit bowtie2(ConfigManager& cm);
+	explicit offTargetScoring(ConfigManager& cm);
 
 	void run(std::map<std::string, std::map<std::string, std::string, std::less<>>, std::less<>>& candidateGuides);
 
@@ -19,11 +19,13 @@ private:
 	std::string optimsationLevel;
 	int toolCount;
 	int consensusN;
-	int threadCount;
-	std::string bowtie2OutFile;
-	std::string bowtie2InFile;
-	std::string bowtie2Bin;
-	std::string bowtie2Index;
-	int bowtie2PageLength;
+	std::string offTargetScoreOutFile;
+	std::string offTargetScoreInFile;
+	std::string offTargetScoreBin;
+	std::string offTargetScoreIndex;
+	std::string offTargetScoreMaxDist;
+	std::string offTargetScoreMethod;
+	float offTagertScoreThreshold;
+	int offTargetScorePageLength;
 
 };

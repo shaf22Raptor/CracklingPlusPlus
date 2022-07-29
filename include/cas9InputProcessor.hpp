@@ -3,7 +3,7 @@
 #include <list>
 #include <string>
 #include <fstream>
-#include <unordered_set>
+#include <set>
 #include <regex>
 #include <filesystem>
 #include <numeric>
@@ -17,14 +17,14 @@ public:
 
 	const std::list<std::string>& getBatchFiles() const;
 
-	bool isDuplicateGuide(const std::string& guide) const ;
+	bool isDuplicateGuide(std::string_view guide) const ;
 
 	void cleanUp() final;
 
 	~cas9InputProcessor() final = default;
 
 private:
-	std::unordered_set<std::string> duplicateGuides;
+	std::set<std::string, std::less<>> duplicateGuides;
 	std::list<std::string> batchFiles;
 	int numDuplicateGuides;
 	int numIdentifiedGuides;
@@ -35,7 +35,7 @@ private:
 		std::string_view seqHeader,
 		std::ofstream& outFile,
 		std::filesystem::path const& tempWorkingDir,
-		std::unordered_set<std::string>& candidateGuides,
+		std::set<std::string, std::less<>>& candidateGuides,
 		const int& batchSize
 	);
 };

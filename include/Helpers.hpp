@@ -6,7 +6,7 @@
 #include <iterator>
 #include <array>
 #include <ctime>
-#include <unordered_map>
+#include <map>
 #include <vector>
 #include <locale>
 #include <iomanip>
@@ -33,7 +33,7 @@ bool endsWith(std::string_view targetString, std::string_view suffix);
 
 std::string rc(std::string DNA);
 
-bool filterCandidateGuides(std::unordered_map<std::string, std::string> candidateGuideResultMap, std::string_view selectedModule, std::string_view optimisation, const int& consensusN, const int& toolCount);
+bool filterCandidateGuides(std::map<std::string, std::string, std::less<>> candidateGuideResultMap, std::string_view selectedModule, std::string_view optimisation, const int& consensusN, const int& toolCount);
 
 void printer(std::string_view formattedString);
 

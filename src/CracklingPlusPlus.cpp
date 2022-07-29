@@ -1,5 +1,5 @@
 ﻿// CracklingPlusPlus.cpp : Defines the entry point for the application.
-#pragma once
+
 #include <Helpers.hpp>
 #include <Constants.hpp>
 #include <Logger.hpp>
@@ -9,7 +9,8 @@
 #include <mm10db.hpp>
 #include <sgrnascorer2.hpp>
 #include <bowtie2.hpp>
-#include <ISSLOffTargetScoring.hpp>
+#include <offTargetScoring.hpp>
+
 
 int main(int argc, char** argv)
 {
@@ -40,7 +41,7 @@ int main(int argc, char** argv)
 		mm10db mm10dbModule(cm);
 		sgrnascorer2 sgRNAScorer2Module(cm);
 		bowtie2 bowtie2Module(cm);
-		ISSLOffTargetScoring OTSmodule(cm);
+		offTargetScoring otsModule(cm);
 
 		// Add header line to output file
 		std::ofstream outFile(cm.getString("output", "file"), std::ios_base::binary | std::ios_base::out);
@@ -60,7 +61,7 @@ int main(int argc, char** argv)
 			// Record batch start time
 			auto batchStart = std::chrono::high_resolution_clock::now();
 
-			std::unordered_map <std::string, std::unordered_map<std::string, std::string>> candidateGuides;
+			std::map <std::string, std::map<std::string, std::string, std::less<>>, std::less<>> candidateGuides;
 			std::ifstream inFile;
 			inFile.open(fileName, std::ios::binary | std::ios_base::in);
 
@@ -116,7 +117,7 @@ int main(int argc, char** argv)
 
 			bowtie2Module.run(candidateGuides);
 
-			OTSmodule.run(candidateGuides);
+			otsModule.run(candidateGuides);
 
 			printer("Writing results to file.");
 

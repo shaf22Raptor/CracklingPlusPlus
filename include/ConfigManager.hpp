@@ -2,7 +2,7 @@
 #pragma once
 #include <string>
 #include <list>
-#include <unordered_map>
+#include <map>
 #include <iostream>
 #include <fstream>
 #include <algorithm>
@@ -47,5 +47,5 @@ public:
 
 private:
 	std::list<std::string> filesToProcess;
-	std::unordered_map<std::string, std::unordered_map<std::string, std::string>> configMap;
+	std::map<std::string, std::map<std::string, std::string>> configMap;
 };

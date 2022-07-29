@@ -3,7 +3,7 @@
 
 using std::string;
 using std::list;
-using std::unordered_set;
+using std::set;
 using std::regex;
 using std::regex_iterator;
 using std::string_view;
@@ -48,8 +48,8 @@ void cas9InputProcessor::process(list<string> const & filesToProcess, int const 
 	std::vector<string> seq;
 
 	// Duplicate tracking
-	unordered_set<string> candidateGuides;
-	unordered_set<string> recordedSequences;
+	set<string, std::less<>> candidateGuides;
+	set<string, std::less<>> recordedSequences;
 	numDuplicateGuides = 0;
 	numIdentifiedGuides = 0;
 
@@ -93,9 +93,7 @@ void cas9InputProcessor::process(list<string> const & filesToProcess, int const 
 					if (recordedSequences.find(seqHeader) == recordedSequences.end())
 					{
 						recordedSequences.insert(seqHeader);
-
-						string concatanatedSeq;
-						for (const string& s : seq) { concatanatedSeq.append(s); }
+						string concatanatedSeq = makeUpper(std::accumulate(seq.begin(), seq.end(), std::string{}));
 
 						processSeqeunce(
 							concatanatedSeq,
@@ -119,9 +117,7 @@ void cas9InputProcessor::process(list<string> const & filesToProcess, int const 
 			if (recordedSequences.find(seqHeader) == recordedSequences.end())
 			{
 				recordedSequences.insert(seqHeader);
-
-				string concatanatedSeq;
-				for (const string& s : seq) { concatanatedSeq.append(s); }
+				string concatanatedSeq = makeUpper(std::accumulate(seq.begin(), seq.end(), std::string{}));
 
 				processSeqeunce(
 					concatanatedSeq,
@@ -188,7 +184,7 @@ void cas9InputProcessor::processSeqeunce(
 	string_view seqHeader,
 	ofstream& outFile,
 	const path& tempWorkingDir,
-	unordered_set<string>& candidateGuides,
+	set<string, std::less<>>& candidateGuides,
 	const int& batchSize
 	)
 {
@@ -255,7 +251,7 @@ const list<string>& cas9InputProcessor::getBatchFiles() const
 	return batchFiles;
 }
 
-bool cas9InputProcessor::isDuplicateGuide(const string& guide) const
+bool cas9InputProcessor::isDuplicateGuide(string_view guide) const
 {
 	return duplicateGuides.find(guide) != duplicateGuides.end();
 }
