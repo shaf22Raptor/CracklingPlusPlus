@@ -363,7 +363,7 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
                         uint64_t evenBits = xoredSignatures & 0xAAAAAAAAAAAAAAAAull;
                         uint64_t oddBits = xoredSignatures & 0x5555555555555555ull;
                         uint64_t mismatches = (evenBits >> 1) | oddBits;
-                        int dist = __popcnt64(mismatches);
+                        int dist = portable_popcount(mismatches);
 
                         if (dist >= 0 && dist <= maxDist) {
 
