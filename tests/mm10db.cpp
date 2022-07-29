@@ -159,122 +159,122 @@ TEST_CASE("transToDNA" * doctest::description("Ensure that the transToDNA functi
     }
 }
 
-TEST_CASE("RNAFold" * doctest::description("Ensure that RNAFold is working correctly") * doctest::timeout(5))
-{
-    std::vector<std::string> expected{ {
-        "GCUCCUCAUGCUGGACAUUCGUUUUAGAGCUAGAAAUAGCAAGUUAAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAAGUGGCACCGAGUCGGUGCUUUU",
-        "((.......))(((((..(((((((((.((((....))))...)))))))..))...)))))......((((....))))(((((((...)))))))... (-22.40)",
-        "GUUCUGGUUCCUAGUAUAUCGUUUUAGAGCUAGAAAUAGCAAGUUAAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAAGUGGCACCGAGUCGGUGCUUUU",
-        ".(((((((((..((........))..)))))))))....((((((...((((.(......).)))).)))))).......(((((((...)))))))... (-25.20)",
-        "GUAUAUCUGGAGAGUUAAGAGUUUUAGAGCUAGAAAUAGCAAGUUAAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAAGUGGCACCGAGUCGGUGCUUUU",
-        ".......((((.((((....(((((((.((((....))))...)))))))..))))..))))......((((....))))(((((((...)))))))... (-22.50)"
-    } };
-
-    std::vector<std::string> result;
-
-    std::ofstream outFile("input.txt", std::ios::binary);
-
-    outFile << "GCTCCTCATGCTGGACATTCGUUUUAGAGCUAGAAAUAGCAAGUUAAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAAGUGGCACCGAGUCGGUGCUUUU\n"
-            << "GTTCTGGTTCCTAGTATATCGUUUUAGAGCUAGAAAUAGCAAGUUAAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAAGUGGCACCGAGUCGGUGCUUUU\n"
-            << "GTATATCTGGAGAGTTAAGAGUUUUAGAGCUAGAAAUAGCAAGUUAAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAAGUGGCACCGAGUCGGUGCUUUU\n";
-
-    outFile.close();
-
-    system("RNAfold --noPS -j16 -i input.txt > output.txt");
-
-    std::ifstream inFile("output.txt", std::ios::binary);
-
-    for (std::string line; std::getline(inFile, line);)
-    {
-        result.push_back(trim(line));
-    }
-
-    inFile.close();
-
-    remove("input.txt");
-    remove("output.txt");
-
-    CHECK(result == expected);
-}
-
-TEST_CASE("mm10db" * doctest::description("Ensure that mm10db module is working correctly") * doctest::timeout(5))
-{
-    ConfigManager cm("data/test_config.ini");
-    cm.set("general", "optimisation", "ultralow");
-    mm10db testModule(cm);
-    
-    std::unordered_map<std::string, std::unordered_map<std::string, std::string>> result = {
-        {"ACTCCTCATGCTGGACATTCTGG", {
-            {"passedAvoidLeadingT" , CODE_UNTESTED},
-            {"passedATPercent" , CODE_UNTESTED},
-            {"AT" , CODE_UNTESTED},
-            {"passedTTTT" , CODE_UNTESTED},
-            {"ssL1" , CODE_UNTESTED},
-            {"ssStructure" , CODE_UNTESTED},
-            {"ssEnergy" , CODE_UNTESTED},
-            {"passedSecondaryStructure" , CODE_UNTESTED},
-            {"acceptedByMm10db" , CODE_UNTESTED}
-        }},
-        {"ATTCTGGTTCCTAGTATATCTGG", {
-            {"passedAvoidLeadingT" , CODE_UNTESTED},
-            {"passedATPercent" , CODE_UNTESTED},
-            {"AT" , CODE_UNTESTED},
-            {"passedTTTT" , CODE_UNTESTED},
-            {"ssL1" , CODE_UNTESTED},
-            {"ssStructure" , CODE_UNTESTED},
-            {"ssEnergy" , CODE_UNTESTED},
-            {"passedSecondaryStructure" , CODE_UNTESTED},
-            {"acceptedByMm10db" , CODE_UNTESTED}
-        }},
-        {"GTATATCTGGAGAGTTAAGATGG", {
-            {"passedAvoidLeadingT" , CODE_UNTESTED},
-            {"passedATPercent" , CODE_UNTESTED},
-            {"AT" , CODE_UNTESTED},
-            {"passedTTTT" , CODE_UNTESTED},
-            {"ssL1" , CODE_UNTESTED},
-            {"ssStructure" , CODE_UNTESTED},
-            {"ssEnergy" , CODE_UNTESTED},
-            {"passedSecondaryStructure" , CODE_UNTESTED},
-            {"acceptedByMm10db" , CODE_UNTESTED}
-        }}
-    };
-
-    std::unordered_map<std::string, std::unordered_map<std::string, std::string>> expected = {
-        {"ACTCCTCATGCTGGACATTCTGG", {
-            {"passedAvoidLeadingT" , CODE_ACCEPTED},
-            {"passedATPercent" , CODE_ACCEPTED},
-            {"AT" , "50.0"},
-            {"passedTTTT" , CODE_ACCEPTED},
-            {"ssL1" , "GCUCCUCAUGCUGGACAUUCGUUUUAGAGCUAGAAAUAGCAAGUUAAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAAGUGGCACCGAGUCGGUGCUUUU"},
-            {"ssStructure" , "((.......))(((((..(((((((((.((((....))))...)))))))..))...)))))......((((....))))(((((((...)))))))..."},
-            {"ssEnergy" , "-22.40"},
-            {"passedSecondaryStructure" , CODE_ACCEPTED},
-            {"acceptedByMm10db" , CODE_ACCEPTED}
-        }},
-        {"ATTCTGGTTCCTAGTATATCTGG", {
-            {"passedAvoidLeadingT" , CODE_ACCEPTED},
-            {"passedATPercent" , CODE_ACCEPTED},
-            {"AT" , "65.0"},
-            {"passedTTTT" , CODE_ACCEPTED},
-            {"ssL1" , "GUUCUGGUUCCUAGUAUAUCGUUUUAGAGCUAGAAAUAGCAAGUUAAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAAGUGGCACCGAGUCGGUGCUUUU"},
-            {"ssStructure" , ".(((((((((..((........))..)))))))))....((((((...((((.(......).)))).)))))).......(((((((...)))))))..."},
-            {"ssEnergy" , "-25.20"},
-            {"passedSecondaryStructure" , CODE_REJECTED},
-            {"acceptedByMm10db" , CODE_REJECTED}
-        }},
-        {"GTATATCTGGAGAGTTAAGATGG", {
-            {"passedAvoidLeadingT" , CODE_ACCEPTED},
-            {"passedATPercent" , CODE_ACCEPTED},
-            {"AT" , "65.0"},
-            {"passedTTTT" , CODE_ACCEPTED},
-            {"ssL1" , "GUAUAUCUGGAGAGUUAAGAGUUUUAGAGCUAGAAAUAGCAAGUUAAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAAGUGGCACCGAGUCGGUGCUUUU"},
-            {"ssStructure" , ".......((((.((((....(((((((.((((....))))...)))))))..))))..))))......((((....))))(((((((...)))))))..."},
-            {"ssEnergy" , "-22.50"},
-            {"passedSecondaryStructure" , CODE_ACCEPTED},
-            {"acceptedByMm10db" , CODE_ACCEPTED}
-        }}
-    };
-
-    testModule.run(result);
-    CHECK(result == expected);
-}
+//TEST_CASE("RNAFold" * doctest::description("Ensure that RNAFold is working correctly") * doctest::timeout(5))
+//{
+//    std::vector<std::string> expected{ {
+//        "GCUCCUCAUGCUGGACAUUCGUUUUAGAGCUAGAAAUAGCAAGUUAAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAAGUGGCACCGAGUCGGUGCUUUU",
+//        "((.......))(((((..(((((((((.((((....))))...)))))))..))...)))))......((((....))))(((((((...)))))))... (-22.40)",
+//        "GUUCUGGUUCCUAGUAUAUCGUUUUAGAGCUAGAAAUAGCAAGUUAAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAAGUGGCACCGAGUCGGUGCUUUU",
+//        ".(((((((((..((........))..)))))))))....((((((...((((.(......).)))).)))))).......(((((((...)))))))... (-25.20)",
+//        "GUAUAUCUGGAGAGUUAAGAGUUUUAGAGCUAGAAAUAGCAAGUUAAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAAGUGGCACCGAGUCGGUGCUUUU",
+//        ".......((((.((((....(((((((.((((....))))...)))))))..))))..))))......((((....))))(((((((...)))))))... (-22.50)"
+//    } };
+//
+//    std::vector<std::string> result;
+//
+//    std::ofstream outFile("input.txt", std::ios::binary);
+//
+//    outFile << "GCTCCTCATGCTGGACATTCGUUUUAGAGCUAGAAAUAGCAAGUUAAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAAGUGGCACCGAGUCGGUGCUUUU\n"
+//            << "GTTCTGGTTCCTAGTATATCGUUUUAGAGCUAGAAAUAGCAAGUUAAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAAGUGGCACCGAGUCGGUGCUUUU\n"
+//            << "GTATATCTGGAGAGTTAAGAGUUUUAGAGCUAGAAAUAGCAAGUUAAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAAGUGGCACCGAGUCGGUGCUUUU\n";
+//
+//    outFile.close();
+//
+//    system("RNAfold --noPS -j16 -i input.txt > output.txt");
+//
+//    std::ifstream inFile("output.txt", std::ios::binary);
+//
+//    for (std::string line; std::getline(inFile, line);)
+//    {
+//        result.push_back(line);
+//    }
+//
+//    inFile.close();
+//
+//    remove("input.txt");
+//    remove("output.txt");
+//
+//    CHECK(result == expected);
+//}
+//
+//TEST_CASE("mm10db" * doctest::description("Ensure that mm10db module is working correctly") * doctest::timeout(5))
+//{
+//    ConfigManager cm("data/test_config.ini");
+//    cm.set("general", "optimisation", "ultralow");
+//    mm10db testModule(cm);
+//    
+//    std::map<std::string, std::map<std::string, std::string>> result = {
+//        {"ACTCCTCATGCTGGACATTCTGG", {
+//            {"passedAvoidLeadingT" , CODE_UNTESTED},
+//            {"passedATPercent" , CODE_UNTESTED},
+//            {"AT" , CODE_UNTESTED},
+//            {"passedTTTT" , CODE_UNTESTED},
+//            {"ssL1" , CODE_UNTESTED},
+//            {"ssStructure" , CODE_UNTESTED},
+//            {"ssEnergy" , CODE_UNTESTED},
+//            {"passedSecondaryStructure" , CODE_UNTESTED},
+//            {"acceptedByMm10db" , CODE_UNTESTED}
+//        }},
+//        {"ATTCTGGTTCCTAGTATATCTGG", {
+//            {"passedAvoidLeadingT" , CODE_UNTESTED},
+//            {"passedATPercent" , CODE_UNTESTED},
+//            {"AT" , CODE_UNTESTED},
+//            {"passedTTTT" , CODE_UNTESTED},
+//            {"ssL1" , CODE_UNTESTED},
+//            {"ssStructure" , CODE_UNTESTED},
+//            {"ssEnergy" , CODE_UNTESTED},
+//            {"passedSecondaryStructure" , CODE_UNTESTED},
+//            {"acceptedByMm10db" , CODE_UNTESTED}
+//        }},
+//        {"GTATATCTGGAGAGTTAAGATGG", {
+//            {"passedAvoidLeadingT" , CODE_UNTESTED},
+//            {"passedATPercent" , CODE_UNTESTED},
+//            {"AT" , CODE_UNTESTED},
+//            {"passedTTTT" , CODE_UNTESTED},
+//            {"ssL1" , CODE_UNTESTED},
+//            {"ssStructure" , CODE_UNTESTED},
+//            {"ssEnergy" , CODE_UNTESTED},
+//            {"passedSecondaryStructure" , CODE_UNTESTED},
+//            {"acceptedByMm10db" , CODE_UNTESTED}
+//        }}
+//    };
+//
+//    std::map<std::string, std::map<std::string, std::string>> expected = {
+//        {"ACTCCTCATGCTGGACATTCTGG", {
+//            {"passedAvoidLeadingT" , CODE_ACCEPTED},
+//            {"passedATPercent" , CODE_ACCEPTED},
+//            {"AT" , "50.0"},
+//            {"passedTTTT" , CODE_ACCEPTED},
+//            {"ssL1" , "GCUCCUCAUGCUGGACAUUCGUUUUAGAGCUAGAAAUAGCAAGUUAAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAAGUGGCACCGAGUCGGUGCUUUU"},
+//            {"ssStructure" , "((.......))(((((..(((((((((.((((....))))...)))))))..))...)))))......((((....))))(((((((...)))))))..."},
+//            {"ssEnergy" , "-22.40"},
+//            {"passedSecondaryStructure" , CODE_ACCEPTED},
+//            {"acceptedByMm10db" , CODE_ACCEPTED}
+//        }},
+//        {"ATTCTGGTTCCTAGTATATCTGG", {
+//            {"passedAvoidLeadingT" , CODE_ACCEPTED},
+//            {"passedATPercent" , CODE_ACCEPTED},
+//            {"AT" , "65.0"},
+//            {"passedTTTT" , CODE_ACCEPTED},
+//            {"ssL1" , "GUUCUGGUUCCUAGUAUAUCGUUUUAGAGCUAGAAAUAGCAAGUUAAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAAGUGGCACCGAGUCGGUGCUUUU"},
+//            {"ssStructure" , ".(((((((((..((........))..)))))))))....((((((...((((.(......).)))).)))))).......(((((((...)))))))..."},
+//            {"ssEnergy" , "-25.20"},
+//            {"passedSecondaryStructure" , CODE_REJECTED},
+//            {"acceptedByMm10db" , CODE_REJECTED}
+//        }},
+//        {"GTATATCTGGAGAGTTAAGATGG", {
+//            {"passedAvoidLeadingT" , CODE_ACCEPTED},
+//            {"passedATPercent" , CODE_ACCEPTED},
+//            {"AT" , "65.0"},
+//            {"passedTTTT" , CODE_ACCEPTED},
+//            {"ssL1" , "GUAUAUCUGGAGAGUUAAGAGUUUUAGAGCUAGAAAUAGCAAGUUAAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAAGUGGCACCGAGUCGGUGCUUUU"},
+//            {"ssStructure" , ".......((((.((((....(((((((.((((....))))...)))))))..))))..))))......((((....))))(((((((...)))))))..."},
+//            {"ssEnergy" , "-22.50"},
+//            {"passedSecondaryStructure" , CODE_ACCEPTED},
+//            {"acceptedByMm10db" , CODE_ACCEPTED}
+//        }}
+//    };
+//
+//    testModule.run(result);
+//    CHECK(result == expected);
+//}

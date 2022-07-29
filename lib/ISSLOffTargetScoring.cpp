@@ -9,7 +9,7 @@ using std::unordered_set;
 /** Char to binary encoding */
 const vector<uint8_t> nucleotideIndex{ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
 const vector<char> signatureIndex{ 'A', 'C', 'G', 'T'};
-enum ScoreMethod { unknown = 0, mit = 1, cfd = 2, mitAndCfd = 3, mitOrCfd = 4, avgMitCfd = 5 };
+const enum ScoreMethod { unknown = 0, mit = 1, cfd = 2, mitAndCfd = 3, mitOrCfd = 4, avgMitCfd = 5 };
 
 ISSLOffTargetScoring::ISSLOffTargetScoring(ConfigManager& cm) :
     toolIsSelected(cm.getBool("offtargetscore", "enabled")),
@@ -33,9 +33,6 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
         printer("Off-target scoring has been configured not to run. Skipping Off-target scoring");
         return;
     }
-
-    //TODO: Add thread limit from config
-    omp_set_num_threads(16);
 
     printer("Loading ISSL Index.");
 
@@ -270,8 +267,7 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
             paginatorIterator++;
         }
 
-        queryDataSet.shrink_to_fit();
-        pamDataSet.shrink_to_fit();
+
 
         printer(fmt::format("\t\t{} guides in this page.", commaify(guidesInPage)));
 
@@ -367,7 +363,8 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
                         uint64_t evenBits = xoredSignatures & 0xAAAAAAAAAAAAAAAAull;
                         uint64_t oddBits = xoredSignatures & 0x5555555555555555ull;
                         uint64_t mismatches = (evenBits >> 1) | oddBits;
-                        int dist = popcnt((const void*)&mismatches, sizeof(uint64_t));
+                        int dist = __popcnt64(mismatches);
+
                         if (dist >= 0 && dist <= maxDist) {
 
                             /** Prevent assessing the same off-target for multiple slices */

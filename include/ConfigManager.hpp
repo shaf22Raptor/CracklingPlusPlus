@@ -49,9 +49,3 @@ private:
 	std::list<std::string> filesToProcess;
 	std::unordered_map<std::string, std::unordered_map<std::string, std::string>> configMap;
 };
-
-class fileNotFound : public std::runtime_error
-{
-public:
-	fileNotFound(const std::string& msg) : std::runtime_error(msg) { };
-};

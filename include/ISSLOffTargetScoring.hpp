@@ -5,7 +5,6 @@
 #include <unordered_set>
 #include <phmap/phmap.h>
 #include <omp.h>
-#include <libpopcnt.h>
 #include <ConfigManager.hpp>
 #include <Constants.hpp>
 #include <Helpers.hpp>
@@ -13,9 +12,6 @@
 #ifdef _WIN32
 #define portable_stat64 _stat64
 #elif defined __linux__
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
 #define portable_stat64 stat64
 #endif
 

@@ -41,7 +41,7 @@ TEST_CASE("Constants" * doctest::description("Ensure that the Constant values ha
     }
     SUBCASE("Test DEFAULT_GUIDE_PROPERTIES")
     {
-        std::unordered_map <std::string, std::string> result = {
+        std::map <std::string, std::string> result = {
             {"seq"                      , ""},
             {"header"                   , ""},
             {"isUnique"                 , CODE_ACCEPTED},
