@@ -11,14 +11,14 @@ ConfigManager::ConfigManager(string configFilePath)
 		Check config file exists
 	*/ 
 	// Create path object
-	path configPathObject = configFilePath;
+	path configPathObject(configFilePath);
 	// Normalise path delimiters to the systems preferred delimiters
 	configPathObject = configPathObject.make_preferred();
 	// Check file exists
 	if (!std::filesystem::exists(configPathObject))
 	{
 		// File doesn't exist, Throw error
-		throw std::runtime_error("Could not find the config file specified");
+		throw fileNotFound("Could not find the config file specified");
 	}
 
 
@@ -90,21 +90,6 @@ ConfigManager::ConfigManager(string configFilePath)
 
 	// Check that binarys are callable
 
-	// Check ISSL
-	snprintf(printingBuffer, 1024, "%s 2>&1", getCString("offtargetscore", "binary"));
-	stdoutStream = portablePopen(printingBuffer, "r");
-	while (fgets(stdoutBuffer, 1024, stdoutStream) != NULL)
-	{
-		resultOutput.append(stdoutBuffer);
-	}
-	portablePclose(stdoutStream);
-
-	snprintf(printingBuffer, 1024, "Usage: %s [issltable] [query file] [max distance] [score-threshold] [score-method]\n", getCString("offtargetscore", "binary"));
-	if (resultOutput != printingBuffer)
-	{ 
-		throw std::runtime_error("Could not find Off-target scoring binary");
-	}
-
 	// Check bowtie2
 	snprintf(printingBuffer, 1024, "%s --version", getCString("bowtie2", "binary"));
 	stdoutBuffer[0] = '\0';
@@ -136,11 +121,20 @@ ConfigManager::ConfigManager(string configFilePath)
 		throw std::runtime_error("The consensus approach is incorrectly set. You have specified %d tools to be run but the n-value is %d. Change n to be <= %d.");
 	}
 
+	
+	// Get output dir path object
+	path outputDirPathObject = getPath("output", "dir");
+	// Check output dir exists
+	if (!std::filesystem::exists(outputDirPathObject))
+	{
+		// Create output dir
+		std::filesystem::create_directory(outputDirPathObject);
+	}
+
 	// Check that output file doesn't already exist
 	// Generate outputfile name
 	snprintf(printingBuffer, 1024, "%s-%s", getCString("general", "name"), getCString("output", "filename"));
-	// Get output dir path object
-	path outputDirPathObject = getPath("output", "dir");
+
 	// Append output file name to output dir
 	set("output", "file", (outputDirPathObject / printingBuffer).string());
 	if (std::filesystem::exists(getPath("output","file")))
@@ -166,7 +160,6 @@ ConfigManager::ConfigManager(string configFilePath)
 		(getString("output", "filename") == "") ||
 		(getString("output", "delimiter") == "") ||
 		(getString("offtargetscore", "enabled") == "") ||
-		(getString("offtargetscore", "binary") == "") ||
 		(getString("offtargetscore", "method") == "") ||
 		(getString("offtargetscore", "threads") == "") ||
 		(getString("offtargetscore", "page-length") == "") ||
