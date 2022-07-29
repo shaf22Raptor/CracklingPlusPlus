@@ -3,7 +3,7 @@
 #include <list>
 #include <string>
 #include <fstream>
-#include <set>
+#include <unordered_set>
 #include <regex>
 #include <filesystem>
 #include <numeric>
@@ -24,7 +24,7 @@ public:
 	~cas9InputProcessor() final = default;
 
 private:
-	std::set<std::string> duplicateGuides;
+	std::unordered_set<std::string> duplicateGuides;
 	std::list<std::string> batchFiles;
 	int numDuplicateGuides;
 	int numIdentifiedGuides;
@@ -35,7 +35,7 @@ private:
 		std::string_view seqHeader,
 		std::ofstream& outFile,
 		std::filesystem::path const& tempWorkingDir,
-		std::set<std::string>& candidateGuides,
+		std::unordered_set<std::string>& candidateGuides,
 		const int& batchSize
 	);
 };
