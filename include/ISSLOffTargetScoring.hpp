@@ -11,7 +11,12 @@
 
 #ifdef _WIN32
 #define portable_stat64 _stat64
+#define portable_popcount __popcnt64
 #elif defined __linux__
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#define portable_popcount __builtin_popcountll
 #define portable_stat64 stat64
 #endif
 
