@@ -19,7 +19,7 @@ bowtie2::bowtie2(ConfigManager& cm) :
 	bowtie2PageLength(cm.getInt("bowtie2", "page-length"))
 {}
 
-void bowtie2::run(unordered_map<string, unordered_map<string, string, std::less<>>, std::less<>>& candidateGuides)
+void bowtie2::run(unordered_map<string, unordered_map<string, string>>& candidateGuides)
 {
 	if (!toolIsSelected)
 	{
@@ -54,7 +54,7 @@ void bowtie2::run(unordered_map<string, unordered_map<string, string, std::less<
 			pageEnd = candidateGuides.end();
 		}
 		printer("\t\tConstructing the Bowtie input file.");
-		unordered_map<string, string, std::less<>> tempTargetDict_offset;
+		unordered_map<string, string> tempTargetDict_offset;
 		// Open input file 
 		std::ofstream inFile;
 		inFile.open(bowtie2InFile, std::ios::binary);

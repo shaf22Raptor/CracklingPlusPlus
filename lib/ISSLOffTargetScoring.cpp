@@ -283,7 +283,7 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
         #pragma omp parallel
         {
         #pragma omp for
-            for (size_t i = 0; i < queryCount; i++) {
+            for (int i = 0; i < queryCount; i++) {
                 char* ptr = &queryDataSet[i * seqLineLength];
                 uint64_t signature = sequenceToSignature(ptr, seqLength);
                 querySignatures[i] = signature;
@@ -300,7 +300,7 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
 
             /** For each candidate guide */
         #pragma omp for
-            for (size_t searchIdx = 0; searchIdx < querySignatures.size(); searchIdx++) {
+            for (int searchIdx = 0; searchIdx < querySignatures.size(); searchIdx++) {
 
                 auto searchSignature = querySignatures[searchIdx];
 

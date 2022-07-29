@@ -17,7 +17,7 @@ class mm10db
 public:
 	explicit mm10db(ConfigManager& cm);
 
-	void run(std::unordered_map<std::string, std::unordered_map<std::string, std::string, std::less<>>, std::less<>>& candidateGuides);
+	void run(std::unordered_map<std::string, std::unordered_map<std::string, std::string>>& candidateGuides);
 
 	bool static leadingT(std::string_view candidateGuide);
 

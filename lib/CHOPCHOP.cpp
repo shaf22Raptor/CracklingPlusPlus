@@ -13,7 +13,7 @@ CHOPCHOP::CHOPCHOP(ConfigManager& cm) :
     consensusN(cm.getInt("consensus", "n"))
 {}
 
-void CHOPCHOP::run(unordered_map<string, unordered_map<string, string, std::less<>>, std::less<>>& candidateGuides)
+void CHOPCHOP::run(unordered_map<string, unordered_map<string, string>>& candidateGuides)
 {
 
     if (!toolIsSelected)

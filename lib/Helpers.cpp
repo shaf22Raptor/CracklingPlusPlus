@@ -97,7 +97,7 @@ string rc(string DNA)
 	return DNA;
 }
 
-bool filterCandidateGuides(unordered_map<string, string, std::less<>> candidateGuideResultMap, string_view selectedModule, string_view optimisation, const int& consensusN, const int& toolCount)
+bool filterCandidateGuides(unordered_map<string, string> candidateGuideResultMap, string_view selectedModule, string_view optimisation, const int& consensusN, const int& toolCount)
 {
 	// Ultralow optimisation, process all guides
 	if (optimisation == "ultralow") { return true; }

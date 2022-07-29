@@ -12,7 +12,7 @@ class bowtie2
 public:
 	explicit bowtie2(ConfigManager& cm);
 
-	void run(std::unordered_map<std::string, std::unordered_map<std::string, std::string, std::less<>>, std::less<>>& candidateGuides);
+	void run(std::unordered_map<std::string, std::unordered_map<std::string, std::string>>& candidateGuides);
 
 private:
 	bool toolIsSelected;

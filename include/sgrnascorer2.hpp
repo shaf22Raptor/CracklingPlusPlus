@@ -18,7 +18,7 @@ public:
 
 	//TODO: Custom deconstructor to properly handle pointer destruction
 
-	void run(std::unordered_map<std::string, std::unordered_map<std::string, std::string, std::less<>>, std::less<>>& candidateGuides) const;
+	void run(std::unordered_map<std::string, std::unordered_map<std::string, std::string>>& candidateGuides) const;
 
 private:
 	bool toolIsSelected;

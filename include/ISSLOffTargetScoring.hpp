@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <phmap/phmap.h>
+#include <omp.h>
 #include <ConfigManager.hpp>
 #include <Constants.hpp>
 #include <Helpers.hpp>

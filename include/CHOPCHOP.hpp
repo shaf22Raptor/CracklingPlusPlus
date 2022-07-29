@@ -11,7 +11,7 @@ class CHOPCHOP
 public:
 	explicit CHOPCHOP(ConfigManager& cm);
 
-	void run(std::unordered_map<std::string, std::unordered_map<std::string, std::string, std::less<>>, std::less<>>& candidateGuides);
+	void run(std::unordered_map<std::string, std::unordered_map<std::string, std::string>>& candidateGuides);
 	
 	bool static G20(std::string_view candidateGuide);
 
