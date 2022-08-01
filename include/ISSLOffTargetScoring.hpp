@@ -1,41 +1,37 @@
 // ISSLOffTargetScoring.hpp
 #pragma once
-#include <cfdPenalties.h>
-
 #include <cstdio>
 #include <cstdlib>
 #include <cstdint>
 #include <cstring>
 #include <climits>
 #include <stdio.h>
-
-#include <unordered_set>
-#include <unordered_map>
+#include <stdint.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/time.h>
-
-#include <stdint.h>
-
+#include <omp.h>
+#include <string>
+#include <vector>
+#include <unordered_set>
+#include <unordered_map>
+#include <map>
 #include <chrono>
 #include <bitset>
 #include <iostream>
+#include "../include/ConfigManager.hpp"
+#include "../include/Constants.hpp"
+#include "../include/Helpers.hpp"
+#include "../include/phmap/phmap.h"
+#include "../include/libpopcnt.h"
+#include "../include/cfdPenalties.h"
 
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+#include "../include/sys/time.h"
+#include "../include/unistd.h"
+#else
+#include <sys/time.h>
 #include <unistd.h>
-
-
-#include <omp.h>
-#include <phmap/phmap.h>
-
-#include <string>
-#include <vector>
-#include <map>
-
-#include <ConfigManager.hpp>
-#include <Constants.hpp>
-#include <Helpers.hpp>
-
-#include <libpopcnt.h>
+#endif
 
 #ifndef portableStat64
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)

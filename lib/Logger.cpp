@@ -1,5 +1,5 @@
 // Logger Class and Log Buffer Class
-#include <Logger.hpp>
+#include "../include/Logger.hpp"
 
 using std::string;
 using std::ostream;

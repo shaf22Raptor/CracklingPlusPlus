@@ -2,9 +2,9 @@
 #pragma once
 #include <string>
 #include <map>
-#include <ConfigManager.hpp>
-#include <Constants.hpp>
-#include <Helpers.hpp>
+#include "../include/ConfigManager.hpp"
+#include "../include/Constants.hpp"
+#include "../include/Helpers.hpp"
 
 class CHOPCHOP
 {

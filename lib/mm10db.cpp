@@ -1,5 +1,5 @@
 // mm10db class
-#include <mm10db.hpp>
+#include "../include/mm10db.hpp"
 
 using std::string;
 using std::map;

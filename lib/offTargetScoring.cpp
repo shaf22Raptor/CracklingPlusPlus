@@ -1,4 +1,4 @@
-#include <offTargetScoring.hpp>
+#include "../include/offTargetScoring.hpp"
 
 using std::string;
 using std::map;

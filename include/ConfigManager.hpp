@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <regex>
 #include <filesystem>
-#include <Helpers.hpp>
+#include "../include/Helpers.hpp"
 
 #if defined(_POSIX_C_SOURCE) && (_POSIX_C_SOURCE >= 2)
 # define portablePopen popen

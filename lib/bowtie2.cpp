@@ -1,5 +1,5 @@
 // bowtie2 Class
-#include <bowtie2.hpp>
+#include "../include/bowtie2.hpp"
 
 using std::string;
 using std::map;

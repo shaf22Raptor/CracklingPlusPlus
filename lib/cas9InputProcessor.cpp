@@ -1,5 +1,5 @@
 // cas9InputProcessor class, implementation of inputProcessor for Cas9.
-#include <cas9InputProcessor.hpp>
+#include "../include/cas9InputProcessor.hpp"
 
 using std::string;
 using std::list;

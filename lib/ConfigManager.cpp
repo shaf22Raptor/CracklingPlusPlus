@@ -1,5 +1,5 @@
 // ConfigManager Class
-#include <ConfigManager.hpp>
+#include "../include/ConfigManager.hpp"
 
 using std::string;
 using std::list;

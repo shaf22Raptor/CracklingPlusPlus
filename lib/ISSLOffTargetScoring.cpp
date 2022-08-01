@@ -1,4 +1,4 @@
-#include <ISSLOffTargetScoring.hpp>
+#include "../include/ISSLOffTargetScoring.hpp"
 
 using std::string;
 using std::map;

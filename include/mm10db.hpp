@@ -8,9 +8,9 @@
 #include <list>
 #include <regex>
 #include <sstream>
-#include <ConfigManager.hpp>
-#include <Constants.hpp>
-#include <Helpers.hpp>
+#include "../include/ConfigManager.hpp"
+#include "../include/Constants.hpp"
+#include "../include/Helpers.hpp"
 
 class mm10db
 {

@@ -7,8 +7,8 @@
 #include <regex>
 #include <filesystem>
 #include <numeric>
-#include <inputProcessor.hpp>
-#include <Helpers.hpp>
+#include "../include/inputProcessor.hpp"
+#include "../include/Helpers.hpp"
 
 class cas9InputProcessor : public inputProcessor
 {

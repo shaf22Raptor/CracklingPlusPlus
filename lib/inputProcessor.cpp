@@ -1,5 +1,5 @@
 // inputProcessor class, base class for processing input files for various Cas proteins
-#include <inputProcessor.hpp>
+#include "../include/inputProcessor.hpp"
 using std::string;
 using std::list;
 using std::logic_error;

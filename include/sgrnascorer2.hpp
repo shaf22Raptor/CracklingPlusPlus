@@ -2,10 +2,10 @@
 #include <string>
 #include <map>
 #include <array>
-#include <svm.h>
-#include <ConfigManager.hpp>
-#include <Constants.hpp>
-#include <Helpers.hpp>
+#include "../include/svm.h"
+#include "../include/ConfigManager.hpp"
+#include "../include/Constants.hpp"
+#include "../include/Helpers.hpp"
 
 // Variables for model training
 

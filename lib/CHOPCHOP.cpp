@@ -1,5 +1,5 @@
 // CHOPCHOP class
-#include <CHOPCHOP.hpp>
+#include "../include/CHOPCHOP.hpp"
 
 using std::string;
 using std::map;

@@ -1,4 +1,4 @@
-#include <sgrnascorer2.hpp>
+#include "../include/sgrnascorer2.hpp"
 
 using std::string;
 using std::map;

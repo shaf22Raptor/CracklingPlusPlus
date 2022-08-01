@@ -1,16 +1,16 @@
 ﻿// CracklingPlusPlus.cpp : Defines the entry point for the application.
 
-#include <Helpers.hpp>
-#include <Constants.hpp>
-#include <Logger.hpp>
-#include <ConfigManager.hpp>
-#include <cas9InputProcessor.hpp>
-#include <CHOPCHOP.hpp>
-#include <mm10db.hpp>
-#include <sgrnascorer2.hpp>
-#include <bowtie2.hpp>
-#include <offTargetScoring.hpp>
-#include <ISSLOffTargetScoring.hpp>
+#include "../include/Helpers.hpp"
+#include "../include/Constants.hpp"
+#include "../include/Logger.hpp"
+#include "../include/ConfigManager.hpp"
+#include "../include/cas9InputProcessor.hpp"
+#include "../include/CHOPCHOP.hpp"
+#include "../include/mm10db.hpp"
+#include "../include/sgrnascorer2.hpp"
+#include "../include/bowtie2.hpp"
+#include "../include/offTargetScoring.hpp"
+#include "../include/ISSLOffTargetScoring.hpp"
 
 #pragma push_macro(close)
 #undef close
