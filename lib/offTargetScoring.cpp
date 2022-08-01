@@ -116,6 +116,10 @@ void offTargetScoring::run(map<string, map<string, string, std::less<>>, std::le
 
 		while (paginatorIterator != pageEnd)
 		{
+			if (!filterCandidateGuides(paginatorIterator->second, MODULE_SPECIFICITY, optimsationLevel, consensusN, toolCount)) {
+				paginatorIterator++;
+				continue;
+			}
 			string target23 = paginatorIterator->first;
 
 			if (string target = target23.substr(0, 20); targetsScored.find(target) != targetsScored.end())

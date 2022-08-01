@@ -10,7 +10,10 @@
 #include <sgrnascorer2.hpp>
 #include <bowtie2.hpp>
 #include <offTargetScoring.hpp>
+#include <ISSLOffTargetScoring.hpp>
 
+#pragma push_macro(close)
+#undef close
 
 int main(int argc, char** argv)
 {
@@ -42,6 +45,7 @@ int main(int argc, char** argv)
 		sgrnascorer2 sgRNAScorer2Module(cm);
 		bowtie2 bowtie2Module(cm);
 		offTargetScoring otsModule(cm);
+		ISSLOffTargetScoring OTSModule(cm);
 
 		// Add header line to output file
 		std::ofstream outFile(cm.getString("output", "file"), std::ios_base::binary | std::ios_base::out);
@@ -118,6 +122,7 @@ int main(int argc, char** argv)
 			bowtie2Module.run(candidateGuides);
 
 			otsModule.run(candidateGuides);
+			OTSModule.run(candidateGuides);
 
 			printer("Writing results to file.");
 
@@ -184,3 +189,5 @@ int main(int argc, char** argv)
 		return -1;
 	}
 }
+
+#pragma pop_macro(close)

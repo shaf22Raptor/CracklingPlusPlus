@@ -38,3 +38,10 @@ add_library(bowtie2 STATIC ${CMAKE_SOURCE_DIR}/lib/bowtie2.cpp ${CMAKE_SOURCE_DI
 
 # Add offTargetScoring
 add_library(offTargetScoring STATIC ${CMAKE_SOURCE_DIR}/lib/offTargetScoring.cpp ${CMAKE_SOURCE_DIR}/include/offTargetScoring.hpp)
+
+# Add offTargetScoring
+add_library(ISSLOffTargetScoring STATIC ${CMAKE_SOURCE_DIR}/lib/ISSLOffTargetScoring.cpp ${CMAKE_SOURCE_DIR}/include/ISSLOffTargetScoring.hpp)
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(ISSLOffTargetScoring OpenMP::OpenMP_CXX)
+endif()
