@@ -1,5 +1,5 @@
-#include <mm10db.hpp>
-#include <doctest.h>
+#include "../include/mm10db.hpp"
+#include "../include/doctest.h"
 #include <fstream>
 #include <vector>
 

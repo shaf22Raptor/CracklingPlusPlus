@@ -1,5 +1,5 @@
-#include <Constants.hpp>
-#include <doctest.h>
+#include "../include/Constants.hpp"
+#include "../include/doctest.h"
 
 TEST_CASE("Constants" * doctest::description("Ensure that the Constant values have not changed") * doctest::timeout(5))
 {

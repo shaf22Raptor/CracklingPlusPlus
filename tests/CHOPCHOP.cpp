@@ -1,5 +1,5 @@
-#include <CHOPCHOP.hpp>
-#include <doctest.h>
+#include "../include/CHOPCHOP.hpp"
+#include "../include/doctest.h"
 
 TEST_CASE("G20" * doctest::description("Ensure that the G20 function is working correctly") * doctest::timeout(5))
 {

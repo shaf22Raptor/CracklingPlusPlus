@@ -1,5 +1,5 @@
-#include <Helpers.hpp>
-#include <doctest.h>
+#include "../include/Helpers.hpp"
+#include "../include/doctest.h"
 
 TEST_CASE("rc" * doctest::description("Ensure that the Reverse Compliment function is working correctly") * doctest::timeout(5))
 {

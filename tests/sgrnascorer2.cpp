@@ -1,5 +1,5 @@
-#include <sgrnascorer2.hpp>
-#include <doctest.h>
+#include "../include/sgrnascorer2.hpp"
+#include "../include/doctest.h"
 
 //TEST_CASE("sgRNAScorer2" * doctest::description("Ensure that the sgRNAScorer2 Module is working correctly") * doctest::timeout(5))
 //{
