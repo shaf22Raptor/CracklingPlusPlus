@@ -19,7 +19,7 @@ class logBuffer : public std::streambuf
 public:
     logBuffer();
 
-    logBuffer(const std::ostream& stdOut ,const std::ostream& destFile);
+    logBuffer(const std::ostream& stdOut, const std::ostream& destFile);
 
     int sync() final;
 

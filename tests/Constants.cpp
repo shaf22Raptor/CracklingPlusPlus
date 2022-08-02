@@ -100,7 +100,7 @@ TEST_CASE("Constants" * doctest::description("Ensure that the Constant values ha
             "mitOfftargetscore",
             "cfdOfftargetscore",
             "passedAvoidLeadingT",
-        });
+            });
         CHECK(DEFAULT_GUIDE_PROPERTIES_ORDER == result);
     }
 

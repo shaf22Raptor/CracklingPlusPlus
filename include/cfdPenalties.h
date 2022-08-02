@@ -3,7 +3,7 @@ const double cfdPosPenalties[320] = {
 	// mask |= guide[pos] << 2
 	// mask |= revcom(offtarget[pos])
 	// 0: A, 1: C, 2: G, 3: T
-	
+
 	1.0000000000, // (  0) 0:A-A 0b000000000
 	1.0000000000, // (  1) 0:C-C 0b000000001
 	0.8571428570, // (  2) 0:G-G 0b000000010

@@ -4,7 +4,7 @@ using std::string;
 using std::list;
 using std::logic_error;
 
-void inputProcessor::process(list<string> const & filesToProcess, int const & batchSize)
+void inputProcessor::process(const list<string>& filesToProcess, const int& batchSize)
 {
 	throw NotImplemented();
 }
@@ -12,4 +12,4 @@ void inputProcessor::process(list<string> const & filesToProcess, int const & ba
 void inputProcessor::cleanUp()
 {
 	throw NotImplemented();
-}	
+}

@@ -6,11 +6,11 @@ using std::string_view;
 using std::list;
 using std::filesystem::path;
 
-ConfigManager::ConfigManager(const string& configFilePath) 
+ConfigManager::ConfigManager(const string& configFilePath)
 {
 	/*
 		Check config file exists
-	*/ 
+	*/
 	// Create path object
 	path configPathObject = configFilePath;
 	// Normalise path delimiters to the systems preferred delimiters
@@ -57,7 +57,7 @@ ConfigManager::ConfigManager(const string& configFilePath)
 			key = trim(currentLine.substr(0, currentLine.find("=")));
 			std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) { return std::tolower(c); });
 			// After '='
-			value = trim(currentLine.substr(currentLine.find("=")+1, currentLine.length()-1));
+			value = trim(currentLine.substr(currentLine.find("=") + 1, currentLine.length() - 1));
 			// Update configMap
 			set(section, key, value);
 		}
@@ -121,14 +121,14 @@ ConfigManager::ConfigManager(const string& configFilePath)
 	path outputDirPathObject = getPath("output", "dir");
 	// Append output file name to output dir
 	set("output", "file", (outputDirPathObject / fmt::format("{}-{}", getString("general", "name"), getString("output", "filename"))).string());
-	if (std::filesystem::exists(getPath("output","file")))
+	if (std::filesystem::exists(getPath("output", "file")))
 	{
 		throw InvalidConfiguration(fmt::format("The output file already exists: {}.\nTo avoid loosing data, please rename your output file.", getString("output", "file")));
 	}
 
 	// Check all the fields have values
 	if (
-		(getString("general", "name") == "") || 
+		(getString("general", "name") == "") ||
 		(getString("general", "optimisation") == "") ||
 		(getString("consensus", "n") == "") ||
 		(getString("consensus", "mm10db") == "") ||
@@ -159,7 +159,7 @@ ConfigManager::ConfigManager(const string& configFilePath)
 		(getString("rnafold", "page-length") == "") ||
 		(getString("rnafold", "low_energy_threshold") == "") ||
 		(getString("rnafold", "high_energy_threshold") == "")
-	)
+		)
 	{
 		throw InvalidConfiguration("Configuration file is missing some fields!");
 	}
@@ -189,7 +189,7 @@ ConfigManager::ConfigManager(const string& configFilePath)
 	/*
 		Generate temp output file names
 	*/
-	set("rnafold","input", (outputDirPathObject / fmt::format("{}-rnafold-input.txt", getString("general", "name"))).string());
+	set("rnafold", "input", (outputDirPathObject / fmt::format("{}-rnafold-input.txt", getString("general", "name"))).string());
 	set("rnafold", "output", (outputDirPathObject / fmt::format("{}-rnafold-output.txt", getString("general", "name"))).string());
 
 	set("bowtie2", "input", (outputDirPathObject / fmt::format("{}-bowtie2-input.txt", getString("general", "name"))).string());
@@ -204,7 +204,7 @@ int ConfigManager::getConsensusToolCount()
 	int mm10db = getBool("consensus", "mm10db");
 	int sgrnascorer2 = getBool("consensus", "sgrnascorer2");
 	int chopchop = getBool("consensus", "chopchop");
-	return mm10db+sgrnascorer2+chopchop;
+	return mm10db + sgrnascorer2 + chopchop;
 }
 
 void ConfigManager::set(const string& section, const string& key, string_view value)
@@ -232,7 +232,7 @@ string ConfigManager::getString(const string& section, const string& key)
 	return this->configMap[section][key];
 }
 
-const char* ConfigManager::getCString(const string& section, const string& key) 
+const char* ConfigManager::getCString(const string& section, const string& key)
 {
 	return this->configMap[section][key].c_str();
 }
@@ -243,8 +243,8 @@ bool ConfigManager::getBool(const string& section, const string& key)
 	std::transform(boolValue.begin(), boolValue.end(), boolValue.begin(), [](unsigned char c) { return std::tolower(c); });
 	if (boolValue == "true") { return true; }
 	else if (boolValue == "false") { return false; }
-	else 
-	{ 
+	else
+	{
 		throw std::invalid_argument("The value selected is not of the type bool!");
 	}
 }

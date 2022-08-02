@@ -18,7 +18,7 @@ using std::runtime_error;
 const regex patternForward("(?=([ATCG]{21}GG))", std::regex::optimize);
 const regex patternReverse("(?=(CC[ACGT]{21}))", std::regex::optimize);
 
-void cas9InputProcessor::process(list<string> const & filesToProcess, int const & batchSize)
+void cas9InputProcessor::process(const list<string>& filesToProcess, const int& batchSize)
 {
 	printer("Analysing files...");
 
@@ -59,7 +59,7 @@ void cas9InputProcessor::process(list<string> const & filesToProcess, int const 
 	if (!std::filesystem::create_directory(systemTempDir / "Crackling")) { throw FileSystemError(); }
 	path tempWorkingDir(systemTempDir / "Crackling");
 
-	
+
 	printer(fmt::format("Storing batch files in: {}", tempWorkingDir.string()));
 
 
@@ -85,7 +85,7 @@ void cas9InputProcessor::process(list<string> const & filesToProcess, int const 
 		{
 			seqHeader = trim(inputLine).substr(1);
 			seq = {};
-			while (std::getline(inFile, inputLine)) 
+			while (std::getline(inFile, inputLine))
 			{
 				inputLine = trim(inputLine);
 				if (inputLine[0] == '>')
@@ -186,7 +186,7 @@ void cas9InputProcessor::processSeqeunce(
 	const path& tempWorkingDir,
 	unordered_set<string>& candidateGuides,
 	const int& batchSize
-	)
+)
 {
 	for (auto regexItr = regex_iterator<string_view::const_iterator>(seqeunce.begin(), seqeunce.end(), patternForward);
 		regexItr != regex_iterator<string_view::const_iterator>();

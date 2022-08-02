@@ -24,7 +24,7 @@ class ConfigManager
 {
 public:
 	explicit ConfigManager(const std::string& configFilePath);
-	
+
 	int getConsensusToolCount();
 
 	void set(const std::string& section, const std::string& key, std::string_view value);

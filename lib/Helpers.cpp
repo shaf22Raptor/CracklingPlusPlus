@@ -106,7 +106,7 @@ bool filterCandidateGuides(unordered_map<string, string> candidateGuideResultMap
 	if (
 		(optimisation == "low" || optimisation == "medium" || optimisation == "high") &&
 		(candidateGuideResultMap["isUnique"] == CODE_REJECTED)
-	)
+		)
 	{
 		// Reject all guides that have been seen more than once
 		return false;
@@ -114,7 +114,7 @@ bool filterCandidateGuides(unordered_map<string, string> candidateGuideResultMap
 
 	// mm10db filtering
 	if (
-		(selectedModule == MODULE_MM10DB) && 
+		(selectedModule == MODULE_MM10DB) &&
 		(optimisation == "medium" || optimisation == "high") &&
 		(
 			candidateGuideResultMap["passedAvoidLeadingT"] == CODE_REJECTED ||
@@ -122,18 +122,18 @@ bool filterCandidateGuides(unordered_map<string, string> candidateGuideResultMap
 			candidateGuideResultMap["passedTTTT"] == CODE_REJECTED ||
 			candidateGuideResultMap["passedSecondaryStructure"] == CODE_REJECTED ||
 			candidateGuideResultMap["acceptedByMm10db"] == CODE_REJECTED
+			)
 		)
-	)
 	{
 		// Reject if any mm10db test has failed
-			return false;
+		return false;
 	}
 
 	// For all consensus scoring tools
 	if (
-		(selectedModule == MODULE_CHOPCHOP || selectedModule == MODULE_MM10DB || selectedModule == MODULE_SGRNASCORER2) && 
+		(selectedModule == MODULE_CHOPCHOP || selectedModule == MODULE_MM10DB || selectedModule == MODULE_SGRNASCORER2) &&
 		(optimisation == "high")
-	)
+		)
 	{
 		int countAlreadyAccepted =
 			(int)(candidateGuideResultMap["acceptedByMm10db"] == CODE_ACCEPTED) +

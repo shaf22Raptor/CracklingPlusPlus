@@ -4,10 +4,10 @@
 #include <string>
 #include <stdexcept>
 
-class inputProcessor 
+class inputProcessor
 {
 public:
-	virtual void process(std::list<std::string> const & filesToProcess, int const & batchSize);
+	virtual void process(const std::list<std::string>& filesToProcess, const int& batchSize);
 
 	virtual void cleanUp();
 

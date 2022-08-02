@@ -116,7 +116,7 @@ int main(int argc, char** argv)
 				if (std::stoi(candidateGuides[target23]["consensusCount"]) < cm.getInt("consensus", "n")) { failedCount++; }
 				testedCount++;
 			}
-			
+
 			printer(fmt::format("\t{} of {} failed here.", commaify(failedCount), commaify(testedCount)));
 
 			bowtie2Module.run(candidateGuides);
@@ -162,7 +162,7 @@ int main(int argc, char** argv)
 			printer(fmt::format("This batch ran in {:02} {:02}:{:02}:{:02} (dd hh:mm:ss) or {} seconds", days, hours, minutes, seconds, (int)totalSeconds.count()));
 
 		}
-		
+
 		auto totalSeconds = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start);
 
 		int days = (int)totalSeconds.count() / 86400;
@@ -176,7 +176,7 @@ int main(int argc, char** argv)
 		// Clean up
 		coutLogger.close();
 		cerrLogger.close();
-		
+
 		ip.cleanUp();
 
 		return 0;

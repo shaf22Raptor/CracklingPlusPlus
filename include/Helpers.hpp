@@ -44,7 +44,7 @@ void runner(const char* args);
 class ReturnCode : public std::logic_error
 {
 public:
-	ReturnCode() : std::logic_error("The externally called program returned a non-zero value") { };
+    ReturnCode() : std::logic_error("The externally called program returned a non-zero value") { };
 };
 
 std::string commaify(int);

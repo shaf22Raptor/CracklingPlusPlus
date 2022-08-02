@@ -57,7 +57,7 @@ void sgrnascorer2::run(unordered_map<string, unordered_map<string, string>>& can
 		{
 			for (int j = 0; j < 4; j++)
 			{
-				encodedSeq[(i*4)+j] = (double)encoding.at(seqUpper[i])[j] - 48;
+				encodedSeq[(i * 4) + j] = (double)encoding.at(seqUpper[i])[j] - 48;
 			}
 		}
 

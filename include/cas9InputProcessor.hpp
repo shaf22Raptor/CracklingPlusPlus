@@ -13,11 +13,11 @@
 class cas9InputProcessor : public inputProcessor
 {
 public:
-	void process(std::list<std::string> const & filesToProcess, int const & batchSize) final;
+	void process(const std::list<std::string>& filesToProcess, const int& batchSize) final;
 
 	const std::list<std::string>& getBatchFiles() const;
 
-	bool isDuplicateGuide(const std::string& guide) const ;
+	bool isDuplicateGuide(const std::string& guide) const;
 
 	void cleanUp() final;
 

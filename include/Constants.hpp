@@ -45,7 +45,7 @@ const std::unordered_map < std::string, std::string> DEFAULT_GUIDE_PROPERTIES = 
     {"passedAvoidLeadingT"      , CODE_UNTESTED},
 };
 
-const std::list<std::string> DEFAULT_GUIDE_PROPERTIES_ORDER ({
+const std::list<std::string> DEFAULT_GUIDE_PROPERTIES_ORDER({
     "seq",
     "sgrnascorer2score",
     "header",
@@ -73,4 +73,4 @@ const std::list<std::string> DEFAULT_GUIDE_PROPERTIES_ORDER ({
     "cfdOfftargetscore",
     "passedAvoidLeadingT",
     //"passedReversePrimer"
-});
+    });

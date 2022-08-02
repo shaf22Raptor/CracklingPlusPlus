@@ -52,5 +52,5 @@ bool CHOPCHOP::G20(std::string_view candidateGuide)
     {
         throw G20Input();
     }
-	return candidateGuide[19] == 'G';
+    return candidateGuide[19] == 'G';
 }
