@@ -18,7 +18,7 @@ ConfigManager::ConfigManager(string configFilePath)
 	if (!std::filesystem::exists(configPathObject))
 	{
 		// File doesn't exist, Throw error
-		throw std::runtime_error("Could not find the config file specified");
+		throw InvalidConfiguration("Could not find the config file specified");
 	}
 
 
@@ -55,7 +55,6 @@ ConfigManager::ConfigManager(string configFilePath)
 			std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) { return std::tolower(c); });
 			// After '='
 			value = trim(currentLine.substr(currentLine.find("=")+1, currentLine.length()-1));
-			std::transform(value.begin(), value.end(), value.begin(), [](unsigned char c) { return std::tolower(c); });
 			// Update configMap
 			set(section, key, value);
 		}
@@ -82,49 +81,28 @@ ConfigManager::ConfigManager(string configFilePath)
 		Check that the config file is valid
 	*/
 	// Run Validate function
-	char printingBuffer[1024];	// Buffer used to format strings
-	char stdoutBuffer[1024];	// Buffer used to collet stdout
 	int returnCode;				// Return code used to check if the binary was run successfuly
 	string resultOutput;		// String that collects the stdout
 	FILE* stdoutStream;			// Stream to collect stdout from popen calls
 
 	// Check that binarys are callable
 
-	// Check ISSL
-	snprintf(printingBuffer, 1024, "%s 2>&1", getCString("offtargetscore", "binary"));
-	stdoutStream = portablePopen(printingBuffer, "r");
-	while (fgets(stdoutBuffer, 1024, stdoutStream) != NULL)
-	{
-		resultOutput.append(stdoutBuffer);
-	}
-	portablePclose(stdoutStream);
-
-	snprintf(printingBuffer, 1024, "Usage: %s [issltable] [query file] [max distance] [score-threshold] [score-method]\n", getCString("offtargetscore", "binary"));
-	if (resultOutput != printingBuffer)
-	{ 
-		throw std::runtime_error("Could not find Off-target scoring binary");
-	}
-
 	// Check bowtie2
-	snprintf(printingBuffer, 1024, "%s --version", getCString("bowtie2", "binary"));
-	stdoutBuffer[0] = '\0';
-	stdoutStream = portablePopen(printingBuffer, "r");
+	stdoutStream = portablePopen(fmt::format("{} --version", getString("bowtie2", "binary")).c_str(), "r");
 	returnCode = portablePclose(stdoutStream);
 
 	if (returnCode != 0)
 	{
-		throw std::runtime_error("Could not find Bowtie2 binary");
+		throw InvalidConfiguration("Could not find Bowtie2 binary");
 	}
 
 	// Check rnafold
-	snprintf(printingBuffer, 1024, "%s --version", getCString("rnafold", "binary"));
-	stdoutBuffer[0] = '\0';
-	stdoutStream = portablePopen(printingBuffer, "r");
+	stdoutStream = portablePopen(fmt::format("{} --version", getString("rnafold", "binary")).c_str(), "r");
 	returnCode = portablePclose(stdoutStream);
 
 	if (returnCode != 0)
 	{
-		throw std::runtime_error("Could not find RNAFold binary");
+		throw InvalidConfiguration("Could not find RNAFold binary");
 	}
 
 
@@ -133,20 +111,17 @@ ConfigManager::ConfigManager(string configFilePath)
 	int n = getInt("consensus","n");
 	if (n > toolCount)
 	{
-		throw std::runtime_error("The consensus approach is incorrectly set. You have specified %d tools to be run but the n-value is %d. Change n to be <= %d.");
+		throw InvalidConfiguration(fmt::format("The consensus approach is incorrectly set. You have specified {} tools to be run but the n-value is {}. Change n to be <= {}.", toolCount, n, toolCount));
 	}
 
 	// Check that output file doesn't already exist
-	// Generate outputfile name
-	snprintf(printingBuffer, 1024, "%s-%s", getCString("general", "name"), getCString("output", "filename"));
 	// Get output dir path object
 	path outputDirPathObject = getPath("output", "dir");
 	// Append output file name to output dir
-	set("output", "file", (outputDirPathObject / printingBuffer).string());
+	set("output", "file", (outputDirPathObject / fmt::format("{}-{}", getString("general", "name"), getString("output", "filename"))).string());
 	if (std::filesystem::exists(getPath("output","file")))
 	{
-		snprintf(printingBuffer, 1024, "The output file already exists: %s.\nTo avoid loosing data, please rename your output file.", getCString("output", "file"));
-		throw std::runtime_error(printingBuffer);
+		throw InvalidConfiguration(fmt::format("The output file already exists: {}.\nTo avoid loosing data, please rename your output file.", getString("output", "file")));
 	};
 
 	// Check all the fields have values
@@ -184,7 +159,7 @@ ConfigManager::ConfigManager(string configFilePath)
 		(getString("rnafold", "high_energy_threshold") == "")
 	)
 	{
-		throw std::runtime_error("Configuration file is missing some fields!");
+		throw InvalidConfiguration("Configuration file is missing some fields!");
 	}
 
 
@@ -214,29 +189,14 @@ ConfigManager::ConfigManager(string configFilePath)
 	/*
 		Generate temp output file names
 	*/
-	snprintf(printingBuffer, 1024, "%s-rnafold-input.txt", getCString("general", "name"));
-	set("rnafold","input", (outputDirPathObject / printingBuffer).string());
+	set("rnafold","input", (outputDirPathObject / fmt::format("{}-rnafold-input.txt", getString("general", "name"))).string());
+	set("rnafold", "output", (outputDirPathObject / fmt::format("{}-rnafold-output.txt", getString("general", "name"))).string());
 
-	snprintf(printingBuffer, 1024, "%s-rnafold-output.txt", getCString("general", "name"));
-	set("rnafold", "output", (outputDirPathObject / printingBuffer).string());
+	set("bowtie2", "input", (outputDirPathObject / fmt::format("{}-bowtie2-input.txt", getString("general", "name"))).string());
+	set("bowtie2", "output", (outputDirPathObject / fmt::format("{}-bowtie2-output.txt", getString("general", "name"))).string());
 
-	snprintf(printingBuffer, 1024, "%s-offtargetscore-input.txt", getCString("general", "name"));
-	set("offtargetscore", "input", (outputDirPathObject / printingBuffer).string());
-
-	snprintf(printingBuffer, 1024, "%s-offtargetscore-output.txt", getCString("general", "name"));
-	set("offtargetscore", "output", (outputDirPathObject / printingBuffer).string());
-
-	snprintf(printingBuffer, 1024, "%s-bowtie-input.txt", getCString("general", "name"));
-	set("bowtie2", "input", (outputDirPathObject / printingBuffer).string());
-
-	snprintf(printingBuffer, 1024, "%s-bowtie-output.txt", getCString("general", "name"));
-	set("bowtie2", "output", (outputDirPathObject / printingBuffer).string());
-
-	snprintf(printingBuffer, 1024, "%s-%s.log", getCString("general", "name"), configPathObject.stem().string().c_str());
-	set("output", "log", (outputDirPathObject / printingBuffer).string());
-
-	snprintf(printingBuffer, 1024, "%s-%s.errlog", getCString("general", "name"), configPathObject.stem().string().c_str());
-	set("output", "error", (outputDirPathObject / printingBuffer).string());
+	set("output", "log", (outputDirPathObject / fmt::format("{}-{}.txt", getString("general", "name"), configPathObject.stem().c_str())).string());
+	set("output", "error", (outputDirPathObject / fmt::format("{}-{}.txt", getString("general", "name"), configPathObject.stem().c_str())).string());
 }
 
 int ConfigManager::getConsensusToolCount()

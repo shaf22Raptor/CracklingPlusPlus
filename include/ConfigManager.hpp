@@ -49,3 +49,9 @@ private:
 	std::list<std::string> filesToProcess;
 	std::unordered_map<std::string, std::unordered_map<std::string, std::string>> configMap;
 };
+
+class InvalidConfiguration : public std::runtime_error
+{
+public:
+	InvalidConfiguration(const std::string& message) : std::runtime_error(message) { };
+};
