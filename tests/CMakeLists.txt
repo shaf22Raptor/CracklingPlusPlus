@@ -1,6 +1,4 @@
-﻿# CMakeList.txt : CMake project for CracklingPlusPlus
-cmake_minimum_required (VERSION 3.8)
-
+﻿# CMakeList.txt : CMake file to build testing suite
 # Copy testing data
 file (COPY ${CMAKE_SOURCE_DIR}/tests/data/ DESTINATION data/)
 
@@ -20,7 +18,7 @@ add_test (NAME testConstants COMMAND testConstants)
 add_executable (testHelpers Helpers.cpp $<TARGET_OBJECTS:testMain>)
 
 # Link Libraries 
-target_link_libraries (testHelpers helperLib)
+target_link_libraries (testHelpers Helpers)
 
 # Add Helpers test
 add_test (NAME testHelpers COMMAND testHelpers)

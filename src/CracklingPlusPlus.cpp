@@ -1,5 +1,4 @@
 ﻿// CracklingPlusPlus.cpp : Defines the entry point for the application.
-
 #include "../include/Helpers.hpp"
 #include "../include/Constants.hpp"
 #include "../include/Logger.hpp"
