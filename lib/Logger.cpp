@@ -26,7 +26,7 @@ int logBuffer::overflow(int c)
     if (isAtStartOfLine) {
         time_t rawtime = time(nullptr);
         struct tm timeinfo;
-        localtime_s(&timeinfo, &rawtime);
+        _localtime(timeinfo, rawtime);
         string timestampBuffer;
         timestampBuffer.reserve(32);
         strftime(&timestampBuffer[0], timestampBuffer.size(), ">>> %Y-%m-%d %H:%M:%S: ", &timeinfo);
