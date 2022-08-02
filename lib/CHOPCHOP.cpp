@@ -25,7 +25,7 @@ void CHOPCHOP::run(unordered_map<string, unordered_map<string, string>>& candida
     printer("CHOPCHOP - remove those without G in position 20.");
     failedCount = 0;
     testedCount = 0;
-    for (auto const& [target23, resultsMap] : candidateGuides)
+    for (const auto& [target23, resultsMap] : candidateGuides)
     {
         // Run time filtering
         if (!filterCandidateGuides(resultsMap, MODULE_CHOPCHOP, optimsationLevel, consensusN, toolCount)) { continue; }

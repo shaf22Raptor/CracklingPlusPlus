@@ -108,7 +108,7 @@ int main(int argc, char** argv)
 			printer("Evaluating efficiency via consensus approach.");
 			int failedCount = 0;
 			int testedCount = 0;
-			for (auto const& [target23, resultsMap] : candidateGuides)
+			for (const auto& [target23, resultsMap] : candidateGuides)
 			{
 				candidateGuides[target23]["consensusCount"] = std::to_string((int)(candidateGuides[target23]["acceptedByMm10db"] == CODE_ACCEPTED) +
 					(int)(candidateGuides[target23]["acceptedBySgRnaScorer"] == CODE_ACCEPTED) +
@@ -127,7 +127,7 @@ int main(int argc, char** argv)
 
 			std::ofstream resultsFile(cm.getString("output", "file"), std::ios_base::app | std::ios_base::binary);
 
-			for (auto const& [target23, resultsMap] : candidateGuides) {
+			for (const auto& [target23, resultsMap] : candidateGuides) {
 				std::string line;
 				for (std::string guideProperty : DEFAULT_GUIDE_PROPERTIES_ORDER)
 				{

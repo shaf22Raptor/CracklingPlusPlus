@@ -34,7 +34,7 @@ void mm10db::run(unordered_map<string, unordered_map<string, string>>& candidate
 	printer("mm10db - remove all targets with a leading T(+) or trailing A(-).");
 	int failedCount = 0;
 	int testedCount = 0;
-	for (auto const& [target23, resultsMap] : candidateGuides)
+	for (const auto& [target23, resultsMap] : candidateGuides)
 	{
 		// Run time filtering
 		if (!filterCandidateGuides(resultsMap, MODULE_MM10DB, optimsationLevel, consensusN, toolCount)) { continue; }
@@ -56,7 +56,7 @@ void mm10db::run(unordered_map<string, unordered_map<string, string>>& candidate
 	printer("mm10db - remove based on AT percent.");
 	failedCount = 0;
 	testedCount = 0;
-	for (auto const& [target23, resultsMap] : candidateGuides)
+	for (const auto& [target23, resultsMap] : candidateGuides)
 	{
 		// Run time filtering
 		if (!filterCandidateGuides(resultsMap, MODULE_MM10DB, optimsationLevel, consensusN, toolCount)) { continue; }
@@ -81,7 +81,7 @@ void mm10db::run(unordered_map<string, unordered_map<string, string>>& candidate
 	printer("mm10db - remove all targets that contain TTTT.");
 	failedCount = 0;
 	testedCount = 0;
-	for (auto const& [target23, resultsMap] : candidateGuides)
+	for (const auto& [target23, resultsMap] : candidateGuides)
 	{
 		// Run time filtering
 		if (!filterCandidateGuides(resultsMap, MODULE_MM10DB, optimsationLevel, consensusN, toolCount)) { continue; }
@@ -281,7 +281,7 @@ void mm10db::run(unordered_map<string, unordered_map<string, string>>& candidate
 	printer("Calculating mm10db final result.");
 	int acceptedCount = 0;
 	failedCount = 0;
-	for (auto const& [target23, resultsMap] : candidateGuides)
+	for (const auto& [target23, resultsMap] : candidateGuides)
 	{
 		if ((candidateGuides[target23]["passedAvoidLeadingT"] == CODE_ACCEPTED) &&
 			(candidateGuides[target23]["passedATPercent"] == CODE_ACCEPTED) &&

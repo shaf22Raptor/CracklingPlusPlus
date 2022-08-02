@@ -34,7 +34,7 @@ private:
 		std::string_view seqeunce,
 		std::string_view seqHeader,
 		std::ofstream& outFile,
-		std::filesystem::path const& tempWorkingDir,
+		const std::filesystem::path& tempWorkingDir,
 		std::unordered_set<std::string>& candidateGuides,
 		const int& batchSize
 	);

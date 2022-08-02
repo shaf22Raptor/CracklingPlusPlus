@@ -43,7 +43,7 @@ void sgrnascorer2::run(unordered_map<string, unordered_map<string, string>>& can
 	printer("sgRNAScorer2 - score using model.");
 	int failedCount = 0;
 	int testedCount = 0;
-	for (auto const& [target23, resultsMap] : candidateGuides)
+	for (const auto& [target23, resultsMap] : candidateGuides)
 	{
 
 		// Run time filtering
