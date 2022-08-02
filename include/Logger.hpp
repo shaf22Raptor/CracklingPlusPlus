@@ -10,24 +10,24 @@ class logBuffer : public std::streambuf
 public:
     logBuffer();
 
-    logBuffer(std::ostream& stdOut ,std::ostream& destFile);
+    logBuffer(const std::ostream& stdOut ,const std::ostream& destFile);
 
-    virtual int sync();
+    int sync() final;
 
     virtual int underflow(int c);
 
-    virtual int overflow(int c);
+    int overflow(int c) final;
 
 private:
-    bool isAtStartOfLine;
-    std::streambuf* fileBuf;
-    std::streambuf* stdBuf;
+    bool isAtStartOfLine = true;
+    std::streambuf* fileBuf = nullptr;
+    std::streambuf* stdBuf = nullptr;
 };
 
 class Logger : public std::streambuf
 {
 public:
-    Logger(std::ostream& logSource, std::string outFile);
+    Logger(std::ostream& logSource, const std::string& outFile);
 
     void close();
 

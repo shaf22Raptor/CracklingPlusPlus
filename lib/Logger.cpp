@@ -5,18 +5,9 @@ using std::string;
 using std::ostream;
 using std::ofstream;
 
-logBuffer::logBuffer() : isAtStartOfLine(true), fileBuf(NULL), stdBuf(NULL) {};
+logBuffer::logBuffer() = default;
 
-logBuffer::logBuffer(ostream& stdOut, ostream& destFile) :
-    isAtStartOfLine(true),
-    fileBuf(NULL),
-    stdBuf(NULL)
-{
-    // Record output stream buffers
-    isAtStartOfLine = true;
-    fileBuf = destFile.rdbuf();
-    stdBuf = stdOut.rdbuf();
-}
+logBuffer::logBuffer(const ostream& stdOut, const ostream& destFile) : fileBuf(destFile.rdbuf()), stdBuf(stdOut.rdbuf()) {}
 
 int logBuffer::sync() {
     // Call sync for both output streams and buffers
@@ -33,27 +24,25 @@ int logBuffer::overflow(int c)
 {
     // Insert Timestamp
     if (isAtStartOfLine) {
-        time_t rawtime = time(0);
-        struct tm* timeinfo = localtime(&rawtime);
-        char timestampBuffer[32];
-        strftime(timestampBuffer, 32, ">>> %Y-%m-%d %H:%M:%S: ", timeinfo);
-        stdBuf->sputn(timestampBuffer, strlen(timestampBuffer));
-        fileBuf->sputn(timestampBuffer, strlen(timestampBuffer));
+        time_t rawtime = time(nullptr);
+        struct tm timeinfo;
+        localtime_s(&timeinfo, &rawtime);
+        string timestampBuffer;
+        timestampBuffer.reserve(32);
+        strftime(&timestampBuffer[0], timestampBuffer.size(), ">>> %Y-%m-%d %H:%M:%S: ", &timeinfo);
+        stdBuf->sputn(&timestampBuffer[0], timestampBuffer.size());
+        fileBuf->sputn(&timestampBuffer[0], timestampBuffer.size());
     }
     // Check for new line
     isAtStartOfLine = c == '\n';
     // Add extra newline
-    if (isAtStartOfLine) { stdBuf->sputc(c) & fileBuf->sputc(c); }
+    if (isAtStartOfLine) { stdBuf->sputc((char)c); fileBuf->sputc((char)c); }
     // Pass 'c' to output buffers
-    return stdBuf->sputc(c) & fileBuf->sputc(c);
+    return stdBuf->sputc((char)c) & fileBuf->sputc((char)c);
 }
 
-Logger::Logger(ostream& logSource, string outFile)
+Logger::Logger(ostream& logSource, const string& outFile) : origOutputStream(&logSource), origSrcBuffer(logSource.rdbuf())
 {
-    // Store Original ref
-    origOutputStream = &logSource;
-    origSrcBuffer = logSource.rdbuf();
-
     // Open file stream
     outputFileStream = ofstream(outFile, std::ios::binary);
 
