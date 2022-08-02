@@ -23,27 +23,27 @@
 class ConfigManager
 {
 public:
-	ConfigManager(std::string configFilePath);
+	explicit ConfigManager(const std::string& configFilePath);
 	
 	int getConsensusToolCount();
 
-	void set(std::string section, std::string key, std::string value);
+	void set(const std::string& section, const std::string& key, std::string_view value);
 
-	int getInt(std::string section, std::string key);
+	int getInt(const std::string& section, const std::string& key);
 
-	float getFloat(std::string section, std::string key);
+	float getFloat(const std::string& section, const std::string& key);
 
-	double getDouble(std::string section, std::string key);
+	double getDouble(const std::string& section, const std::string& key);
 
-	std::string getString(std::string section, std::string key);
+	std::string getString(const std::string& section, const std::string& key);
 
-	const char* getCString(std::string section, std::string key);
+	const char* getCString(const std::string& section, const std::string& key);
 
-	bool getBool(std::string section, std::string key);
+	bool getBool(const std::string& section, const std::string& key);
 
-	std::filesystem::path getPath(std::string section, std::string key);
+	std::filesystem::path getPath(const std::string& section, const std::string& key);
 
-	std::list<std::string> getFilesToProcess();
+	std::list<std::string> getFilesToProcess() const;
 
 private:
 	std::list<std::string> filesToProcess;
@@ -52,6 +52,5 @@ private:
 
 class InvalidConfiguration : public std::runtime_error
 {
-public:
-	InvalidConfiguration(const std::string& message) : std::runtime_error(message) { };
+	using std::runtime_error::runtime_error;
 };

@@ -2,10 +2,11 @@
 #include "../include/ConfigManager.hpp"
 
 using std::string;
+using std::string_view;
 using std::list;
 using std::filesystem::path;
 
-ConfigManager::ConfigManager(string configFilePath) 
+ConfigManager::ConfigManager(const string& configFilePath) 
 {
 	/*
 		Check config file exists
@@ -26,7 +27,9 @@ ConfigManager::ConfigManager(string configFilePath)
 		Read config file into map<string, map<string,string>> format
 	*/
 	// Assign strings to represent appropriate values
-	string section, key, value;
+	string section;
+	string key;
+	string value;
 	// Regex matching variables
 	std::smatch match;
 	std::regex expression("\\[.*\\]");
@@ -108,8 +111,7 @@ ConfigManager::ConfigManager(string configFilePath)
 
 	// Check that the 'n' value for the consensus is valid
 	int toolCount = getConsensusToolCount();
-	int n = getInt("consensus","n");
-	if (n > toolCount)
+	if (int n = getInt("consensus", "n"); n > toolCount)
 	{
 		throw InvalidConfiguration(fmt::format("The consensus approach is incorrectly set. You have specified {} tools to be run but the n-value is {}. Change n to be <= {}.", toolCount, n, toolCount));
 	}
@@ -122,7 +124,7 @@ ConfigManager::ConfigManager(string configFilePath)
 	if (std::filesystem::exists(getPath("output","file")))
 	{
 		throw InvalidConfiguration(fmt::format("The output file already exists: {}.\nTo avoid loosing data, please rename your output file.", getString("output", "file")));
-	};
+	}
 
 	// Check all the fields have values
 	if (
@@ -166,10 +168,8 @@ ConfigManager::ConfigManager(string configFilePath)
 	/*
 		Generate files to process
 	*/
-	// Create path object for input
-	path inputPathObject = getPath("input","exon-sequences");
 	// Check for directory or file
-	if (std::filesystem::is_directory(inputPathObject))
+	if (path inputPathObject = getPath("input", "exon-sequences"); std::filesystem::is_directory(inputPathObject))
 	{
 		// Iterate through directory to find all files to process
 		for (const std::filesystem::directory_entry& dir_entry :
@@ -201,43 +201,43 @@ ConfigManager::ConfigManager(string configFilePath)
 
 int ConfigManager::getConsensusToolCount()
 {
-	bool mm10db = getBool("consensus", "mm10db");
-	bool sgrnascorer2 = getBool("consensus", "sgrnascorer2");
-	bool chopchop = getBool("consensus", "chopchop");
+	int mm10db = getBool("consensus", "mm10db");
+	int sgrnascorer2 = getBool("consensus", "sgrnascorer2");
+	int chopchop = getBool("consensus", "chopchop");
 	return mm10db+sgrnascorer2+chopchop;
 }
 
-void ConfigManager::set(string section, string key, string value)
+void ConfigManager::set(const string& section, const string& key, string_view value)
 {
 	configMap[section][key] = value;
 }
 
-int ConfigManager::getInt(string section, string key)
+int ConfigManager::getInt(const string& section, const string& key)
 {
 	return std::stoi(this->configMap[section][key]);
 }
 
-float ConfigManager::getFloat(string section, string key)
+float ConfigManager::getFloat(const string& section, const string& key)
 {
 	return std::stof(this->configMap[section][key]);
 }
 
-double ConfigManager::getDouble(string section, string key)
+double ConfigManager::getDouble(const string& section, const string& key)
 {
 	return std::stod(this->configMap[section][key]);
 }
 
-string ConfigManager::getString(string section, string key)
+string ConfigManager::getString(const string& section, const string& key)
 {
 	return this->configMap[section][key];
 }
 
-const char* ConfigManager::getCString(string section, string key) 
+const char* ConfigManager::getCString(const string& section, const string& key) 
 {
 	return this->configMap[section][key].c_str();
 }
 
-bool ConfigManager::getBool(string section, string key)
+bool ConfigManager::getBool(const string& section, const string& key)
 {
 	string boolValue = this->configMap[section][key];
 	std::transform(boolValue.begin(), boolValue.end(), boolValue.begin(), [](unsigned char c) { return std::tolower(c); });
@@ -249,12 +249,12 @@ bool ConfigManager::getBool(string section, string key)
 	}
 }
 
-path ConfigManager::getPath(string section, string key)
+path ConfigManager::getPath(const string& section, const string& key)
 {
 	return path(this->configMap[section][key]);
 }
 
-list<string> ConfigManager::getFilesToProcess() 
+list<string> ConfigManager::getFilesToProcess() const
 {
 	return this->filesToProcess;
 }
