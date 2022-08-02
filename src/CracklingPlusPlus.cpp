@@ -9,7 +9,6 @@
 #include "../include/mm10db.hpp"
 #include "../include/sgrnascorer2.hpp"
 #include "../include/bowtie2.hpp"
-#include "../include/offTargetScoring.hpp"
 #include "../include/ISSLOffTargetScoring.hpp"
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
@@ -46,7 +45,6 @@ int main(int argc, char** argv)
 		mm10db mm10dbModule(cm);
 		sgrnascorer2 sgRNAScorer2Module(cm);
 		bowtie2 bowtie2Module(cm);
-		offTargetScoring otsModule(cm);
 		ISSLOffTargetScoring OTSModule(cm);
 
 		// Add header line to output file
@@ -67,7 +65,7 @@ int main(int argc, char** argv)
 			// Record batch start time
 			auto batchStart = std::chrono::high_resolution_clock::now();
 
-			std::map <std::string, std::map<std::string, std::string, std::less<>>, std::less<>> candidateGuides;
+			std::unordered_map <std::string, std::unordered_map<std::string, std::string>> candidateGuides;
 			std::ifstream inFile;
 			inFile.open(fileName, std::ios::binary | std::ios_base::in);
 
@@ -123,7 +121,6 @@ int main(int argc, char** argv)
 
 			bowtie2Module.run(candidateGuides);
 
-			otsModule.run(candidateGuides);
 			OTSModule.run(candidateGuides);
 
 			printer("Writing results to file.");

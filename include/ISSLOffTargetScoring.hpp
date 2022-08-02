@@ -14,7 +14,6 @@
 #include <vector>
 #include <unordered_set>
 #include <unordered_map>
-#include <map>
 #include <chrono>
 #include <bitset>
 #include <iostream>
@@ -47,7 +46,7 @@ class ISSLOffTargetScoring
 public:
 	explicit ISSLOffTargetScoring(ConfigManager& cm);
 
-	void run(std::map<std::string, std::map<std::string, std::string, std::less<>>, std::less<>>& candidateGuides);
+	void run(std::unordered_map<std::string, std::unordered_map<std::string, std::string>>& candidateGuides);
 
 private:
 	bool toolIsSelected;

@@ -203,7 +203,7 @@ TEST_CASE("transToDNA" * doctest::description("Ensure that the transToDNA functi
 //    cm.set("general", "optimisation", "ultralow");
 //    mm10db testModule(cm);
 //    
-//    std::map<std::string, std::map<std::string, std::string>> result = {
+//    std::unordered_map<std::string, std::unordered_map<std::string, std::string>> result = {
 //        {"ACTCCTCATGCTGGACATTCTGG", {
 //            {"passedAvoidLeadingT" , CODE_UNTESTED},
 //            {"passedATPercent" , CODE_UNTESTED},
@@ -239,7 +239,7 @@ TEST_CASE("transToDNA" * doctest::description("Ensure that the transToDNA functi
 //        }}
 //    };
 //
-//    std::map<std::string, std::map<std::string, std::string>> expected = {
+//    std::unordered_map<std::string, std::unordered_map<std::string, std::string>> expected = {
 //        {"ACTCCTCATGCTGGACATTCTGG", {
 //            {"passedAvoidLeadingT" , CODE_ACCEPTED},
 //            {"passedATPercent" , CODE_ACCEPTED},

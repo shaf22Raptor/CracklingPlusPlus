@@ -1,10 +1,10 @@
 #include "../include/sgrnascorer2.hpp"
 
 using std::string;
-using std::map;
+using std::unordered_map;
 using std::array;
 
-const map <char, string> encoding = {
+const unordered_map <char, string> encoding = {
 	{'A' , "0001"},
 	{'C' , "0010"},
 	{'T' , "0100"},
@@ -31,7 +31,7 @@ sgrnascorer2::sgrnascorer2(ConfigManager& cm) :
 	sgRNAScorer2Model(svm_load_model(cm.getCString("sgrnascorer2", "model")))
 {}
 
-void sgrnascorer2::run(map<string, map<string, string, std::less<>>, std::less<>>& candidateGuides) const
+void sgrnascorer2::run(unordered_map<string, unordered_map<string, string>>& candidateGuides) const
 {
 
 	if (!toolIsSelected)

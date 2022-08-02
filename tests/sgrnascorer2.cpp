@@ -7,7 +7,7 @@
 //    cm.set("general", "optimisation", "ultralow");
 //    sgrnascorer2 testModule(cm);
 //
-//    std::map<std::string, std::map<std::string, std::string>> result = {
+//    std::unordered_map<std::string, std::unordered_map<std::string, std::string>> result = {
 //        {"ACTCCTCATGCTGGACATTCTGG", {
 //            {"acceptedBySgRnaScorer"    , CODE_UNTESTED},
 //            {"sgrnascorer2score"        , CODE_UNTESTED}
@@ -22,7 +22,7 @@
 //        }}
 //    };
 //
-//    std::map<std::string, std::map<std::string, std::string>> expected = {
+//    std::unordered_map<std::string, std::unordered_map<std::string, std::string>> expected = {
 //        {"ACTCCTCATGCTGGACATTCTGG", {
 //            {"acceptedBySgRnaScorer"    , CODE_REJECTED},
 //            {"sgrnascorer2score"        , "-1.8394958342445178"}

@@ -1,11 +1,10 @@
 #include "../include/ISSLOffTargetScoring.hpp"
 
 using std::string;
-using std::map;
 using std::vector;
 using std::pair;
-using std::unordered_map;
 using std::unordered_set;
+using std::unordered_map;
 
 /** Char to binary encoding */
 const vector<uint8_t> nucleotideIndex{ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
@@ -27,7 +26,7 @@ ISSLOffTargetScoring::ISSLOffTargetScoring(ConfigManager& cm) :
     offTargetScorePageLength(cm.getInt("offtargetscore", "page-length"))
 {}
 
-void ISSLOffTargetScoring::run(map<string, map<string, string, std::less<>>, std::less<>>& candidateGuides)
+void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, string>>& candidateGuides)
 {
     if (!toolIsSelected)
     {
@@ -501,7 +500,7 @@ void ISSLOffTargetScoring::run(map<string, map<string, string, std::less<>>, std
 
         for (size_t searchIdx = 0; searchIdx < querySignatures.size(); searchIdx++) {
             string target20 = signatureToSequence(querySignatures[searchIdx], seqLength);
-            char* pamPtr = &queryDataSet[searchIdx * 3];
+            char* pamPtr = &pamDataSet[searchIdx * 3];
             string pam(pamPtr, pamPtr + 3);
             string target23 = target20 + pam;
             candidateGuides[target23]["mitOfftargetscore"] = calcMit ? std::to_string(querySignatureMitScores[searchIdx]) : "\t-1";

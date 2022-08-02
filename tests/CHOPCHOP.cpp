@@ -59,13 +59,13 @@ TEST_CASE("G20" * doctest::description("Ensure that the G20 function is working 
 //    cm.set("general", "optimisation", "ultralow");
 //    CHOPCHOP testModule(cm);
 //    
-//    std::map<std::string, std::map<std::string, std::string>> result = {
+//    std::unordered_map<std::string, std::unordered_map<std::string, std::string>> result = {
 //        {"ACTCCTCATGCTGGACATTCTGG", {{"passedG20" , CODE_UNTESTED}} },
 //        {"ATTCTGGTTCCTAGTATATCTGG", {{"passedG20" , CODE_UNTESTED}} },
 //        {"GTATATCTGGAGAGTTAAGATGG", {{"passedG20" , CODE_UNTESTED}} }
 //    };
 //
-//    std::map<std::string, std::map<std::string, std::string>> expected = {
+//    std::unordered_map<std::string, std::unordered_map<std::string, std::string>> expected = {
 //    {"ACTCCTCATGCTGGACATTCTGG", {{"passedG20" , CODE_REJECTED}} },
 //    {"ATTCTGGTTCCTAGTATATCTGG", {{"passedG20" , CODE_REJECTED}} },
 //    {"GTATATCTGGAGAGTTAAGATGG", {{"passedG20" , CODE_REJECTED}} }

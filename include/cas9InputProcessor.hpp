@@ -17,14 +17,14 @@ public:
 
 	const std::list<std::string>& getBatchFiles() const;
 
-	bool isDuplicateGuide(std::string_view guide) const ;
+	bool isDuplicateGuide(const std::string& guide) const ;
 
 	void cleanUp() final;
 
 	~cas9InputProcessor() final = default;
 
 private:
-	std::set<std::string, std::less<>> duplicateGuides;
+	std::set<std::string> duplicateGuides;
 	std::list<std::string> batchFiles;
 	int numDuplicateGuides;
 	int numIdentifiedGuides;
@@ -35,7 +35,7 @@ private:
 		std::string_view seqHeader,
 		std::ofstream& outFile,
 		std::filesystem::path const& tempWorkingDir,
-		std::set<std::string, std::less<>>& candidateGuides,
+		std::set<std::string>& candidateGuides,
 		const int& batchSize
 	);
 };

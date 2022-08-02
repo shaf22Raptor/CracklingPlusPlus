@@ -48,8 +48,8 @@ void cas9InputProcessor::process(list<string> const & filesToProcess, int const 
 	std::vector<string> seq;
 
 	// Duplicate tracking
-	set<string, std::less<>> candidateGuides;
-	set<string, std::less<>> recordedSequences;
+	set<string> candidateGuides;
+	set<string> recordedSequences;
 	numDuplicateGuides = 0;
 	numIdentifiedGuides = 0;
 
@@ -184,7 +184,7 @@ void cas9InputProcessor::processSeqeunce(
 	string_view seqHeader,
 	ofstream& outFile,
 	const path& tempWorkingDir,
-	set<string, std::less<>>& candidateGuides,
+	set<string>& candidateGuides,
 	const int& batchSize
 	)
 {
@@ -251,7 +251,7 @@ const list<string>& cas9InputProcessor::getBatchFiles() const
 	return batchFiles;
 }
 
-bool cas9InputProcessor::isDuplicateGuide(string_view guide) const
+bool cas9InputProcessor::isDuplicateGuide(const string& guide) const
 {
 	return duplicateGuides.find(guide) != duplicateGuides.end();
 }
