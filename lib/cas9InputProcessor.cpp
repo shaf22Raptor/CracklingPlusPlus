@@ -3,7 +3,7 @@
 
 using std::string;
 using std::list;
-using std::set;
+using std::unordered_set;
 using std::regex;
 using std::regex_iterator;
 using std::string_view;
@@ -48,8 +48,8 @@ void cas9InputProcessor::process(list<string> const & filesToProcess, int const 
 	std::vector<string> seq;
 
 	// Duplicate tracking
-	set<string> candidateGuides;
-	set<string> recordedSequences;
+	unordered_set<string> candidateGuides;
+	unordered_set<string> recordedSequences;
 	numDuplicateGuides = 0;
 	numIdentifiedGuides = 0;
 
@@ -184,7 +184,7 @@ void cas9InputProcessor::processSeqeunce(
 	string_view seqHeader,
 	ofstream& outFile,
 	const path& tempWorkingDir,
-	set<string>& candidateGuides,
+	unordered_set<string>& candidateGuides,
 	const int& batchSize
 	)
 {
