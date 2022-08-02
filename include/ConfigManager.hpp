@@ -10,7 +10,7 @@
 #include <filesystem>
 #include "../include/Helpers.hpp"
 
-#if defined(_POSIX_C_SOURCE) && (_POSIX_C_SOURCE >= 2)
+#if (_POSIX_C_SOURCE >= 2 || _XOPEN_SOURCE || _BSD_SOURCE || _SVID_SOURCE)
 # define portablePopen popen
 # define portablePclose pclose
 #elif defined(_MSC_VER)
