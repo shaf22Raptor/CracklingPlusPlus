@@ -4,6 +4,7 @@
 #include <streambuf>
 #include <fstream>
 #include <cstring>
+#include <time.h>
 
 class logBuffer : public std::streambuf
 {
