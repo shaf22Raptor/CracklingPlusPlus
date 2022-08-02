@@ -11,11 +11,11 @@
 #include "../include/Helpers.hpp"
 
 #if (_POSIX_C_SOURCE >= 2 || _XOPEN_SOURCE || _BSD_SOURCE || _SVID_SOURCE)
-# define portablePopen popen
-# define portablePclose pclose
+# define p_popen popen
+# define p_pclose pclose
 #elif defined(_MSC_VER)
-# define portablePopen _popen
-# define portablePclose _pclose
+# define p_popen _popen
+# define p_pclose _pclose
 #else
 # error "Error, no popen"
 #endif

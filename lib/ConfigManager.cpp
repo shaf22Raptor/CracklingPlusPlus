@@ -91,8 +91,8 @@ ConfigManager::ConfigManager(const string& configFilePath)
 	// Check that binarys are callable
 
 	// Check bowtie2
-	stdoutStream = portablePopen(fmt::format("{} --version", getString("bowtie2", "binary")).c_str(), "r");
-	returnCode = portablePclose(stdoutStream);
+	stdoutStream = p_popen(fmt::format("{} --version", getString("bowtie2", "binary")).c_str(), "r");
+	returnCode = p_pclose(stdoutStream);
 
 	if (returnCode != 0)
 	{
@@ -100,8 +100,8 @@ ConfigManager::ConfigManager(const string& configFilePath)
 	}
 
 	// Check rnafold
-	stdoutStream = portablePopen(fmt::format("{} --version", getString("rnafold", "binary")).c_str(), "r");
-	returnCode = portablePclose(stdoutStream);
+	stdoutStream = p_popen(fmt::format("{} --version", getString("rnafold", "binary")).c_str(), "r");
+	returnCode = p_pclose(stdoutStream);
 
 	if (returnCode != 0)
 	{

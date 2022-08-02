@@ -12,7 +12,7 @@
 #include "../include/ISSLOffTargetScoring.hpp"
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-#pragma push_macro(close)
+#pragma push_macro("close")
 #undef close
 #endif
 
@@ -190,5 +190,5 @@ int main(int argc, char** argv)
 }
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-#pragma pop_macro(close)
+#pragma pop_macro("close")
 #endif
