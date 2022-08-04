@@ -8,7 +8,7 @@
 
 #if (_POSIX_C_SOURCE >= 1 || _XOPEN_SOURCE || _BSD_SOURCE || _SVID_SOURCE || _POSIX_SOURCE)
 # define p_localtime(time_t_ptr, tm_ptr) localtime_r(&tm_ptr, &time_t_ptr)
-#elif defined(_MSC_VER)
+#elif defined(_WIN64)
 # define p_localtime(time_t_ptr, tm_ptr) localtime_s(&time_t_ptr, &tm_ptr)
 #else
 # error "Error, no localtime"

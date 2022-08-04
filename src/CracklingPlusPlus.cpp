@@ -10,7 +10,7 @@
 #include "../include/bowtie2.hpp"
 #include "../include/ISSLOffTargetScoring.hpp"
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+#if defined(_WIN64)
 #pragma push_macro("close")
 #undef close
 #endif
@@ -188,6 +188,6 @@ int main(int argc, char** argv)
 	}
 }
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+#if defined(_WIN64)
 #pragma pop_macro("close")
 #endif

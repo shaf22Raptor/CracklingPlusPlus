@@ -24,19 +24,15 @@
 #include "../include/libpopcnt.h"
 #include "../include/cfdPenalties.h"
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-#include "../include/sys/time.h"
-#include "../include/unistd.h"
-#else
+#ifndef portableStat64
+#if (_BSD_SOURCE || _XOPEN_SOURCE >= 500 || _XOPEN_SOURCE && _XOPEN_SOURCE_EXTENDED || /* Since glibc 2.10: */ _POSIX_C_SOURCE >= 200112L)
 #include <sys/time.h>
 #include <unistd.h>
-#endif
-
-#ifndef portableStat64
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-#define p_stat64 _stat64
-#else
 #define p_stat64 stat64
+#elif defined(_WIN64) 
+#include "../include/sys/time.h"
+#include "../include/unistd.h"
+#define p_stat64 _stat64
 #endif
 #endif // !portableStat64
 
