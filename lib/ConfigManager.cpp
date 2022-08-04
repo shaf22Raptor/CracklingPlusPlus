@@ -74,7 +74,6 @@ ConfigManager::ConfigManager(const string& configFilePath)
 	set("input", "gff-annotation", getPath("input", "gff-annotation").make_preferred().string());
 	set("input", "bowtie2-index", getPath("input", "bowtie2-index").make_preferred().string());
 	set("output", "dir", getPath("output", "dir").make_preferred().string());
-	set("offtargetscore", "binary", getPath("offtargetscore", "binary").make_preferred().string());
 	set("sgrnascorer2", "model", getPath("sgrnascorer2", "model").make_preferred().string());
 	set("bowtie2", "binary", getPath("bowtie2", "binary").make_preferred().string());
 	set("rnafold", "binary", getPath("rnafold", "binary").make_preferred().string());
@@ -143,7 +142,6 @@ ConfigManager::ConfigManager(const string& configFilePath)
 		(getString("output", "filename") == "") ||
 		(getString("output", "delimiter") == "") ||
 		(getString("offtargetscore", "enabled") == "") ||
-		(getString("offtargetscore", "binary") == "") ||
 		(getString("offtargetscore", "method") == "") ||
 		(getString("offtargetscore", "threads") == "") ||
 		(getString("offtargetscore", "page-length") == "") ||

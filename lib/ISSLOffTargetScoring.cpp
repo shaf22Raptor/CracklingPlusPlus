@@ -16,14 +16,12 @@ ISSLOffTargetScoring::ISSLOffTargetScoring(ConfigManager& cm) :
     optimsationLevel(cm.getString("general", "optimisation")),
     toolCount(cm.getConsensusToolCount()),
     consensusN(cm.getInt("consensus", "n")),
-    offTargetScoreOutFile(cm.getString("offtargetscore", "output")),
-    offTargetScoreInFile(cm.getString("offtargetscore", "input")),
-    offTargetScoreBin(cm.getString("offtargetscore", "binary")),
-    offTargetScoreIndex(cm.getString("input", "offtarget-sites")),
-    offTargetScoreMaxDist(cm.getString("offtargetscore", "max-distance")),
-    offTargetScoreMethod(cm.getString("offtargetscore", "method")),
-    offTagertScoreThreshold(cm.getFloat("offtargetscore", "score-threshold")),
-    offTargetScorePageLength(cm.getInt("offtargetscore", "page-length"))
+    threadCount(cm.getInt("offtargetscore", "threads")),
+    ISSLIndex(cm.getString("input", "offtarget-sites")),
+    maxDist(cm.getInt("offtargetscore", "max-distance")),
+    scoreMethod(cm.getString("offtargetscore", "method")),
+    scoreThreshold(cm.getFloat("offtargetscore", "score-threshold")),
+    pageLength(cm.getInt("offtargetscore", "page-length"))
 {}
 
 void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, string>>& candidateGuides)
@@ -38,12 +36,6 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
 
     size_t seqLength, seqCount, sliceWidth, sliceCount, offtargetsCount, scoresCount;
 
-    /** The maximum number of mismatches */
-    int maxDist = stoi(offTargetScoreMaxDist);
-
-    /** The threshold used to exit scoring early */
-    double threshold = offTagertScoreThreshold;
-
     /** Scoring methods. To exit early:
      *      - only CFD must drop below `threshold`
      *      - only MIT must drop below `threshold`
@@ -51,31 +43,30 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
      *      - CFD or MIT must drop below `threshold`
      *      - the average of CFD and MIT must below `threshold`
      */
-    string argScoreMethod = offTargetScoreMethod;
-    ScoreMethod scoreMethod = ScoreMethod::unknown;
+    ScoreMethod sm = ScoreMethod::unknown;
     bool calcCfd = false;
     bool calcMit = false;
-    if (!argScoreMethod.compare("and")) {
-        scoreMethod = ScoreMethod::mitAndCfd;
+    if (!scoreMethod.compare("and")) {
+        sm = ScoreMethod::mitAndCfd;
         calcCfd = true;
         calcMit = true;
     }
-    else if (!argScoreMethod.compare("or")) {
-        scoreMethod = ScoreMethod::mitOrCfd;
+    else if (!scoreMethod.compare("or")) {
+        sm = ScoreMethod::mitOrCfd;
         calcCfd = true;
         calcMit = true;
     }
-    else if (!argScoreMethod.compare("avg")) {
-        scoreMethod = ScoreMethod::avgMitCfd;
+    else if (!scoreMethod.compare("avg")) {
+        sm = ScoreMethod::avgMitCfd;
         calcCfd = true;
         calcMit = true;
     }
-    else if (!argScoreMethod.compare("mit")) {
-        scoreMethod = ScoreMethod::mit;
+    else if (!scoreMethod.compare("mit")) {
+        sm = ScoreMethod::mit;
         calcMit = true;
     }
-    else if (!argScoreMethod.compare("cfd")) {
-        scoreMethod = ScoreMethod::cfd;
+    else if (!scoreMethod.compare("cfd")) {
+        sm = ScoreMethod::cfd;
         calcCfd = true;
     }
 
@@ -86,7 +77,7 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
      *      - slice list sizes
      *      - slice contents
      */
-    FILE* fp = fopen(offTargetScoreIndex.c_str(), "rb");
+    FILE* fp = fopen(ISSLIndex.c_str(), "rb");
 
     /** The index contains a fixed-sized header
      *      - the number of off-targets in the index
@@ -215,14 +206,14 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
     // Outer loop deals with changing iterator start and end points (Pagination)
     while (pageEnd != candidateGuides.end())
     {
-        if (offTargetScorePageLength > 0)
+        if (pageLength > 0)
         {
             // Advance the pageEnd pointer
-            std::advance(pageEnd, (std::min)((int)std::distance(pageEnd, candidateGuides.end()), offTargetScorePageLength));
+            std::advance(pageEnd, (std::min)((int)std::distance(pageEnd, candidateGuides.end()), pageLength));
             // Record page start
             pageStart = paginatorIterator;
             // Print page information
-            printer(fmt::format("\tProcessing page {} ({} per page).", commaify(pgIdx), commaify(offTargetScorePageLength)));
+            printer(fmt::format("\tProcessing page {} ({} per page).", commaify(pgIdx), commaify(pageLength)));
         }
         else {
             // Process all guides at once
@@ -235,9 +226,9 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
 
         // New intergrated method (No need for external file, simply write to char vector)
         vector<char> queryDataSet;
-        queryDataSet.reserve(offTargetScorePageLength * 20);
+        queryDataSet.reserve(pageLength * seqLength);
         vector<char> pamDataSet;
-        pamDataSet.reserve(offTargetScorePageLength * 3);
+        pamDataSet.reserve(pageLength * 3);
 
         guidesInPage = 0;
         while (paginatorIterator != pageEnd)
@@ -280,6 +271,8 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
         vector<double> querySignatureCfdScores(queryCount);
 
         /** Binary encode query sequences */
+        omp_set_dynamic(0);     // Explicitly disable dynamic teams
+        omp_set_num_threads(threadCount); // Use 4 threads for all consecutive parallel regions
 #pragma omp parallel
         {
 #pragma omp for
@@ -309,7 +302,7 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
                 double totScoreCfd = 0.0;
 
                 int numOffTargetSitesScored = 0;
-                double maximum_sum = (10000.0 - threshold * 100) / threshold;
+                double maximum_sum = (10000.0 - scoreThreshold * 100) / scoreThreshold;
                 bool checkNextSlice = true;
 
                 /** For each ISSL slice */
@@ -450,31 +443,31 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
                                 numOffTargetSitesScored += occurrences;
 
                                 /** Stop calculating global score early if possible */
-                                if (scoreMethod == ScoreMethod::mitAndCfd) {
+                                if (sm == ScoreMethod::mitAndCfd) {
                                     if (totScoreMit > maximum_sum && totScoreCfd > maximum_sum) {
                                         checkNextSlice = false;
                                         break;
                                     }
                                 }
-                                if (scoreMethod == ScoreMethod::mitOrCfd) {
+                                if (sm == ScoreMethod::mitOrCfd) {
                                     if (totScoreMit > maximum_sum || totScoreCfd > maximum_sum) {
                                         checkNextSlice = false;
                                         break;
                                     }
                                 }
-                                if (scoreMethod == ScoreMethod::avgMitCfd) {
+                                if (sm == ScoreMethod::avgMitCfd) {
                                     if (((totScoreMit + totScoreCfd) / 2.0) > maximum_sum) {
                                         checkNextSlice = false;
                                         break;
                                     }
                                 }
-                                if (scoreMethod == ScoreMethod::mit) {
+                                if (sm == ScoreMethod::mit) {
                                     if (totScoreMit > maximum_sum) {
                                         checkNextSlice = false;
                                         break;
                                     }
                                 }
-                                if (scoreMethod == ScoreMethod::cfd) {
+                                if (sm == ScoreMethod::cfd) {
                                     if (totScoreCfd > maximum_sum) {
                                         checkNextSlice = false;
                                         break;
@@ -506,9 +499,9 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
             candidateGuides[target23]["mitOfftargetscore"] = calcMit ? std::to_string(querySignatureMitScores[searchIdx]) : "\t-1";
             candidateGuides[target23]["cfdOfftargetscore"] = calcCfd ? std::to_string(querySignatureCfdScores[searchIdx]) : "-1\n";
 
-            if (offTargetScoreMethod == "mit")
+            if (sm == ScoreMethod::mit)
             {
-                if (std::stof(candidateGuides[target23]["mitOfftargetscore"]) < offTagertScoreThreshold)
+                if (std::stof(candidateGuides[target23]["mitOfftargetscore"]) < scoreThreshold)
                 {
                     candidateGuides[target23]["passedOffTargetScore"] = CODE_REJECTED;
                     failedCount++;
@@ -516,9 +509,9 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
                 else { candidateGuides[target23]["passedOffTargetScore"] = CODE_ACCEPTED; }
             }
 
-            else if (offTargetScoreMethod == "cfd")
+            else if (sm == ScoreMethod::cfd)
             {
-                if (std::stof(candidateGuides[target23]["cfdOfftargetscore"]) < offTagertScoreThreshold)
+                if (std::stof(candidateGuides[target23]["cfdOfftargetscore"]) < scoreThreshold)
                 {
                     candidateGuides[target23]["passedOffTargetScore"] = CODE_REJECTED;
                     failedCount++;
@@ -526,9 +519,9 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
                 else { candidateGuides[target23]["passedOffTargetScore"] = CODE_ACCEPTED; }
             }
 
-            else if (offTargetScoreMethod == "and")
+            else if (sm == ScoreMethod::mitAndCfd)
             {
-                if ((std::stof(candidateGuides[target23]["mitOfftargetscore"]) < offTagertScoreThreshold) && (std::stof(candidateGuides[target23]["cfdOfftargetscore"]) < offTagertScoreThreshold))
+                if ((std::stof(candidateGuides[target23]["mitOfftargetscore"]) < scoreThreshold) && (std::stof(candidateGuides[target23]["cfdOfftargetscore"]) < scoreThreshold))
                 {
                     candidateGuides[target23]["passedOffTargetScore"] = CODE_REJECTED;
                     failedCount++;
@@ -536,9 +529,9 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
                 else { candidateGuides[target23]["passedOffTargetScore"] = CODE_ACCEPTED; }
             }
 
-            else if (offTargetScoreMethod == "or")
+            else if (sm == ScoreMethod::mitOrCfd)
             {
-                if ((std::stof(candidateGuides[target23]["mitOfftargetscore"]) < offTagertScoreThreshold) || (std::stof(candidateGuides[target23]["cfdOfftargetscore"]) < offTagertScoreThreshold))
+                if ((std::stof(candidateGuides[target23]["mitOfftargetscore"]) < scoreThreshold) || (std::stof(candidateGuides[target23]["cfdOfftargetscore"]) < scoreThreshold))
                 {
                     candidateGuides[target23]["passedOffTargetScore"] = CODE_REJECTED;
                     failedCount++;
@@ -546,9 +539,9 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
                 else { candidateGuides[target23]["passedOffTargetScore"] = CODE_ACCEPTED; }
             }
 
-            else if (offTargetScoreMethod == "avg")
+            else if (sm == ScoreMethod::avgMitCfd)
             {
-                if (((std::stof(candidateGuides[target23]["mitOfftargetscore"]) + std::stof(candidateGuides[target23]["cfdOfftargetscore"])) / 2) < offTagertScoreThreshold)
+                if (((std::stof(candidateGuides[target23]["mitOfftargetscore"]) + std::stof(candidateGuides[target23]["cfdOfftargetscore"])) / 2) < scoreThreshold)
                 {
                     candidateGuides[target23]["passedOffTargetScore"] = CODE_REJECTED;
                     failedCount++;

@@ -53,14 +53,12 @@ private:
 	std::string optimsationLevel;
 	int toolCount;
 	int consensusN;
-	std::string offTargetScoreOutFile;
-	std::string offTargetScoreInFile;
-	std::string offTargetScoreBin;
-	std::string offTargetScoreIndex;
-	std::string offTargetScoreMaxDist;
-	std::string offTargetScoreMethod;
-	float offTagertScoreThreshold;
-	int offTargetScorePageLength;
+	int threadCount;
+	std::string ISSLIndex;
+	int maxDist;
+	std::string scoreMethod;
+	float scoreThreshold;
+	int pageLength;
 
 	size_t getFileSize(const char* path);
 
