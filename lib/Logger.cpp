@@ -29,9 +29,9 @@ int logBuffer::overflow(int c)
         p_localtime(timeinfo, rawtime);
         string timestampBuffer;
         timestampBuffer.reserve(32);
-        strftime(&timestampBuffer[0], timestampBuffer.size(), ">>> %Y-%m-%d %H:%M:%S: ", &timeinfo);
-        stdBuf->sputn(&timestampBuffer[0], timestampBuffer.size());
-        fileBuf->sputn(&timestampBuffer[0], timestampBuffer.size());
+        strftime(timestampBuffer.data(), 32, ">>> %Y-%m-%d %H:%M:%S: ", &timeinfo);
+        stdBuf->sputn(timestampBuffer.data(), strlen(timestampBuffer.data()));
+        fileBuf->sputn(timestampBuffer.data(), strlen(timestampBuffer.data()));
     }
     // Check for new line
     isAtStartOfLine = c == '\n';
