@@ -53,24 +53,24 @@ TEST_CASE("G20" * doctest::description("Ensure that the G20 function is working 
     }
 }
 
-//TEST_CASE("CHOPCHOP Module" * doctest::description("Ensure CHOPCHOP module is working correctly") * doctest::timeout(5))
-//{
-//    ConfigManager cm("data/test_config.ini");
-//    cm.set("general", "optimisation", "ultralow");
-//    CHOPCHOP testModule(cm);
-//    
-//    std::unordered_map<std::string, std::unordered_map<std::string, std::string>> result = {
-//        {"ACTCCTCATGCTGGACATTCTGG", {{"passedG20" , CODE_UNTESTED}} },
-//        {"ATTCTGGTTCCTAGTATATCTGG", {{"passedG20" , CODE_UNTESTED}} },
-//        {"GTATATCTGGAGAGTTAAGATGG", {{"passedG20" , CODE_UNTESTED}} }
-//    };
-//
-//    std::unordered_map<std::string, std::unordered_map<std::string, std::string>> expected = {
-//    {"ACTCCTCATGCTGGACATTCTGG", {{"passedG20" , CODE_REJECTED}} },
-//    {"ATTCTGGTTCCTAGTATATCTGG", {{"passedG20" , CODE_REJECTED}} },
-//    {"GTATATCTGGAGAGTTAAGATGG", {{"passedG20" , CODE_REJECTED}} }
-//    };
-//
-//    testModule.run(result);
-//    CHECK(result == expected);
-//}
+TEST_CASE("CHOPCHOP Module" * doctest::description("Ensure CHOPCHOP module is working correctly") * doctest::timeout(5))
+{
+    ConfigManager cm("data/test_config.ini");
+    cm.set("general", "optimisation", "ultralow");
+    CHOPCHOP testModule(cm);
+    
+    std::unordered_map<std::string, std::unordered_map<std::string, std::string>> result = {
+        {"ACTCCTCATGCTGGACATTCTGG", {{"passedG20" , CODE_UNTESTED}} },
+        {"ATTCTGGTTCCTAGTATATCTGG", {{"passedG20" , CODE_UNTESTED}} },
+        {"GTATATCTGGAGAGTTAAGATGG", {{"passedG20" , CODE_UNTESTED}} }
+    };
+
+    std::unordered_map<std::string, std::unordered_map<std::string, std::string>> expected = {
+    {"ACTCCTCATGCTGGACATTCTGG", {{"passedG20" , CODE_REJECTED}} },
+    {"ATTCTGGTTCCTAGTATATCTGG", {{"passedG20" , CODE_REJECTED}} },
+    {"GTATATCTGGAGAGTTAAGATGG", {{"passedG20" , CODE_REJECTED}} }
+    };
+
+    testModule.run(result);
+    CHECK(result == expected);
+}
