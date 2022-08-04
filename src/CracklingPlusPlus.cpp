@@ -64,6 +64,7 @@ int main(int argc, char** argv)
 			// Record batch start time
 			auto batchStart = std::chrono::high_resolution_clock::now();
 
+			// Load candidate guides from batch file
 			std::unordered_map <std::string, std::unordered_map<std::string, std::string>> candidateGuides;
 			std::ifstream inFile;
 			inFile.open(fileName, std::ios::binary | std::ios_base::in);
@@ -98,12 +99,14 @@ int main(int argc, char** argv)
 				}
 			}
 
+			// Run scoring modules
 			CHOPCHOPModule.run(candidateGuides);
 
 			mm10dbModule.run(candidateGuides);
 
 			sgRNAScorer2Module.run(candidateGuides);
 
+			// Complete consensus evaluation
 			printer("Evaluating efficiency via consensus approach.");
 			int failedCount = 0;
 			int testedCount = 0;
@@ -118,10 +121,12 @@ int main(int argc, char** argv)
 
 			printer(fmt::format("\t{} of {} failed here.", commaify(failedCount), commaify(testedCount)));
 
+			// Run Specifity (Off target) modules 
 			bowtie2Module.run(candidateGuides);
 
 			OTSModule.run(candidateGuides);
 
+			// Write results to output file
 			printer("Writing results to file.");
 
 			std::ofstream resultsFile(cm.getString("output", "file"), std::ios_base::app | std::ios_base::binary);
@@ -138,6 +143,7 @@ int main(int argc, char** argv)
 
 			resultsFile.close();
 
+			// Clean up
 			printer("Cleaning auxiliary files.");
 
 			std::filesystem::remove(cm.getString("rnafold", "input"));
@@ -151,6 +157,7 @@ int main(int argc, char** argv)
 
 			printer(fmt::format("{} guides evaluated.", commaify((int)candidateGuides.size())));
 
+			// Update timing
 			auto totalSeconds = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - batchStart);
 
 			int days = (int)totalSeconds.count() / 86400;
