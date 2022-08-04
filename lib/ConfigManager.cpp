@@ -84,14 +84,11 @@ ConfigManager::ConfigManager(const string& configFilePath)
 	*/
 	// Run Validate function
 	int returnCode;				// Return code used to check if the binary was run successfuly
-	string resultOutput;		// String that collects the stdout
-	FILE* stdoutStream;			// Stream to collect stdout from popen calls
 
 	// Check that binarys are callable
 
 	// Check bowtie2
-	stdoutStream = p_popen(fmt::format("{} --version", getString("bowtie2", "binary")).c_str(), "r");
-	returnCode = p_pclose(stdoutStream);
+	returnCode = system(fmt::format("{} --version >{} 2>{}", getString("bowtie2", "binary"), nullDir, nullDir).c_str());
 
 	if (returnCode != 0)
 	{
@@ -99,8 +96,7 @@ ConfigManager::ConfigManager(const string& configFilePath)
 	}
 
 	// Check rnafold
-	stdoutStream = p_popen(fmt::format("{} --version", getString("rnafold", "binary")).c_str(), "r");
-	returnCode = p_pclose(stdoutStream);
+	returnCode = system(fmt::format("{} --version >{} 2>{}", getString("rnafold", "binary"), nullDir, nullDir).c_str());
 
 	if (returnCode != 0)
 	{

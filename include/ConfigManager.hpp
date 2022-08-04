@@ -10,14 +10,10 @@
 #include <filesystem>
 #include "../include/Helpers.hpp"
 
-#if (_POSIX_C_SOURCE >= 2 || _XOPEN_SOURCE || _BSD_SOURCE || _SVID_SOURCE)
-# define p_popen popen
-# define p_pclose pclose
-#elif defined(_MSC_VER)
-# define p_popen _popen
-# define p_pclose _pclose
-#else
-# error "Error, no popen"
+#if defined (__unix__) || defined (__unix)
+const std::string nullDir("/dev/null");
+#elif defined(_WIN64)
+const std::string nullDir("nul");
 #endif
 
 class ConfigManager
