@@ -114,6 +114,10 @@ ConfigManager::ConfigManager(const string& configFilePath)
 	// Check that output file doesn't already exist
 	// Get output dir path object
 	path outputDirPathObject = getPath("output", "dir");
+	if (!std::filesystem::exists(outputDirPathObject))
+	{
+		std::filesystem::create_directories(outputDirPathObject);
+	}
 	// Append output file name to output dir
 	set("output", "file", (outputDirPathObject / fmt::format("{}-{}", getString("general", "name"), getString("output", "filename"))).string());
 	if (std::filesystem::exists(getPath("output", "file")))

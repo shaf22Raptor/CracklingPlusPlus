@@ -186,7 +186,7 @@ TEST_CASE("RNAFold" * doctest::description("Ensure that RNAFold is working corre
 
     for (std::string line; std::getline(inFile, line);)
     {
-        result.push_back(line);
+        result.push_back(trim(line));
     }
 
     inFile.close();
