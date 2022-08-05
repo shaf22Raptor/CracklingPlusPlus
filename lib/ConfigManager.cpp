@@ -6,7 +6,7 @@ using std::string_view;
 using std::list;
 using std::filesystem::path;
 
-const std::regex fsRegex("(\\|\/)+");
+const std::regex fsRegex("(\\\\|\\/)+");
 
 ConfigManager::ConfigManager(const string& configFilePath)
 {
