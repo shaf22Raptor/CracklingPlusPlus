@@ -208,6 +208,7 @@ void mm10db::run(unordered_map<string, unordered_map<string, string>>& candidate
 			{
 				printer(fmt::format("Could not find: {}", key));
 				notFoundCount++;
+				paginatorIterator++;
 				continue;
 			}
 
