@@ -6,6 +6,8 @@ using std::string_view;
 using std::list;
 using std::filesystem::path;
 
+const std::regex fsRegex("(\\|\/)+");
+
 ConfigManager::ConfigManager(const string& configFilePath)
 {
 	/*
@@ -68,16 +70,18 @@ ConfigManager::ConfigManager(const string& configFilePath)
 	/*
 		Normalise all paths
 	*/
-	// Ensure the path delimiters are set to the system preferred
-	set("input", "exon-sequences", getPath("input", "exon-sequences").make_preferred().string());
-	set("input", "offtarget-sites", getPath("input", "offtarget-sites").make_preferred().string());
-	set("input", "gff-annotation", getPath("input", "gff-annotation").make_preferred().string());
-	set("input", "bowtie2-index", getPath("input", "bowtie2-index").make_preferred().string());
-	set("output", "dir", getPath("output", "dir").make_preferred().string());
-	set("sgrnascorer2", "model", getPath("sgrnascorer2", "model").make_preferred().string());
-	set("bowtie2", "binary", getPath("bowtie2", "binary").make_preferred().string());
-	set("rnafold", "binary", getPath("rnafold", "binary").make_preferred().string());
+	string preferred_separator;
+	preferred_separator.append(1, path::preferred_separator);
+	set("input", "exon-sequences", std::regex_replace(getString("input", "exon-sequences"), fsRegex, preferred_separator));
+	set("input", "offtarget-sites", std::regex_replace(getString("input", "offtarget-sites"), fsRegex, preferred_separator));
+	set("input", "gff-annotation", std::regex_replace(getString("input", "gff-annotation"), fsRegex, preferred_separator));
+	set("input", "bowtie2-index", std::regex_replace(getString("input", "bowtie2-index"), fsRegex, preferred_separator));
+	set("output", "dir", std::regex_replace(getString("output", "dir"), fsRegex, preferred_separator));
+	set("sgrnascorer2", "model", std::regex_replace(getString("sgrnascorer2", "model"), fsRegex, preferred_separator));
+	set("bowtie2", "binary", std::regex_replace(getString("bowtie2", "binary"), fsRegex, preferred_separator));
+	set("rnafold", "binary", std::regex_replace(getString("rnafold", "binary"), fsRegex, preferred_separator));
 
+	//string test(path::preferred_separator);
 
 	/*
 		Check that the config file is valid
