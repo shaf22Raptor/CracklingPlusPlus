@@ -4,7 +4,7 @@
 
 TEST_CASE("bowtie2 Module" * doctest::description("Ensure bowtie2 module is working correctly") * doctest::timeout(5))
 {
-    SUBCASE("Run bwotie2 and check results")
+    SUBCASE("Run bowtie2 and check results")
     {
         ConfigManager cm("data/test_config.ini");
         cm.set("general", "optimisation", "ultralow");
