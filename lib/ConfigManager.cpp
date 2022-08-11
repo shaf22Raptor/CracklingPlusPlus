@@ -197,8 +197,8 @@ ConfigManager::ConfigManager(const string& configFilePath)
 	set("bowtie2", "input", (outputDirPathObject / fmt::format("{}-bowtie2-input.txt", getString("general", "name"))).string());
 	set("bowtie2", "output", (outputDirPathObject / fmt::format("{}-bowtie2-output.txt", getString("general", "name"))).string());
 
-	set("output", "log", (outputDirPathObject / fmt::format("{}-{}.txt", getString("general", "name"), configPathObject.stem().string())).string());
-	set("output", "error", (outputDirPathObject / fmt::format("{}-{}.txt", getString("general", "name"), configPathObject.stem().string())).string());
+	set("output", "log", (outputDirPathObject / fmt::format("{}-{}.log", getString("general", "name"), configPathObject.stem().string())).string());
+	set("output", "error", (outputDirPathObject / fmt::format("{}-{}.errlog", getString("general", "name"), configPathObject.stem().string())).string());
 }
 
 int ConfigManager::getConsensusToolCount()
