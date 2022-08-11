@@ -496,8 +496,8 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
             char* pamPtr = &pamDataSet[searchIdx * 3];
             string pam(pamPtr, pamPtr + 3);
             string target23 = target20 + pam;
-            candidateGuides[target23]["mitOfftargetscore"] = calcMit ? std::to_string(querySignatureMitScores[searchIdx]) : "\t-1";
-            candidateGuides[target23]["cfdOfftargetscore"] = calcCfd ? std::to_string(querySignatureCfdScores[searchIdx]) : "-1\n";
+            candidateGuides[target23]["mitOfftargetscore"] = calcMit ? std::to_string(querySignatureMitScores[searchIdx]) : "-1";
+            candidateGuides[target23]["cfdOfftargetscore"] = calcCfd ? std::to_string(querySignatureCfdScores[searchIdx]) : "-1";
 
             if (sm == ScoreMethod::mit)
             {
