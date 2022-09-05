@@ -33,6 +33,9 @@ target_link_libraries (
 	PRIVATE ISSLOffTargetScoring
 )
 
+# Added ISSLCreateIndex subdirectory
+add_subdirectory (${CMAKE_SOURCE_DIR}/ISSLCreateIndex)
+
 # Add tests subdirectory
 add_subdirectory (${CMAKE_SOURCE_DIR}/tests)
 

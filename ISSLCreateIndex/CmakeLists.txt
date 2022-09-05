@@ -1,0 +1,2 @@
+# Add ISSLCreateIndex executable
+add_executable (ISSLCreateIndex ISSLCreateIndex.cpp ISSLCreateIndex.hpp)
