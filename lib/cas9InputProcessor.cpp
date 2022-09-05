@@ -120,8 +120,7 @@ void cas9InputProcessor::process(const list<string>& filesToProcess, const int& 
 			{
 				recordedSequences.insert(seqHeader);
 				string concatanatedSeq;
-				for (string s : seq) {
-					concatanatedSeq += makeUpper(s);
+				for (string s : seq) { concatanatedSeq += makeUpper(s); }
 
 				processSeqeunce(
 					concatanatedSeq,
