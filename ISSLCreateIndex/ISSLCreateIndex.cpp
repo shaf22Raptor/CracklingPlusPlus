@@ -1,24 +1,14 @@
-/*
-
-Faster and better CRISPR guide RNA design with the Crackling method.
-Jacob Bradford, Timothy Chappell, Dimitri Perrin
-bioRxiv 2020.02.14.950261; doi: https://doi.org/10.1101/2020.02.14.950261
-
-
-To compile:
-
-g++ -o isslCreateIndex isslCreateIndex.cpp -O3 -std=c++11 -fopenmp -mpopcnt
-
-*/
-
 #include "ISSLCreateIndex.hpp"
 
 using std::vector;
 using std::map;
-using std::string;
 using std::pair;
+using std::string;
+using std::string_view;
+using std::regex;
+using std::regex_iterator;
 
-
+const regex extractNumbers("[1234567890]+");
 
 size_t seqLength;
 vector<uint8_t> nucleotideIndex(256);
@@ -148,6 +138,29 @@ int main(int argc, char** argv)
         fprintf(stderr, "may be something other than LF, or there may be junk at the end of the file.\n");
         exit(1);
     }
+    const string sliceArg = argv[3];
+    vector<size_t> sliceRanges;
+    for (auto i  = std::sregex_iterator(sliceArg.begin(), sliceArg.end(), extractNumbers);
+        i != std::sregex_iterator();
+        i++) 
+    {
+        sliceRanges.push_back(stoi(i->str())*2);
+    }
+    if (sliceRanges.size() % 2) {
+        fprintf(stderr, "Error: Uneven number of slice start and end points provided\n");
+        fprintf(stderr, "Please format slice length list like [(start:end)...(start:end)]\n");
+        exit(1);
+    }
+    if (sliceRanges.size() < 2) {
+        fprintf(stderr, "Error: Please specific more than 2 slice lengths\n");
+        fprintf(stderr, "Please format slice length list like [(start:end)...(start:end)]\n");
+        exit(1);
+    }
+    vector<size_t> sliceLens;
+    for (int i = 0; i < sliceRanges.size(); i = i + 2) {
+        sliceLens.push_back(sliceRanges[i + 1] - (sliceRanges[i] - 2));
+    }
+
     size_t seqCount = fileSize / seqLineLength;
     fprintf(stderr, "Number of sequences: %zu\n", seqCount);
 
@@ -205,23 +218,24 @@ int main(int argc, char** argv)
 
     }
     printf("Finished counting occurrences, now constructing index...\n");
-    size_t sliceWidth = atoi(argv[3]);
-    size_t sliceLimit = 1 << sliceWidth;
-    size_t sliceCount = (seqLength * 2) / sliceWidth;
     size_t offtargetsCount = distinctSites;
 
-    vector<vector<vector<uint64_t>>> sliceLists(sliceCount, vector<vector<uint64_t>>(sliceLimit));
-
-#pragma omp parallel for
-    for (size_t i = 0; i < sliceCount; i++) {
-        uint64_t sliceMask = sliceLimit - 1;
-        int sliceShift = sliceWidth * i;
+    vector<vector<vector<uint64_t>>> sliceLists(sliceLens.size());
+    for (int i = 0; i < sliceLens.size(); i++)
+    {
+        sliceLists[i] = vector<vector<uint64_t>>(1 << sliceLens[i]);
+    }
+    /*#pragma omp parallel for*/
+    for (int i = 0; i < sliceLens.size(); i++) {
+        uint64_t sliceMask = (1 << sliceLens[i]) - 1;
+        int sliceShift = sliceRanges[i * 2] - 2;
         sliceMask = sliceMask << sliceShift;
         auto& sliceList = sliceLists[i];
 
         uint32_t signatureId = 0;
         for (uint64_t signature : seqSignatures) {
             uint32_t occurrences = seqSignaturesOccurrences[signatureId];
+            uint64_t test = signature & sliceMask;
             uint8_t sliceVal = (signature & sliceMask) >> sliceShift;
 
             uint64_t seqSigIdVal = (((uint64_t)occurrences) << 32) | (uint64_t)signatureId;
@@ -235,7 +249,7 @@ int main(int argc, char** argv)
     // Precalculate all the scores
     map<uint64_t, double> precalculatedScores;
 
-    int maxDist = seqLength * 2 / sliceWidth - 1;
+    int maxDist = 4;
     size_t scoresCount = 0;
 
     for (int i = 1; i <= maxDist; i++) {
@@ -255,13 +269,17 @@ int main(int argc, char** argv)
     slicelistHeader.push_back(offtargetsCount);
     slicelistHeader.push_back(seqLength);
     slicelistHeader.push_back(seqCount);
-    slicelistHeader.push_back(sliceWidth);
-    slicelistHeader.push_back(sliceCount);
+    slicelistHeader.push_back(sliceLens.size());
     slicelistHeader.push_back(scoresCount);
-
-
+   
     // write the header
-    fwrite(slicelistHeader.data(), sizeof(size_t), slicelistHeader.size(), fp);
+    fwrite(slicelistHeader.data(), sizeof(size_t), 50, fp);
+
+    // write slice ranges
+    for (const size_t pos : sliceRanges)
+    {
+        fwrite(&pos, sizeof(size_t), 1, fp);
+    }
 
     // write the precalculated scores
     for (auto const& x : precalculatedScores) {
@@ -272,15 +290,15 @@ int main(int argc, char** argv)
     // write the offtargets
     fwrite(seqSignatures.data(), sizeof(uint64_t), seqSignatures.size(), fp);
 
-    for (size_t i = 0; i < sliceCount; i++) { // 5
-        for (size_t j = 0; j < sliceLimit; j++) { // 256
+    for (size_t i = 0; i < sliceLens.size(); i++) { // Number of slices
+        for (size_t j = 0; j < (1 << sliceLens[i]); j++) { // Slice limit give slice width
             size_t sz = sliceLists[i][j].size();
             fwrite(&sz, sizeof(size_t), 1, fp);
         }
     }
 
-    for (size_t i = 0; i < sliceCount; i++) { // 5
-        for (size_t j = 0; j < sliceLimit; j++) { // 256
+    for (size_t i = 0; i < sliceLens.size(); i++) { // Number of slices
+        for (size_t j = 0; j < (1 << sliceLens[i]); j++) { // Slice limit give slice width
             fwrite(sliceLists[i][j].data(), sizeof(uint64_t), sliceLists[i][j].size(), fp); // vector
         }
     }
