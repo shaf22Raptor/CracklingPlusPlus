@@ -15,8 +15,8 @@ using std::runtime_error;
 
 
 // Guide searching
-const regex patternForward("(?=([ATCG]{21}GG))", std::regex::optimize);
-const regex patternReverse("(?=(CC[ACGT]{21}))", std::regex::optimize);
+const regex patternForward("(?=([ATCG]{21}GG))", regex::optimize);
+const regex patternReverse("(?=(CC[ACGT]{21}))", regex::optimize);
 
 void cas9InputProcessor::process(const list<string>& filesToProcess, const int& batchSize)
 {
