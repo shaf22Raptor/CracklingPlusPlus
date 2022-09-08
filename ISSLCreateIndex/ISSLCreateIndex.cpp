@@ -74,7 +74,7 @@ vector<uint64_t> computeMasksTwoBit(int seqLength, int mismatches) {
     vector<uint64_t> masks;
 
     // There will only be one valid combination when mismatches == seqLength.
-    if (mismatches == seqLength) {
+    if (mismatches != seqLength) {
 
         // There are more mismatchs to assign.
         if (mismatches > 0) {
@@ -261,7 +261,8 @@ int main(int argc, char** argv)
         i != std::sregex_iterator();
         i++) 
     {
-        sliceRanges.push_back(stoi(i->str())*2);
+        sliceRanges.push_back(stoi(i->str()) * 2);
+
     }
     if (sliceRanges.size() % 2) {
         fprintf(stderr, "Error: Uneven number of slice start and end points provided\n");
@@ -275,7 +276,7 @@ int main(int argc, char** argv)
     }
     vector<size_t> sliceLens;
     for (int i = 0; i < sliceRanges.size(); i = i + 2) {
-        sliceLens.push_back(sliceRanges[i + 1] - (sliceRanges[i] - 2));
+        sliceLens.push_back((sliceRanges[i + 1] + 2) - (sliceRanges[i]));
     }
 
     size_t seqCount = fileSize / seqLineLength;
@@ -334,19 +335,19 @@ int main(int argc, char** argv)
     }
 
     // Generate ISSL Index
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i = 0; i < sliceLens.size(); i++) {
         // sliceMask is a mask of 1's the length of the slice, used to extract target slice
         uint64_t sliceMask = (1 << sliceLens[i]) - 1;
         // sliceShift is the amout the target signature needs to be shifted to align with the target slice position 
-        int sliceShift = sliceRanges[i * 2] - 2;
+        int sliceShift = sliceRanges[i*2];
         auto& sliceList = sliceLists[i];
         
         uint32_t signatureId = 0;
         for (uint64_t signature : seqSignatures) {
             uint32_t occurrences = seqSignaturesOccurrences[signatureId];
-            // Shift the target signature to align with target slice position 
-            uint8_t sliceVal = (signature >> sliceShift) & sliceMask;
+            // Shift the target signature to align with target slice position
+            uint32_t sliceVal = (signature >> sliceShift) & sliceMask;
             // seqSigIdVal represnets the sequence signature ID and number of occurrences of the associated sequence.
             // (((uint64_t)occurrences) << 32), the most significant 32 bits is the count of the occurrences.
             // (uint64_t)signatureId, the index of the sequence in `seqSignatures`
@@ -379,6 +380,7 @@ int main(int argc, char** argv)
     fp = fopen(argv[4], "wb");
     // Generate Header list
     vector<size_t> slicelistHeader;
+    auto test = sliceRanges.size();
     slicelistHeader.push_back(offtargetsCount);
     slicelistHeader.push_back(seqLength);
     slicelistHeader.push_back(seqCount);
