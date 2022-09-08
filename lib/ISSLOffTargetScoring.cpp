@@ -34,7 +34,7 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
 
     printer("Loading ISSL Index.");
 
-    size_t seqLength, seqCount, sliceWidth, sliceCount, offtargetsCount, scoresCount;
+    
 
     /** Scoring methods. To exit early:
      *      - only CFD must drop below `threshold`
@@ -80,11 +80,10 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
     FILE* fp = fopen(ISSLIndex.c_str(), "rb");
 
     /** The index contains a fixed-sized header
-     *      - the number of off-targets in the index
+     *      - the number of unique off-targets in the index
      *      - the length of an off-target
-     *      -
-     *      - chars per slice
-     *      - the number of slices per sequence
+     *      - the total number of off-targets
+     *      - the length of the slice range array
      *      - the number of precalculated MIT scores
      */
     vector<size_t> slicelistHeader(50);
@@ -93,16 +92,37 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
         throw std::runtime_error("Error reading index: header invalid\n");
     }
 
-    offtargetsCount = slicelistHeader[0];
-    seqLength = slicelistHeader[1];
-    seqCount = slicelistHeader[2];
-    sliceWidth = slicelistHeader[3];
-    sliceCount = slicelistHeader[4];
-    scoresCount = slicelistHeader[5];
+    size_t offtargetsCount = slicelistHeader[0];
+    size_t seqLength = slicelistHeader[1];
+    size_t seqCount = slicelistHeader[2];
+    size_t sliceRangeCount = slicelistHeader[3];
+    size_t scoresCount = slicelistHeader[4];
+
+    /**
+    * Read the slice ranges from header
+    */
+    vector<size_t> sliceRanges;
+    for (int i = 0; i < sliceRangeCount; i++)
+    {
+        size_t sliceRange;
+        fread(&sliceRange, sizeof(size_t), 1, fp);
+        sliceRanges.push_back(sliceRange);
+    }
+
+    vector<size_t> sliceLens;
+    for (int i = 0; i < sliceRanges.size(); i = i + 2) {
+        sliceLens.push_back((sliceRanges[i + 1] + 2) - (sliceRanges[i]));
+    }
+
 
     /** The maximum number of possibly slice identities
      *      4 chars per slice * each of A,T,C,G = limit of 16
      */
+
+    size_t sliceWidth = 8;
+
+    size_t sliceCount = 5;
+
     size_t sliceLimit = 1 << sliceWidth;
 
     /** Read in the precalculated MIT scores
@@ -144,7 +164,12 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
      *      These counts are stored contiguously
      *
      */
-    vector<size_t> allSlicelistSizes(sliceCount * sliceLimit);
+    size_t sliceListCount = 0;
+    for (int i = 0; i < sliceLens.size(); i++)
+    {
+        sliceListCount += 1ULL << sliceLens[i];
+    }
+    vector<size_t> allSlicelistSizes(sliceListCount);
 
     if (fread(allSlicelistSizes.data(), sizeof(size_t), allSlicelistSizes.size(), fp) == 0) {
         throw std::runtime_error("Error reading index: reading slice list sizes failed\n");
@@ -182,7 +207,13 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
      *         |---- ...
      *         | ...
      */
-    vector<vector<uint64_t*>> sliceLists(sliceCount, vector<uint64_t*>(sliceLimit));
+
+    vector<vector<uint64_t*>> sliceLists(sliceLens.size());
+    // Assign sliceLists size based on each slice length
+    for (int i = 0; i < sliceLens.size(); i++)
+    {
+        sliceLists[i] = vector<uint64_t*>(1ULL << sliceLens[i]);
+    }
 
     uint64_t* offset = allSignatures.data();
     for (size_t i = 0; i < sliceCount; i++) {
