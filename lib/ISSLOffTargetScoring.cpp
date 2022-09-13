@@ -71,13 +71,16 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
     }
 
     /** Begin reading the binary encoded ISSL, structured as:
-     *      - a header (6 items)
+     *      - a header (5 items)
+     *      - list of slice ranges
      *      - precalcuated local MIT scores
      *      - all binary-encoded off-target sites
      *      - slice list sizes
      *      - slice contents
      */
     FILE* fp = fopen(ISSLIndex.c_str(), "rb");
+
+
 
     /** The index contains a fixed-sized header
      *      - the number of unique off-targets in the index
@@ -114,16 +117,7 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
         sliceLens.push_back((sliceRanges[i + 1] + 2) - (sliceRanges[i]));
     }
 
-
-    /** The maximum number of possibly slice identities
-     *      4 chars per slice * each of A,T,C,G = limit of 16
-     */
-
-    size_t sliceWidth = 8;
-
-    size_t sliceCount = 5;
-
-    size_t sliceLimit = 1 << sliceWidth;
+    size_t sliceCount = sliceLens.size();
 
     /** Read in the precalculated MIT scores
      *      - `mask` is a 2-bit encoding of mismatch positions
@@ -149,23 +143,13 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
         throw std::runtime_error("Error reading index: loading off-target sequences failed\n");
     }
 
-    /** Prevent assessing an off-target site for multiple slices
-     *
-     *      Create enough 1-bit "seen" flags for the off-targets
-     *      We only want to score a candidate guide against an off-target once.
-     *      The least-significant bit represents the first off-target
-     *      0 0 0 1   0 1 0 0   would indicate that the 3rd and 5th off-target have been seen.
-     *      The CHAR_BIT macro tells us how many bits are in a byte (C++ >= 8 bits per byte)
-     */
-    uint64_t numOfftargetToggles = (offtargetsCount / ((size_t)sizeof(uint64_t) * (size_t)CHAR_BIT)) + 1;
-
     /** The number of signatures embedded per slice
      *
      *      These counts are stored contiguously
      *
      */
     size_t sliceListCount = 0;
-    for (int i = 0; i < sliceLens.size(); i++)
+    for (int i = 0; i < sliceCount; i++)
     {
         sliceListCount += 1ULL << sliceLens[i];
     }
@@ -190,6 +174,17 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
 
     /** End reading the index */
     fclose(fp);
+
+    /** Prevent assessing an off-target site for multiple slices
+     *
+     *      Create enough 1-bit "seen" flags for the off-targets
+     *      We only want to score a candidate guide against an off-target once.
+     *      The least-significant bit represents the first off-target
+     *      0 0 0 1   0 1 0 0   would indicate that the 3rd and 5th off-target have been seen.
+     *      The CHAR_BIT macro tells us how many bits are in a byte (C++ >= 8 bits per byte)
+     */
+    uint64_t numOfftargetToggles = (offtargetsCount / ((size_t)sizeof(uint64_t) * (size_t)CHAR_BIT)) + 1;
+
 
     /** Start constructing index in memory
      *
@@ -217,6 +212,7 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
 
     uint64_t* offset = allSignatures.data();
     for (size_t i = 0; i < sliceCount; i++) {
+        size_t sliceLimit = 1 << sliceLens[i];
         for (size_t j = 0; j < sliceLimit; j++) {
             size_t idx = i * sliceLimit + j;
             sliceLists[i][j] = offset;
@@ -338,6 +334,8 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
 
                 /** For each ISSL slice */
                 for (size_t i = 0; i < sliceCount; i++) {
+                    size_t sliceWidth = sliceLens[i];
+                    size_t sliceLimit = 1 << sliceWidth;
                     uint64_t sliceMask = sliceLimit - 1;
                     int sliceShift = sliceWidth * i;
                     sliceMask = sliceMask << sliceShift;
