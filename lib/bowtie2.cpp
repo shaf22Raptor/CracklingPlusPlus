@@ -58,8 +58,9 @@ void bowtie2::run(unordered_map<string, unordered_map<string, string>>& candidat
 		// Open input file 
 		std::ofstream inFile;
 		inFile.open(bowtie2InFile, std::ios::binary);
-
 		guidesInPage = 0;
+		vector<char> queryDataSet;
+		queryDataSet.reserve(bowtie2PageLength * 23);
 		while (paginatorIterator != pageEnd)
 		{
 			string target23 = paginatorIterator->first;
@@ -74,6 +75,8 @@ void bowtie2::run(unordered_map<string, unordered_map<string, string>>& candidat
 				continue;
 			}
 
+			for (char c : target23) { queryDataSet.push_back(c); }
+
 			vector<string> similarTargets = {
 				target23.substr(0, 20) + "AGG",
 				target23.substr(0, 20) + "CGG",
@@ -85,11 +88,7 @@ void bowtie2::run(unordered_map<string, unordered_map<string, string>>& candidat
 				target23.substr(0, 20) + "TAG"
 			};
 
-			for (string bowtieTarget : similarTargets)
-			{
-				inFile << bowtieTarget << "\n";
-				tempTargetDict_offset[bowtieTarget] = target23;
-			}
+			for (string bowtieTarget : similarTargets) { inFile << bowtieTarget << "\n"; }
 
 			guidesInPage++;
 			paginatorIterator++;
@@ -131,18 +130,9 @@ void bowtie2::run(unordered_map<string, unordered_map<string, string>>& candidat
 			string chr = line[2];
 			int pos = stoi(line[3]);
 			string read = line[9];
-			string seq = "";
-			if (tempTargetDict_offset.find(read) != tempTargetDict_offset.end())
-			{
-				seq = tempTargetDict_offset[read];
-			}
-			else if (tempTargetDict_offset.find(rc(read)) != tempTargetDict_offset.end())
-			{
-				seq = tempTargetDict_offset[rc(read)];
-			}
-			else
-			{
-				std::cout << "Problem? " << read << std::endl;
+			string seq = string(23, ' ');
+			for (int j = 0; j < 23; j++) {
+				seq[j] = queryDataSet[((i/8) * 23) + j];
 			}
 			if (endsWith(seq, "GG"))
 			{
