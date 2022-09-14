@@ -351,7 +351,7 @@ int main(int argc, char** argv)
             // seqSigIdVal represnets the sequence signature ID and number of occurrences of the associated sequence.
             // (((uint64_t)occurrences) << 32), the most significant 32 bits is the count of the occurrences.
             // (uint64_t)signatureId, the index of the sequence in `seqSignatures`
-            uint64_t seqSigIdVal = (((uint64_t)occurrences) << 32) | (uint64_t)signatureId;
+            uint64_t seqSigIdVal = ((uint64_t)occurrences << 32) | (uint64_t)signatureId;
             sliceList[sliceVal].push_back(seqSigIdVal);
             signatureId++;
         }
@@ -380,7 +380,6 @@ int main(int argc, char** argv)
     fp = fopen(argv[4], "wb");
     // Generate Header list
     vector<size_t> slicelistHeader;
-    auto test = sliceRanges.size();
     slicelistHeader.push_back(offtargetsCount);
     slicelistHeader.push_back(seqLength);
     slicelistHeader.push_back(seqCount);

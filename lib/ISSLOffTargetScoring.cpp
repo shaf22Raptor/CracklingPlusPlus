@@ -166,7 +166,7 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
      *      Each signature (64-bit) is structured as:
      *          <occurrences 32-bit><off-target-id 32-bit>
      */
-    vector<uint64_t> allSignatures(seqCount * sliceCount);
+    vector<uint64_t> allSignatures(offtargetsCount * sliceCount);
 
     if (fread(allSignatures.data(), sizeof(uint64_t), allSignatures.size(), fp) == 0) {
         throw std::runtime_error("Error reading index: reading slice contents failed\n");
@@ -211,13 +211,15 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
     }
 
     uint64_t* offset = allSignatures.data();
+    size_t sliceLimitOffset = 0;
     for (size_t i = 0; i < sliceCount; i++) {
         size_t sliceLimit = 1 << sliceLens[i];
         for (size_t j = 0; j < sliceLimit; j++) {
-            size_t idx = i * sliceLimit + j;
+            size_t idx = sliceLimitOffset + j;
             sliceLists[i][j] = offset;
             offset += allSlicelistSizes[idx];
         }
+        sliceLimitOffset += sliceLimit;
     }
 
 
@@ -300,9 +302,9 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
         /** Binary encode query sequences */
         omp_set_dynamic(0);     // Explicitly disable dynamic teams
         omp_set_num_threads(threadCount); // Use 4 threads for all consecutive parallel regions
-#pragma omp parallel
+        #pragma omp parallel
         {
-#pragma omp for
+            #pragma omp for
             for (int i = 0; i < queryCount; i++) {
                 char* ptr = &queryDataSet[i * seqLineLength];
                 uint64_t signature = sequenceToSignature(ptr, seqLength);
@@ -311,7 +313,7 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
         }
 
         /** Begin scoring */
-#pragma omp parallel
+        #pragma omp parallel
         {
             unordered_map<uint64_t, unordered_set<uint64_t>> searchResults;
             vector<uint64_t> offtargetToggles(numOfftargetToggles);
@@ -319,7 +321,7 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
             uint64_t* offtargetTogglesTail = offtargetToggles.data() + numOfftargetToggles - 1;
 
             /** For each candidate guide */
-#pragma omp for
+            #pragma omp for
             for (int searchIdx = 0; searchIdx < querySignatures.size(); searchIdx++) {
 
                 auto searchSignature = querySignatures[searchIdx];
@@ -332,6 +334,7 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
                 double maximum_sum = (10000.0 - scoreThreshold * 100) / scoreThreshold;
                 bool checkNextSlice = true;
 
+                size_t sliceLimitOffset = 0;
                 /** For each ISSL slice */
                 for (size_t i = 0; i < sliceCount; i++) {
                     size_t sliceWidth = sliceLens[i];
@@ -343,7 +346,7 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
 
                     uint64_t searchSlice = (searchSignature & sliceMask) >> sliceShift;
 
-                    size_t idx = i * sliceLimit + searchSlice;
+                    size_t idx = sliceLimitOffset + searchSlice;
 
                     size_t signaturesInSlice = allSlicelistSizes[idx];
                     uint64_t* sliceOffset = sliceList[searchSlice];
@@ -508,8 +511,8 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
 
                     if (!checkNextSlice)
                         break;
+                    sliceLimitOffset += sliceLimit;
                 }
-
                 querySignatureMitScores[searchIdx] = 10000.0 / (100.0 + totScoreMit);
                 querySignatureCfdScores[searchIdx] = 10000.0 / (100.0 + totScoreCfd);
 
