@@ -20,7 +20,7 @@ std::string makeUpper(const std::string& s);
 
 std::string makeLower(const std::string& s);
 
-std::vector<std::string> split(std::string& s, std::string_view delimiter);
+std::vector<std::string> split(const std::string& s, std::string_view delimiter);
 
 std::string rtrim(std::string_view s);
 

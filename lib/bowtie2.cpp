@@ -118,17 +118,10 @@ void bowtie2::run(unordered_map<string, unordered_map<string, string>>& candidat
 		{
 			int nb_occurences = 0;
 
-			vector<string> line;
-
-			size_t tabPos = 0;
-			while ((tabPos = bowtie2Results[i].find('\t')) != std::string::npos) {
-				line.push_back(bowtie2Results[i].substr(0, tabPos));
-				bowtie2Results[i].erase(0, tabPos + 1);
-			}
-			line.push_back(bowtie2Results[i].substr(0, tabPos));
-			string chr = line[2];
-			int pos = stoi(line[3]);
-			string read = line[9];
+			vector<string> bowtie2Output = split(bowtie2Results[i], "\t");
+			string chr = bowtie2Output[2];
+			int pos = stoi(bowtie2Output[3]);
+			string read = bowtie2Output[9];
 			string seq = string(23, ' ');
 			// Bowtie2 results are written in the same order as input, retrieve target seq from `queryDataSet`
 			for (int j = 0; j < 23; j++) {
