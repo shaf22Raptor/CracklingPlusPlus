@@ -64,11 +64,11 @@ string signatureToSequence(uint64_t signature)
 /**
  * computeMasksTwoBit
  *
- * This function generates all of the combinations of mismatches.
+ * This function generates all of the two bit combinations of mismatches.
  *
  * @param seqLength, The length of the seqeunce 
  * @param mismatches, The number of mismatches allowed 
- * @return A vector of combinations
+ * @return A vector of two bit combinations
  */
 vector<uint64_t> computeMasksTwoBit(int seqLength, int mismatches) {
     vector<uint64_t> masks;
@@ -94,18 +94,18 @@ vector<uint64_t> computeMasksTwoBit(int seqLength, int mismatches) {
             *   10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
             * 
             *   Input to next call, length 19, mismatch 1:
-            *      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+            *   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
             * 
             *   Eventually returned values will be:
-            *      10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-            *         10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+            *   00 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+            *   00 00 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
             *      ....................................................................................................................
             *                                                                                                                     10 00
             *                                                                                                                        10
             *   The loop will add all the recursively genereated values with the original value will give unique combinations:
             *   10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
             * +
-            *      10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+            *   00 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
             * 
             *   10 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
             * 
@@ -266,12 +266,12 @@ int main(int argc, char** argv)
     }
     if (sliceRanges.size() % 2) {
         fprintf(stderr, "Error: Uneven number of slice start and end points provided\n");
-        fprintf(stderr, "Please format slice length list like [(start:end)...(start:end)]\n");
+        fprintf(stderr, "Please format slice length list like [(sliceStart:sliceEnd)...(sliceStart:sliceEnd)]\n");
         exit(1);
     }
     if (sliceRanges.size() < 2) {
         fprintf(stderr, "Error: Please specific more than 2 slice lengths\n");
-        fprintf(stderr, "Please format slice length list like [(start:end)...(start:end)]\n");
+        fprintf(stderr, "Please format slice length list like [(sliceStart:sliceEnd)...(sliceStart:sliceEnd)]\n");
         exit(1); 
     }
     vector<size_t> sliceLens;
