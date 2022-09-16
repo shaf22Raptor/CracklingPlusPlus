@@ -117,7 +117,6 @@ void bowtie2::run(unordered_map<string, unordered_map<string, string>>& candidat
 		for (int i = 0; i < bowtie2Results.size(); i += 8)
 		{
 			int nb_occurences = 0;
-			bowtie2Results[i] = rtrim(bowtie2Results[i]);
 
 			vector<string> line;
 
@@ -135,23 +134,10 @@ void bowtie2::run(unordered_map<string, unordered_map<string, string>>& candidat
 			for (int j = 0; j < 23; j++) {
 				seq[j] = queryDataSet[((i/8) * 23) + j];
 			}
-			if (endsWith(seq, "GG"))
-			{
-				candidateGuides[seq]["bowtieChr"] = chr;
-				candidateGuides[seq]["bowtieStart"] = std::to_string(pos);
-				candidateGuides[seq]["bowtieEnd"] = std::to_string(pos + 22);
-			}
-			else if (endsWith(rc(seq), "CC"))
-			{
-				candidateGuides[seq]["bowtieChr"] = chr;
-				candidateGuides[seq]["bowtieStart"] = std::to_string(pos);
-				candidateGuides[seq]["bowtieEnd"] = std::to_string(pos + 22);
-			}
-			else
-			{
-				std::cout << "Error? " << seq << std::endl;
-				exit(-1);
-			}
+			candidateGuides[seq]["bowtieChr"] = chr;
+			candidateGuides[seq]["bowtieStart"] = std::to_string(pos);
+			candidateGuides[seq]["bowtieEnd"] = std::to_string(pos + 22);
+
 			// We count how many of the eight reads for this target have a perfect alignment
 			for (int j = i; j < i + 8; j++)
 			{
@@ -173,11 +159,8 @@ void bowtie2::run(unordered_map<string, unordered_map<string, string>>& candidat
 			// If that number is at least two, the target is removed
 			if (nb_occurences > 1)
 			{
-				if (candidateGuides[seq]["passedBowtie"] != CODE_REJECTED)
-				{
-					failedCount++;
-				}
 				candidateGuides[seq]["passedBowtie"] = CODE_REJECTED;
+				failedCount++;
 			}
 			else
 			{
