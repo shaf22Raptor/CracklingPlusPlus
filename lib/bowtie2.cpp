@@ -122,7 +122,7 @@ void bowtie2::run(unordered_map<string, unordered_map<string, string>>& candidat
 			string chr = bowtie2Output[2];
 			int pos = stoi(bowtie2Output[3]);
 			string read = bowtie2Output[9];
-			string seq = string(23, ' ');
+			string seq(23, ' ');
 			// Bowtie2 results are written in the same order as input, retrieve target seq from `queryDataSet`
 			for (int j = 0; j < 23; j++) {
 				seq[j] = queryDataSet[((i/8) * 23) + j];
