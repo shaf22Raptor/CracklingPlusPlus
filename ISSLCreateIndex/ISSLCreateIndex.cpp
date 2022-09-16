@@ -335,7 +335,7 @@ int main(int argc, char** argv)
     }
 
     // Generate ISSL Index
-    //#pragma omp parallel for
+    #pragma omp parallel for
     for (int i = 0; i < sliceLens.size(); i++) {
         // sliceMask is a mask of 1's the length of the slice, used to extract target slice
         uint64_t sliceMask = (1 << sliceLens[i]) - 1;
