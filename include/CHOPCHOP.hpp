@@ -16,8 +16,6 @@ public:
 	bool static G20(std::string_view candidateGuide);
 
 private:
-	int testedCount;
-	int failedCount;
 	bool toolIsSelected;
 	std::string optimsationLevel;
 	int toolCount;
