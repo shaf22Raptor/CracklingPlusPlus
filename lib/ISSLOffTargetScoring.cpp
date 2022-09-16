@@ -300,7 +300,6 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
         vector<double> querySignatureCfdScores(queryCount);
 
         /** Binary encode query sequences */
-        omp_set_dynamic(0);
         omp_set_num_threads(threadCount); 
         #pragma omp parallel
         {
@@ -313,6 +312,7 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
         }
 
         /** Begin scoring */
+        omp_set_num_threads(threadCount);
         #pragma omp parallel
         {
             unordered_map<uint64_t, unordered_set<uint64_t>> searchResults;
