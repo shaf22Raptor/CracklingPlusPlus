@@ -74,9 +74,9 @@ void bowtie2::run(unordered_map<string, unordered_map<string, string>>& candidat
 				paginatorIterator++;
 				continue;
 			}
-
+			// Store original seqeunce for use later when parsing results.
 			for (char c : target23) { queryDataSet.push_back(c); }
-
+			
 			vector<string> similarTargets = {
 				target23.substr(0, 20) + "AGG",
 				target23.substr(0, 20) + "CGG",
@@ -131,6 +131,7 @@ void bowtie2::run(unordered_map<string, unordered_map<string, string>>& candidat
 			int pos = stoi(line[3]);
 			string read = line[9];
 			string seq = string(23, ' ');
+			// Bowtie2 results are written in the same order as input, retrieve target seq from `queryDataSet`
 			for (int j = 0; j < 23; j++) {
 				seq[j] = queryDataSet[((i/8) * 23) + j];
 			}
@@ -151,19 +152,25 @@ void bowtie2::run(unordered_map<string, unordered_map<string, string>>& candidat
 				std::cout << "Error? " << seq << std::endl;
 				exit(-1);
 			}
-
+			// We count how many of the eight reads for this target have a perfect alignment
 			for (int j = i; j < i + 8; j++)
 			{
+				/**
+				* http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#sam-output
+				* XM : i : <N>    The number of mismatches in the alignment.Only present if SAM record is for an aligned read.
+				* XS : i : <N>    Alignment score for the best - scoring alignment found other than the alignment reported.
+				*/
 				if (bowtie2Results[j].find("XM:i:0") != string::npos)
 				{
 					nb_occurences++;
+					// We also check whether this perfect alignment also happens elsewhere
 					if (bowtie2Results[j].find("XS:i:0") != string::npos)
 					{
 						nb_occurences++;
 					}
 				}
 			}
-
+			// If that number is at least two, the target is removed
 			if (nb_occurences > 1)
 			{
 				if (candidateGuides[seq]["passedBowtie"] != CODE_REJECTED)
