@@ -81,13 +81,13 @@ vector<uint64_t> computeMasksTwoBit(int seqLength, int mismatches) {
             /** 
             * This loop assigns a mismatch to the end of the seqeunce length.
             * It will then recursively call itself, reducing the seqeunce length and mismatch count.
-            * (1LLU << (seqLength - 1) * 2) is responsible for assigning a mismatch at the end of the current seq length.
+            * (1ULL << (seqLength - 1) * 2) is responsible for assigning a mismatch at the end of the current seq length.
             * By adding the term above to the recursively returned, it will combine them into a unique combination.
             * E.g 
             *   Starting with empty seq, seqeunce length 20, mismatch 2: 
             *   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
             * 
-            *   Assign (1LLU << (seqLength - 1) * 2):
+            *   Assign (1ULL << (seqLength - 1) * 2):
             *   10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
             * 
             *   Recursively call function on remaining seq length, seqeunce length 19, mismatch 1:
@@ -113,7 +113,7 @@ vector<uint64_t> computeMasksTwoBit(int seqLength, int mismatches) {
             */
             for (auto mask : computeMasksTwoBit(seqLength - 1, mismatches - 1)) {
 
-                masks.push_back((1LLU << (seqLength - 1) * 2) + mask);
+                masks.push_back((1ULL << (seqLength - 1) * 2) + mask);
             }
 
             /** 
@@ -121,10 +121,10 @@ vector<uint64_t> computeMasksTwoBit(int seqLength, int mismatches) {
             * By shrinking the sequence length it will shift the last possible mismatch and generate a new sequence.
             * This recursive call will result in the process being repeated on this new sequence.
             * E.g
-            *   Considered the first mask genereated by (1LLU << (seqLength - 1) * 2):
+            *   Considered the first mask genereated by (1ULL << (seqLength - 1) * 2):
             *   10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
             * 
-            *   By reducing the sequence size the result of (1LLU << (seqLength - 1) * 2) will be:
+            *   By reducing the sequence size the result of (1ULL << (seqLength - 1) * 2) will be:
             *   00 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
             * 
             *   This sequence will then be used as the starting point for the first loop and the process will repeat:
@@ -156,7 +156,7 @@ vector<uint64_t> computeMasksTwoBit(int seqLength, int mismatches) {
         }
         else {
             // No more mismatches allowed, return a mask of 0 (Exit condition).
-            masks.push_back(0LLU);
+            masks.push_back(0ULL);
         }
     }
     /**
@@ -167,7 +167,7 @@ vector<uint64_t> computeMasksTwoBit(int seqLength, int mismatches) {
     else {
         uint64_t tempMask = 0;
         for (int i = 0; i < seqLength; i++) {
-            tempMask |= (1LLU << i * 2);
+            tempMask |= (1ULL << i * 2);
         }
         masks.push_back(tempMask);
     }

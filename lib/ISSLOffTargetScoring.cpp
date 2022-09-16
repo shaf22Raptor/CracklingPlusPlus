@@ -355,7 +355,7 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
                     for (size_t j = 0; j < signaturesInSlice; j++) {
 
                         auto signatureWithOccurrencesAndId = sliceOffset[j];
-                        auto signatureId = signatureWithOccurrencesAndId & 0xFFFFFFFFull;
+                        auto signatureId = signatureWithOccurrencesAndId & 0xFFFFFFFFULL;
                         uint32_t occurrences = (signatureWithOccurrencesAndId >> (32));
 
                         /** Find the positions of mismatches
@@ -385,8 +385,8 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
                          *   popcount(mismatches):   4
                          */
                         uint64_t xoredSignatures = searchSignature ^ offtargets[signatureId];
-                        uint64_t evenBits = xoredSignatures & 0xAAAAAAAAAAAAAAAAull;
-                        uint64_t oddBits = xoredSignatures & 0x5555555555555555ull;
+                        uint64_t evenBits = xoredSignatures & 0xAAAAAAAAAAAAAAAAULL;
+                        uint64_t oddBits = xoredSignatures & 0x5555555555555555ULL;
                         uint64_t mismatches = (evenBits >> 1) | oddBits;
                         /*int dist = popcnt(&mismatches, sizeof(uint64_t));*/
                         int dist = popcount64(mismatches);
