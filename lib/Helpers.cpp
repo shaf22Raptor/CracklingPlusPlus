@@ -28,26 +28,17 @@ string makeLower(const string& s)
 	return lower;
 }
 
-vector<string> split(const string& s, string_view delimiter)
+vector<string> split(string_view s, string_view delimiter)
 {
 	vector<string> splitLine;
-	size_t last = 0;
-	size_t next = 0;
-	while ((next = s.find(delimiter, last)) != string::npos) 
+	size_t prevDelimiterPos = 0;
+	size_t delimiterPos = 0;
+	while ((delimiterPos = s.find(delimiter, prevDelimiterPos)) != string::npos) 
 	{ 
-		splitLine.push_back( s.substr(last, next - last) );
-		last = next + 1;
+		splitLine.push_back( (string)s.substr(prevDelimiterPos, delimiterPos - prevDelimiterPos) );
+		prevDelimiterPos = delimiterPos + 1;
 	}
-	splitLine.push_back(s.substr(last) );
-
-	//vector<string> splitLine;
-	//size_t delimiterPos = 0;
-	//size_t prevDelimiterPos = delimiterPos;
-	//while ((delimiterPos = s.find(delimiter, prevDelimiterPos)) != std::string::npos) {
-	//	splitLine.push_back(s.substr(prevDelimiterPos, delimiterPos - prevDelimiterPos));
-	//	prevDelimiterPos =  delimiterPos + 1;
-	//}
-	//splitLine.push_back(s.substr(prevDelimiterPos));
+	splitLine.push_back((string)s.substr(prevDelimiterPos) );
 
 	return splitLine;
 }
