@@ -11,8 +11,8 @@
 #include "../include/ISSLOffTargetScoring.hpp"
 
 #if defined(_WIN64)
-#pragma push_macro("close")
-#undef close
+	#pragma push_macro("close")
+	#undef close
 #endif
 
 int main(int argc, char** argv)
@@ -196,5 +196,5 @@ int main(int argc, char** argv)
 }
 
 #if defined(_WIN64)
-#pragma pop_macro("close")
+	#pragma pop_macro("close")
 #endif

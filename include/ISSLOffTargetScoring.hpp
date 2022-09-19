@@ -1,5 +1,6 @@
 // ISSLOffTargetScoring.hpp
 #pragma once
+#define _POSIX_C_SOURCE 200112L
 #include <cstdio>
 #include <cstdlib>
 #include <cstdint>
@@ -25,15 +26,16 @@
 #include "../include/cfdPenalties.h"
 
 #ifndef portableStat64
-#if (_BSD_SOURCE || _XOPEN_SOURCE >= 500 || _XOPEN_SOURCE && _XOPEN_SOURCE_EXTENDED || /* Since glibc 2.10: */ _POSIX_C_SOURCE >= 200112L)
-#include <sys/time.h>
-#include <unistd.h>
-#define p_stat64 stat64
-#elif defined(_WIN64) 
-#include "../include/sys/time.h"
-#include "../include/unistd.h"
-#define p_stat64 _stat64
-#endif
+	#define portableStat64
+	#if defined(_WIN64)
+		#include "../include/unistd.h"
+		#define p_stat64 _stat64
+	#elif defined(unix) || defined(__unix__) || defined(__unix)
+		#include <unistd.h>
+		#define p_stat64 stat64
+	#else
+		# error "Error, no stat function"
+	#endif
 #endif // !portableStat64
 
 
