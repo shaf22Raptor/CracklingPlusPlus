@@ -10,10 +10,10 @@
 #include <filesystem>
 #include "../include/Helpers.hpp"
 
-#if defined (__unix__) || defined (__unix)
-const std::string nullDir("/dev/null");
-#elif defined(_WIN64)
-const std::string nullDir("nul");
+#if defined(_WIN64)
+	const std::string nullDir("nul");
+#elif defined (__unix__) || defined (__unix)
+	const std::string nullDir("/dev/null");
 #endif
 
 class ConfigManager

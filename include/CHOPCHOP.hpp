@@ -11,13 +11,11 @@ class CHOPCHOP
 public:
 	explicit CHOPCHOP(ConfigManager& cm);
 
-	void run(std::unordered_map<std::string, std::unordered_map<std::string, std::string>>& candidateGuides);
+	void run(std::unordered_map<std::string, std::unordered_map<std::string, std::string>>& candidateGuides) const;
 
 	bool static G20(std::string_view candidateGuide);
 
 private:
-	int testedCount;
-	int failedCount;
 	bool toolIsSelected;
 	std::string optimsationLevel;
 	int toolCount;

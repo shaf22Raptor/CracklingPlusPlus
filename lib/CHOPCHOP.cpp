@@ -5,15 +5,13 @@ using std::string;
 using std::unordered_map;
 
 CHOPCHOP::CHOPCHOP(ConfigManager& cm) :
-    testedCount(),
-    failedCount(),
     toolIsSelected(cm.getBool("consensus", "chopchop")),
     optimsationLevel(cm.getString("general", "optimisation")),
     toolCount(cm.getConsensusToolCount()),
     consensusN(cm.getInt("consensus", "n"))
 {}
 
-void CHOPCHOP::run(unordered_map<string, unordered_map<string, string>>& candidateGuides)
+void CHOPCHOP::run(unordered_map<string, unordered_map<string, string>>& candidateGuides) const
 {
 
     if (!toolIsSelected)
@@ -23,8 +21,8 @@ void CHOPCHOP::run(unordered_map<string, unordered_map<string, string>>& candida
     }
 
     printer("CHOPCHOP - remove those without G in position 20.");
-    failedCount = 0;
-    testedCount = 0;
+    int failedCount = 0;
+    int testedCount = 0;
     for (const auto& [target23, resultsMap] : candidateGuides)
     {
         // Run time filtering

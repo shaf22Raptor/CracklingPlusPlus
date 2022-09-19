@@ -58,8 +58,9 @@ void bowtie2::run(unordered_map<string, unordered_map<string, string>>& candidat
 		// Open input file 
 		std::ofstream inFile;
 		inFile.open(bowtie2InFile, std::ios::binary);
-
 		guidesInPage = 0;
+		vector<char> queryDataSet;
+		queryDataSet.reserve(bowtie2PageLength * 23);
 		while (paginatorIterator != pageEnd)
 		{
 			string target23 = paginatorIterator->first;
@@ -73,7 +74,9 @@ void bowtie2::run(unordered_map<string, unordered_map<string, string>>& candidat
 				paginatorIterator++;
 				continue;
 			}
-
+			// Store original seqeunce for use later when parsing results.
+			for (char c : target23) { queryDataSet.push_back(c); }
+			
 			vector<string> similarTargets = {
 				target23.substr(0, 20) + "AGG",
 				target23.substr(0, 20) + "CGG",
@@ -85,11 +88,7 @@ void bowtie2::run(unordered_map<string, unordered_map<string, string>>& candidat
 				target23.substr(0, 20) + "TAG"
 			};
 
-			for (string bowtieTarget : similarTargets)
-			{
-				inFile << bowtieTarget << "\n";
-				tempTargetDict_offset[bowtieTarget] = target23;
-			}
+			for (string bowtieTarget : similarTargets) { inFile << bowtieTarget << "\n"; }
 
 			guidesInPage++;
 			paginatorIterator++;
@@ -118,69 +117,43 @@ void bowtie2::run(unordered_map<string, unordered_map<string, string>>& candidat
 		for (int i = 0; i < bowtie2Results.size(); i += 8)
 		{
 			int nb_occurences = 0;
-			bowtie2Results[i] = rtrim(bowtie2Results[i]);
 
-			vector<string> line;
+			vector<string> bowtie2Output = split(bowtie2Results[i], "\t");
+			string chr = bowtie2Output[2];
+			int pos = stoi(bowtie2Output[3]);
+			string read = bowtie2Output[9];
+			string seq(23, ' ');
+			// Bowtie2 results are written in the same order as input, retrieve target seq from `queryDataSet`
+			for (int j = 0; j < 23; j++) {
+				seq[j] = queryDataSet[((i/8) * 23) + j];
+			}
+			candidateGuides[seq]["bowtieChr"] = chr;
+			candidateGuides[seq]["bowtieStart"] = std::to_string(pos);
+			candidateGuides[seq]["bowtieEnd"] = std::to_string(pos + 22);
 
-			size_t tabPos = 0;
-			while ((tabPos = bowtie2Results[i].find('\t')) != std::string::npos) {
-				line.push_back(bowtie2Results[i].substr(0, tabPos));
-				bowtie2Results[i].erase(0, tabPos + 1);
-			}
-			line.push_back(bowtie2Results[i].substr(0, tabPos));
-			string chr = line[2];
-			int pos = stoi(line[3]);
-			string read = line[9];
-			string seq = "";
-			if (tempTargetDict_offset.find(read) != tempTargetDict_offset.end())
-			{
-				seq = tempTargetDict_offset[read];
-			}
-			else if (tempTargetDict_offset.find(rc(read)) != tempTargetDict_offset.end())
-			{
-				seq = tempTargetDict_offset[rc(read)];
-			}
-			else
-			{
-				std::cout << "Problem? " << read << std::endl;
-			}
-			if (endsWith(seq, "GG"))
-			{
-				candidateGuides[seq]["bowtieChr"] = chr;
-				candidateGuides[seq]["bowtieStart"] = std::to_string(pos);
-				candidateGuides[seq]["bowtieEnd"] = std::to_string(pos + 22);
-			}
-			else if (endsWith(rc(seq), "CC"))
-			{
-				candidateGuides[seq]["bowtieChr"] = chr;
-				candidateGuides[seq]["bowtieStart"] = std::to_string(pos);
-				candidateGuides[seq]["bowtieEnd"] = std::to_string(pos + 22);
-			}
-			else
-			{
-				std::cout << "Error? " << seq << std::endl;
-				exit(-1);
-			}
-
+			// We count how many of the eight reads for this target have a perfect alignment
 			for (int j = i; j < i + 8; j++)
 			{
+				/**
+				* http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#sam-output
+				* XM : i : <N>    The number of mismatches in the alignment.Only present if SAM record is for an aligned read.
+				* XS : i : <N>    Alignment score for the best - scoring alignment found other than the alignment reported.
+				*/
 				if (bowtie2Results[j].find("XM:i:0") != string::npos)
 				{
 					nb_occurences++;
+					// We also check whether this perfect alignment also happens elsewhere
 					if (bowtie2Results[j].find("XS:i:0") != string::npos)
 					{
 						nb_occurences++;
 					}
 				}
 			}
-
+			// If that number is at least two, the target is removed
 			if (nb_occurences > 1)
 			{
-				if (candidateGuides[seq]["passedBowtie"] != CODE_REJECTED)
-				{
-					failedCount++;
-				}
 				candidateGuides[seq]["passedBowtie"] = CODE_REJECTED;
+				failedCount++;
 			}
 			else
 			{
