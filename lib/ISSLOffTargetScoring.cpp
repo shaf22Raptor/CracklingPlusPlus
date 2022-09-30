@@ -332,7 +332,8 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
 
                 int numOffTargetSitesScored = 0;
                 double maximum_sum = (10000.0 - scoreThreshold * 100) / scoreThreshold;
-                bool checkNextSlice = true;
+                // TODO: uncommment
+                //bool checkNextSlice = true;
 
                 size_t sliceLimitOffset = 0;
                 /** For each ISSL slice */
@@ -474,8 +475,9 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
                                 *ptrOfftargetFlag |= (1ULL << (signatureId % 64));
                                 numOffTargetSitesScored += occurrences;
 
+                                // TODO: uncomment
                                 /** Stop calculating global score early if possible */
-                                if (sm == ScoreMethod::mitAndCfd) {
+                                /*if (sm == ScoreMethod::mitAndCfd) {
                                     if (totScoreMit > maximum_sum && totScoreCfd > maximum_sum) {
                                         checkNextSlice = false;
                                         break;
@@ -504,13 +506,14 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
                                         checkNextSlice = false;
                                         break;
                                     }
-                                }
+                                }*/
                             }
                         }
                     }
 
-                    if (!checkNextSlice)
-                        break;
+                    // TODO: uncomment
+                    //if (!checkNextSlice)
+                    //    break;
                     sliceLimitOffset += sliceLimit;
                 }
                 querySignatureMitScores[searchIdx] = 10000.0 / (100.0 + totScoreMit);
