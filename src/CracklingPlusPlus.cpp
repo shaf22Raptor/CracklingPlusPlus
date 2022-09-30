@@ -34,6 +34,7 @@ int main(int argc, char** argv)
 
 		// TODO: remove line
 		cm.set("general", "optimisation", "ultralow");
+		cm.set("offtargetscore", "method", "and");
 
 		// Record start time
 		auto start = std::chrono::high_resolution_clock::now();
