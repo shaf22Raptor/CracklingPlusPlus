@@ -32,6 +32,9 @@ int main(int argc, char** argv)
 		Logger coutLogger(std::cout, cm.getString("output", "log"));
 		Logger cerrLogger(std::cerr, cm.getString("output", "error"));
 
+		// TODO: remove line
+		cm.set("general", "optimisation", "ultralow");
+
 		// Record start time
 		auto start = std::chrono::high_resolution_clock::now();
 
@@ -99,12 +102,13 @@ int main(int argc, char** argv)
 				}
 			}
 
+			// TODO: uncomment
 			// Run scoring modules
-			CHOPCHOPModule.run(candidateGuides);
+			//CHOPCHOPModule.run(candidateGuides);
 
-			mm10dbModule.run(candidateGuides);
+			//mm10dbModule.run(candidateGuides);
 
-			sgRNAScorer2Module.run(candidateGuides);
+			//sgRNAScorer2Module.run(candidateGuides);
 
 			// Complete consensus evaluation
 			printer("Evaluating efficiency via consensus approach.");
@@ -121,8 +125,9 @@ int main(int argc, char** argv)
 
 			printer(fmt::format("\t{} of {} failed here.", commaify(failedCount), commaify(testedCount)));
 
+			// TODO: uncomment
 			// Run Specifity (Off target) modules 
-			bowtie2Module.run(candidateGuides);
+			//bowtie2Module.run(candidateGuides);
 
 			OTSModule.run(candidateGuides);
 
