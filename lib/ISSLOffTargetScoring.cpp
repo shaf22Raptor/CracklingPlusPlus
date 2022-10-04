@@ -311,6 +311,14 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
             }
         }
 
+        // TODO: remove
+        // Neighbourhood Count
+        vector<int> neighbourhoodCount(sliceCount, 0);
+        std::mutex neighbourhoodCountMutex;
+        // OT count by slice pos and mismatch count
+        vector<vector<int>> offTargetCount(sliceCount, vector<int>(21, 0));
+        std::mutex offTargetCountMutex;
+
         /** Begin scoring */
         omp_set_num_threads(threadCount);
         #pragma omp parallel
@@ -341,7 +349,7 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
                     size_t sliceWidth = sliceLens[i];
                     size_t sliceLimit = 1 << sliceWidth;
                     uint64_t sliceMask = sliceLimit - 1;
-                    int sliceShift = sliceWidth * i;
+                    int sliceShift = sliceRanges[i*2];
                     sliceMask = sliceMask << sliceShift;
                     auto& sliceList = sliceLists[i];
 
@@ -358,6 +366,10 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
                         auto signatureWithOccurrencesAndId = sliceOffset[j];
                         auto signatureId = signatureWithOccurrencesAndId & 0xFFFFFFFFULL;
                         uint32_t occurrences = (signatureWithOccurrencesAndId >> (32));
+
+                        neighbourhoodCountMutex.lock();
+                        neighbourhoodCount[i] = neighbourhoodCount[i] + occurrences;
+                        neighbourhoodCountMutex.unlock();
 
                         /** Find the positions of mismatches
                          *
@@ -391,6 +403,10 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
                         uint64_t mismatches = (evenBits >> 1) | oddBits;
                         /*int dist = popcnt(&mismatches, sizeof(uint64_t));*/
                         int dist = popcount64(mismatches);
+                        offTargetCountMutex.lock();
+                        offTargetCount[i][dist] = offTargetCount[i][dist] + occurrences;
+                        offTargetCountMutex.unlock();
+
                         if (dist >= 0 && dist <= maxDist) {
 
                             /** Prevent assessing the same off-target for multiple slices */
@@ -525,6 +541,15 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
         }
 
         printer("\tStarting to process the Off-target scoring results.");
+
+        for (int i = 0; i < neighbourhoodCount.size(); i++)
+        {
+            printer(fmt::format("\tSlice {}\t{}", i+1, commaify(neighbourhoodCount[i])));
+            for (int j = 0; j < 21; j++)
+            {
+                printer(fmt::format("\t\tMismatch {}\t{}", j, commaify(offTargetCount[i][j])));
+            }
+        }
 
         for (size_t searchIdx = 0; searchIdx < querySignatures.size(); searchIdx++) {
             string target20 = signatureToSequence(querySignatures[searchIdx], seqLength);
