@@ -51,14 +51,32 @@ TEST_CASE("commaify" * doctest::description("Ensure that the commaify function i
 {
     SUBCASE("Test commaify on 0")
     {
-        
         CHECK(commaify(0) == "0");
     }
 
     SUBCASE("Test commaify on -1")
     {
-
         CHECK(commaify(-1) == "-1");
+    }
+
+    SUBCASE("Test commaify on number < 1,000")
+    {
+        CHECK(commaify(999) == "999");
+    }
+
+    SUBCASE("Test commaify on number >= 1,000")
+    {
+        CHECK(commaify(1000) == "1,000");
+    }
+
+    SUBCASE("Test commaify on number > -1,000")
+    {
+        CHECK(commaify(-999) == "-999");
+    }
+
+    SUBCASE("Test commaify on number <= -1,000")
+    {
+        CHECK(commaify(-1000) == "-1,000");
     }
 
     SUBCASE("Test commaify on largest signed long long")
@@ -71,13 +89,13 @@ TEST_CASE("commaify" * doctest::description("Ensure that the commaify function i
         CHECK(commaify(-9223372036854775807) == "-9,223,372,036,854,775,807");
     }
 
-    SUBCASE("Test commaify on number < 1,000")
+    SUBCASE("Test commaify on largest signed int")
     {
-        CHECK(commaify(999) == "999");
+        CHECK(commaify(2147483647) == "2,147,483,647");
     }
 
-    SUBCASE("Test commaify on 1,000")
+    SUBCASE("Test commaify on smallest signed int")
     {
-        CHECK(commaify(1000) == "1,000");
+        CHECK(commaify(-2147483647) == "-2,147,483,647");
     }
 }
