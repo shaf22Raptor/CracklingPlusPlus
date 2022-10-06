@@ -166,10 +166,18 @@ bool filterCandidateGuides(unordered_map<string, string> candidateGuideResultMap
 	return true;
 }
 
-std::string commaify(int value)
+std::string commaify(long long value)
 {
+	//TODO: add some form of negative check then process as normal
+	
 	string s;
 	int cnt = 0;
+	bool negative = false;
+	if (value < 0) 
+	{ 
+		negative = true;
+		value *= -1;
+	}
 	do
 	{
 		s.insert(0, 1, char('0' + value % 10));
@@ -180,6 +188,7 @@ std::string commaify(int value)
 			cnt = 0;
 		}
 	} while (value);
+	if (negative) { s.insert(0, 1, '-'); }
 	return s;
 }
 

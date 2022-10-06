@@ -48,7 +48,7 @@ public:
     ReturnCode() : std::logic_error("The externally called program returned a non-zero value") { };
 };
 
-std::string commaify(int);
+std::string commaify(long long);
 
 class comma_numpunct : public std::numpunct<char>
 {
