@@ -315,11 +315,11 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
         // Neighbourhood Count
         std::mutex countsMutex;
 
-        vector<int> neighbourhoodCountTotal(sliceCount, 0);
-        vector<int> neighbourhoodCountUnique(sliceCount, 0);
+        vector<long long> neighbourhoodCountTotal(sliceCount, 0);
+        vector<long long> neighbourhoodCountUnique(sliceCount, 0);
         // OT count by slice pos and mismatch count
-        vector<vector<int>> offTargetCountTotal(sliceCount, vector<int>(21, 0));
-        vector<vector<int>> offTargetCountUnique(sliceCount, vector<int>(21, 0));
+        vector<vector<long long>> offTargetCountTotal(sliceCount, vector<long long>(21, 0));
+        vector<vector<long long>> offTargetCountUnique(sliceCount, vector<long long>(21, 0));
         /** Begin scoring */
         omp_set_num_threads(threadCount);
         #pragma omp parallel
