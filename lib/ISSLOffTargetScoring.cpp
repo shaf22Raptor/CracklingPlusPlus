@@ -1,4 +1,18 @@
 #include "../include/ISSLOffTargetScoring.hpp"
+// TODO: remove
+#include <map>
+#include <chrono>
+#include <fstream>
+using std::chrono::time_point;
+using std::chrono::high_resolution_clock;
+using std::chrono::duration_cast;
+using std::chrono::nanoseconds;
+using std::chrono::seconds;
+
+#if defined(_WIN64)
+    #pragma push_macro("close")
+    #undef close
+#endif
 
 using std::string;
 using std::vector;
@@ -312,14 +326,21 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
         }
 
         // TODO: remove
-        // Neighbourhood Count
+        // Mutex for thread safety
         std::mutex countsMutex;
-
+        // Neighbourhood counts
         vector<long long> neighbourhoodCountTotal(sliceCount, 0);
         vector<long long> neighbourhoodCountUnique(sliceCount, 0);
-        // OT count by slice pos and mismatch count
+        // Mismatch counts
         vector<vector<long long>> offTargetCountTotal(sliceCount, vector<long long>(21, 0));
         vector<vector<long long>> offTargetCountUnique(sliceCount, vector<long long>(21, 0));
+        // Guide counts
+        vector<vector<long long>> perGuideCountTotal(2, vector<long long>(querySignatures.size(), 0));
+        vector<vector<long long>> perGuideCountUnique(2, vector<long long>(querySignatures.size(), 0));
+        // Timings
+        std::chrono::duration<double> usefulTime(0);
+        std::chrono::duration<double> wastedTime(0);
+
         /** Begin scoring */
         omp_set_num_threads(threadCount);
         #pragma omp parallel
@@ -363,6 +384,8 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
 
                     /** For each off-target signature in slice */
                     for (size_t j = 0; j < signaturesInSlice; j++) {
+                        // TODO: remove
+                        time_point start = high_resolution_clock::now();
 
                         auto signatureWithOccurrencesAndId = sliceOffset[j];
                         auto signatureId = signatureWithOccurrencesAndId & 0xFFFFFFFFULL;
@@ -400,14 +423,6 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
                         uint64_t mismatches = (evenBits >> 1) | oddBits;
                         /*int dist = popcnt(&mismatches, sizeof(uint64_t));*/
                         int dist = popcount64(mismatches);
-
-                        countsMutex.lock();
-                        neighbourhoodCountTotal[i] += occurrences;
-                        neighbourhoodCountUnique[i]++;
-
-                        offTargetCountTotal[i][dist] += occurrences;
-                        offTargetCountUnique[i][dist]++;
-                        countsMutex.unlock();
 
                         if (dist >= 0 && dist <= maxDist) {
 
@@ -526,6 +541,42 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
                                     }
                                 }*/
                             }
+                            // TODO: remove
+                            // Updated counts and timings
+                            std::chrono::duration<double> computeTime = high_resolution_clock::now() - start;
+                            countsMutex.lock();
+                            // Timing
+                            usefulTime += computeTime;
+                            // Neighbourhood counts
+                            neighbourhoodCountTotal[i] += occurrences;
+                            neighbourhoodCountUnique[i]++;
+                            // Mismatch counts 
+                            offTargetCountTotal[i][dist] += occurrences;
+                            offTargetCountUnique[i][dist]++;
+                            // Per guide counts
+                            perGuideCountTotal[true][searchIdx] += occurrences;
+                            perGuideCountUnique[true][searchIdx]++;
+                            countsMutex.unlock();
+                        }
+                        else
+                        {
+                            // TODO: remove
+                            // Updated counts and timings
+                            std::chrono::duration<double> computeTime = high_resolution_clock::now() - start;
+                            countsMutex.lock();
+                            // Timing
+                            wastedTime += computeTime;
+                            // Neighbourhood counts
+                            neighbourhoodCountTotal[i] += occurrences;
+                            neighbourhoodCountUnique[i]++;
+                            // Mismatch counts 
+                            offTargetCountTotal[i][dist] += occurrences;
+                            offTargetCountUnique[i][dist]++;
+                            // Per guide counts
+                            perGuideCountTotal[false][searchIdx] += occurrences;
+                            perGuideCountUnique[false][searchIdx]++;
+                            countsMutex.unlock();
+                            
                         }
                     }
 
@@ -543,6 +594,9 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
         }
 
         printer("\tStarting to process the Off-target scoring results.");
+        
+        // TODO: remove
+        printer(fmt::format("Wasted time: {}\tUseful time: {}", wastedTime.count(), usefulTime.count()));
 
         for (int i = 0; i < neighbourhoodCountTotal.size(); i++)
         {
@@ -552,6 +606,89 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
                 printer(fmt::format("\tMismatch {}\tTotal {}\tUnique {}", j, commaify(offTargetCountTotal[i][j]), commaify(offTargetCountUnique[i][j])));
             }
         }
+
+        std::filesystem::path outputPath(std::filesystem::path(ISSLIndex).parent_path());
+
+        std::ofstream outputFile;
+        std::map<long long, long long> truePerGuideCountTotal;
+        for (long long trueOTCount : perGuideCountTotal[true])
+        {
+            if (truePerGuideCountTotal.count(trueOTCount))
+            {
+                truePerGuideCountTotal[trueOTCount]++;
+            }
+            else
+            {
+                truePerGuideCountTotal[trueOTCount] = 1;
+            }
+        }
+
+        outputFile.open(outputPath / "_output" / "truePerGuideCountTotal.txt");
+        for (auto const& x : truePerGuideCountTotal)
+        {
+            outputFile << fmt::format("{}:{}\n",x.first,x.second);
+        }
+        outputFile.close();
+
+        std::map<long long, long long> truePerGuideCountUnique;
+        for (long long trueOTCount : perGuideCountUnique[true])
+        {
+            if (truePerGuideCountUnique.count(trueOTCount))
+            {
+                truePerGuideCountUnique[trueOTCount]++;
+            }
+            else
+            {
+                truePerGuideCountUnique[trueOTCount] = 1;
+            }
+        }
+
+        outputFile.open(outputPath / "_output" / "truePerGuideCountUnique.txt");
+        for (auto const& x : truePerGuideCountUnique)
+        {
+            outputFile << fmt::format("{}:{}\n", x.first, x.second);
+        }
+        outputFile.close();
+
+        std::map<long long, long long> falsePerGuideCountTotal;
+        for (long long trueOTCount : perGuideCountTotal[false])
+        {
+            if (falsePerGuideCountTotal.count(trueOTCount))
+            {
+                falsePerGuideCountTotal[trueOTCount]++;
+            }
+            else
+            {
+                falsePerGuideCountTotal[trueOTCount] = 1;
+            }
+        }
+
+        outputFile.open(outputPath / "_output" / "falsePerGuideCountTotal.txt");
+        for (auto const& x : falsePerGuideCountTotal)
+        {
+            outputFile << fmt::format("{}:{}\n", x.first, x.second);
+        }
+        outputFile.close();
+
+        std::map<long long, long long> falsePerGuideCountUnique;
+        for (long long trueOTCount : perGuideCountUnique[false])
+        {
+            if (falsePerGuideCountUnique.count(trueOTCount))
+            {
+                falsePerGuideCountUnique[trueOTCount]++;
+            }
+            else
+            {
+                falsePerGuideCountUnique[trueOTCount] = 1;
+            }
+        }
+
+        outputFile.open(outputPath / "_output" / "falsePerGuideCountUnique.txt");
+        for (auto const& x : falsePerGuideCountUnique)
+        {
+            outputFile << fmt::format("{}:{}\n", x.first, x.second);
+        }
+        outputFile.close();
 
         for (size_t searchIdx = 0; searchIdx < querySignatures.size(); searchIdx++) {
             string target20 = signatureToSequence(querySignatures[searchIdx], seqLength);
@@ -662,3 +799,7 @@ string ISSLOffTargetScoring::signatureToSequence(uint64_t signature, const size_
     }
     return sequence;
 }
+
+#if defined(_WIN64)
+    #pragma pop_macro("close")
+#endif
