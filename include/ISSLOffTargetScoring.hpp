@@ -63,4 +63,10 @@ private:
 	uint64_t sequenceToSignature(const char* ptr, const size_t& seqLength);
 
 	std::string signatureToSequence(uint64_t signature, const size_t& seqLength);
+
+	double predictMITLocalScore(uint64_t xoredSignatures);
+
+	double calcMITLocalScore(int* mismatch_array, int length);
+
+	std::vector<uint64_t> computeMasksTwoBit(int seqLength, int mismatches);
 };
