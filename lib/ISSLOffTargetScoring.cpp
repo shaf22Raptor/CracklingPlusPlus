@@ -796,7 +796,7 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
         outputFile.close();
 
         std::map<long long, long long> falsePerGuideCount;
-        for (long long falseOTCount : perGuideCount[true])
+        for (long long falseOTCount : perGuideCount[false])
         {
             if (falsePerGuideCount.count(falseOTCount))
             {
