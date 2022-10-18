@@ -360,9 +360,9 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
 
         /** OT scoring loop */
         omp_set_num_threads(threadCount);
-        //#pragma omp parallel
+        #pragma omp parallel
         {
-            //#pragma omp for
+            #pragma omp for
             for (int i = 0; i < queryCount; i++) {
                 uint64_t searchSignature = querySignatures[i];
 
