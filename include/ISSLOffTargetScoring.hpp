@@ -24,6 +24,7 @@
 #include "../include/phmap/phmap.h"
 #include "../include/libpopcnt.h"
 #include "../include/cfdPenalties.h"
+#include "../include/mitPenalties.h"
 
 #ifndef portableStat64
 	#define portableStat64

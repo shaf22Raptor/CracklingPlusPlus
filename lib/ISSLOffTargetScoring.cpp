@@ -3,6 +3,7 @@
 #include <map>
 #include <chrono>
 #include <fstream>
+#include <map>
 using std::chrono::time_point;
 using std::chrono::high_resolution_clock;
 using std::chrono::duration_cast;
@@ -234,23 +235,6 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
     //    sliceLimitOffset += sliceLimit;
     //}
 
-    // TODO: Move this to external header file like CFD penalities
-    // Precalculate all the scores
-    unordered_map<uint64_t, double> precalculatedScores;
-
-    int maxDist = 4;
-    size_t scoresCount = 0;
-
-    for (int i = 1; i <= maxDist; i++) {
-        vector<uint64_t> tempMasks;
-        tempMasks = computeMasksTwoBit(20, i);
-        for (auto mask : tempMasks) {
-            double score = predictMITLocalScore(mask);
-            precalculatedScores.insert(pair<uint64_t, double>(mask, score));
-            scoresCount++;
-        }
-    }
-
     // Load cluster results
 
     int seqLength = 20;
@@ -388,7 +372,6 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
 
                 int numOffTargetSitesScored = 0;
                 double maximum_sum = (10000.0 - scoreThreshold * 100) / scoreThreshold;
-                bool checkNextOT = true;
 
                 // TODO: remove
                 countsMutex.lock();
@@ -411,7 +394,7 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
                         // Begin calculating MIT score
                         if (calcMit) {
                             if (dist > 0) {
-                                totScoreMit += precalculatedScores[mismatches];
+                                totScoreMit += precalculatedMITScores[mismatches];
                             }
                         }
 
@@ -480,7 +463,7 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
                             totScoreCfd += cfdScore;
                         }
 
-
+                        // TODO: remove
                         countsMutex.lock();
                         perGuideCount[true][i]++;
                         offTargetCount[dist]++;
@@ -488,6 +471,7 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
                     }
                     else
                     {
+                        // TODO: remove
                         countsMutex.lock();
                         perGuideCount[false][i]++;
                         offTargetCount[dist]++;
