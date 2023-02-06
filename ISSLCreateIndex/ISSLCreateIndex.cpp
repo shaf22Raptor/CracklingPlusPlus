@@ -11,6 +11,9 @@ using std::regex_iterator;
 const regex extractNumbers("[1234567890]+");
 const vector<uint8_t> nucleotideIndex{ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,3 };
 const vector<char> signatureIndex{ 'A', 'C', 'G', 'T' };
+// 3bit
+// const vector<uint8_t> nucleotideIndex{ 1,0,2,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,7 };
+// const vector<char> signatureIndex{ '0','A','C','3','G','5','6','T' };
 size_t seqLength;
 
 /**
@@ -21,10 +24,130 @@ size_t seqLength;
  */
 size_t getFileSize(const char* path)
 {
-    struct p_stat64 statBuf;
-    p_stat64(path, &statBuf);
-    return statBuf.st_size;
+    std::filesystem::path p{ path };
+    return std::filesystem::file_size(p);
 }
+
+/**
+ * encode3Bit
+ *
+ * Converts from sequence of letters to three bit encoded signature
+ *
+ * @param ptr A pointer to the beginning of a char seqeuence
+ * @return The three bit encoded signature of the sequence at `ptr`
+ */
+uint64_t encode3Bit(const char* ptr)
+{
+    uint64_t signature = 0;
+    for (size_t j = 0; j < seqLength; j++) {
+        signature |= (uint64_t)(nucleotideIndex[(ptr[j]) - 65]) << (j * 3);
+    }
+    return signature;
+}
+
+/**
+ * decode3Bit
+ *
+ * Converts from three bit encoded signature to sequence of letters
+ *
+ * @param signature The three bit encoded signature
+ * @return The letter sequence of `signature`
+ */
+string decode3Bit(uint64_t signature)
+{
+    string sequence = string(seqLength, ' ');
+    for (size_t j = 0; j < seqLength; j++) {
+        sequence[j] = signatureIndex[(signature >> (j * 3)) & 0x7];
+    }
+    return sequence;
+}
+
+/**
+ * decode3Bit
+ *
+ * Converts from three bit encoded signature to sequence of letters
+ *
+ * @param signature The three bit encoded signature
+ * @return The letter sequence of `signature`
+ */
+string decode3Bit(uint64_t signature, int len)
+{
+    string sequence = string(len, ' ');
+    for (size_t j = 0; j < len; j++) {
+        sequence[j] = signatureIndex[(signature >> (j * 3)) & 0x7];
+    }
+    return sequence;
+}
+
+/**
+ * parseSlice
+ *
+ * Converts from a sequence of '1' and '0' to binary mask
+ *
+ * @param ptr A pointer to the beginning of a char seqeuence
+ * @return The three bit encoded signature of the sequence at `ptr`
+ */
+vector<int> parseSlice(const char* ptr)
+{
+    vector<int> mask;
+    for (size_t j = 0; j < seqLength; j++) {
+        if (ptr[j] == '1')
+        {
+            mask.push_back(j);
+        }
+    }
+    mask.shrink_to_fit();
+    return mask;
+}
+
+/**
+ * computeMasksThreeBit
+ *
+ * This function generates all of the three bit combinations of mismatches.
+ *
+ * @param seqLength, The length of the seqeunce
+ * @param mismatches, The number of mismatches allowed
+ * @return A vector of two bit combinations
+ */
+vector<uint64_t> computeMasksThreeBit(int seqLength, int mismatches) {
+    vector<uint64_t> masks;
+
+    if (mismatches != seqLength) {
+        if (mismatches > 0) {
+            for (auto mask : computeMasksThreeBit(seqLength - 1, mismatches - 1)) {
+                masks.push_back((1ULL << (seqLength - 1) * 3) + mask);
+            }
+
+            for (auto mask : computeMasksThreeBit(seqLength - 1, mismatches)) {
+                masks.push_back(mask);
+            }
+        }
+        else {
+            masks.push_back(0ULL);
+        }
+    }
+    else {
+        uint64_t tempMask = 0;
+        for (int i = 0; i < seqLength; i++) {
+            tempMask |= (1ULL << i * 3);
+        }
+        masks.push_back(tempMask);
+    }
+    return masks;
+}
+
+///**
+// * getFileSize
+// *
+// * @param path, The path to the file
+// * @return The size of the file (in Bytes) at `path`
+// */
+//size_t getFileSize(const char* path)
+//{
+//    struct p_stat64 statBuf;
+//    p_stat64(path, &statBuf);
+//    return statBuf.st_size;
+//}
 
 /**
  * sequenceToSignature
@@ -234,52 +357,59 @@ double predictMITLocalScore(uint64_t xoredSignatures)
 
 int main(int argc, char** argv)
 {
-    // Check input args
-    if (argc < 5) {
-        fprintf(stderr, "Usage: %s [offtargetSites.txt] [sequence length] [slice width (bits)] [sissltable]\n", argv[0]);
-        exit(1);
-    }
-    size_t fileSize = getFileSize(argv[1]);
 
-    FILE* fp = fopen(argv[1], "rb");
-    seqLength = atoi(argv[2]);
-    if (seqLength > 32) {
-        fprintf(stderr, "Sequence length is greater than 32, which is the maximum supported currently\n");
+    // Check number of args
+    if (argc < 5) {
+        fprintf(stderr, "Usage: %s [offtargetSites.txt] [sliceconfig.txt] [sequence length] [sissltable]\n", argv[0]);
         exit(1);
     }
+
+    // Check seq length 
+    seqLength = atoi(argv[3]);
+    if (seqLength > 21) {
+        fprintf(stderr, "Sequence length is greater than 21, which is the maximum supported currently\n");
+        exit(1);
+    }
+
+    // Check offtarget sites file size
+    size_t otFileSize = getFileSize(argv[1]);
     size_t seqLineLength = seqLength + 1; // '\n'
-    if (fileSize % seqLineLength != 0) {
-        fprintf(stderr, "fileSize: %zu\n", fileSize);
-        fprintf(stderr, "Error: file does is not a multiple of the expected line length (%zu)\n", seqLineLength);
+    if (otFileSize % seqLineLength != 0) {
+        fprintf(stderr, "fileSize: %zu\n", otFileSize);
+        fprintf(stderr, "Error: offtargetSites.txt file does is not a multiple of the expected line length (%zu)\n", seqLineLength);
         fprintf(stderr, "The sequence length may be incorrect; alternatively, the line endings\n");
         fprintf(stderr, "may be something other than LF, or there may be junk at the end of the file.\n");
         exit(1);
     }
-    const string sliceArg = argv[3];
-    vector<size_t> sliceRanges;
-    for (auto i  = std::sregex_iterator(sliceArg.begin(), sliceArg.end(), extractNumbers);
-        i != std::sregex_iterator();
-        i++) 
-    {
-        sliceRanges.push_back(stoi(i->str()) * 2);
 
-    }
-    if (sliceRanges.size() % 2) {
-        fprintf(stderr, "Error: Uneven number of slice start and end points provided\n");
-        fprintf(stderr, "Please format slice length list like [(sliceStart:sliceEnd)...(sliceStart:sliceEnd)]\n");
+    // Check slice config file size
+    size_t scFileSize = getFileSize(argv[2]);
+    if (scFileSize % seqLineLength != 0) {
+        fprintf(stderr, "fileSize: %zu\n", scFileSize);
+        fprintf(stderr, "Error: sliceconfig.txt file does is not a multiple of the expected line length (%zu)\n", seqLineLength);
+        fprintf(stderr, "The sequence length may be incorrect; alternatively, the line endings\n");
+        fprintf(stderr, "may be something other than LF, or there may be junk at the end of the file.\n");
         exit(1);
     }
-    if (sliceRanges.size() < 2) {
-        fprintf(stderr, "Error: Please specific more than 2 slice lengths\n");
-        fprintf(stderr, "Please format slice length list like [(sliceStart:sliceEnd)...(sliceStart:sliceEnd)]\n");
-        exit(1); 
+
+    FILE* scFp = fopen(argv[2], "rb");
+    vector<char> sliceConfig(scFileSize);
+    if (fread(sliceConfig.data(), scFileSize, 1, scFp) < 1) {
+        fclose(scFp);
+        fprintf(stderr, "Failed to read in file.\n");
+        exit(1);
     }
-    vector<size_t> sliceLens;
-    for (int i = 0; i < sliceRanges.size(); i = i + 2) {
-        sliceLens.push_back((sliceRanges[i + 1] + 2) - (sliceRanges[i]));
+    fclose(scFp);
+
+    size_t sliceCount = scFileSize / seqLineLength;
+    vector<vector<int>> sliceMasks;
+    for (int i = 0; i < sliceCount; i++)
+    {
+        char* slicePtr = &sliceConfig[i * seqLineLength];
+        sliceMasks.push_back(parseSlice(slicePtr));
     }
 
-    size_t seqCount = fileSize / seqLineLength;
+    size_t seqCount = otFileSize / seqLineLength;
     fprintf(stderr, "Number of sequences: %zu\n", seqCount);
 
     size_t globalCount = 0;
@@ -288,14 +418,16 @@ int main(int argc, char** argv)
     vector<uint32_t> seqSignaturesOccurrences;
 
     size_t offtargetsCount = 0;
+    FILE* otFp = fopen(argv[1], "rb");
     {
-        vector<char> entireDataSet(fileSize);
+        vector<char> entireDataSet(otFileSize);
 
-        if (fread(entireDataSet.data(), fileSize, 1, fp) < 1) {
+        if (fread(entireDataSet.data(), otFileSize, 1, otFp) < 1) {
+            fclose(otFp);
             fprintf(stderr, "Failed to read in file.\n");
             exit(1);
         }
-        fclose(fp);
+        fclose(otFp);
 
         size_t progressCount = 0;
         size_t offtargetId = 0;
@@ -327,27 +459,29 @@ int main(int argc, char** argv)
     }
     printf("Finished counting occurrences, now constructing index...\n");
 
-    vector<vector<vector<uint64_t>>> sliceLists(sliceLens.size());
+    vector<vector<vector<uint64_t>>> sliceLists(sliceCount);
     // Assign sliceLists size based on each slice length
-    for (int i = 0; i < sliceLens.size(); i++)
+    for (int i = 0; i < sliceMasks.size(); i++)
     {
-        sliceLists[i] = vector<vector<uint64_t>>(1ULL << sliceLens[i]);
+        sliceLists[i] = vector<vector<uint64_t>>(1ULL << (sliceMasks[i].size() * 2));
     }
 
     // Generate ISSL Index
     #pragma omp parallel for
-    for (int i = 0; i < sliceLens.size(); i++) {
-        // sliceMask is a mask of 1's the length of the slice, used to extract target slice
-        uint64_t sliceMask = (1 << sliceLens[i]) - 1;
-        // sliceShift is the amout the target signature needs to be shifted to align with the target slice position 
-        int sliceShift = sliceRanges[i*2];
-        auto& sliceList = sliceLists[i];
-        
+    for (int i = 0; i < sliceCount; i++) {
+        vector<int>& sliceMask = sliceMasks[i];
+        vector<vector<uint64_t>>& sliceList = sliceLists[i];
         uint32_t signatureId = 0;
         for (uint64_t signature : seqSignatures) {
             uint32_t occurrences = seqSignaturesOccurrences[signatureId];
-            // Shift the target signature to align with target slice position
-            uint32_t sliceVal = (signature >> sliceShift) & sliceMask;
+            // Right shift to target position specified by slice mask list.
+            // & it with 3ULL to extract the two bits of interest.
+            // Left shift it back to its position in the slice value.
+            uint32_t sliceVal = 0ULL;
+            for (int j = 0; j < sliceMask.size(); j++)
+            {
+                sliceVal |= ((signature >> (sliceMask[j] * 2)) & 3ULL) << (j * 2);
+            }
             // seqSigIdVal represnets the sequence signature ID and number of occurrences of the associated sequence.
             // (((uint64_t)occurrences) << 32), the most significant 32 bits is the count of the occurrences.
             // (uint64_t)signatureId, the index of the sequence in `seqSignatures`
@@ -356,6 +490,8 @@ int main(int argc, char** argv)
             signatureId++;
         }
     }
+
+    printf("Finished constructing index, now precalculating scores...\n");
 
     printf("Finished constructing index, now precalculating scores...\n");
 
@@ -377,51 +513,62 @@ int main(int argc, char** argv)
 
     printf("Finished calculating scores, now preparing to write to disk...\n");
 
-    fp = fopen(argv[4], "wb");
     // Generate Header list
     vector<size_t> slicelistHeader;
     slicelistHeader.push_back(offtargetsCount);
     slicelistHeader.push_back(seqLength);
     slicelistHeader.push_back(seqCount);
-    slicelistHeader.push_back(sliceRanges.size());
+    slicelistHeader.push_back(sliceCount);
     slicelistHeader.push_back(scoresCount);
-   
-    // write the header, reserve the first 50 for header information
-    fwrite(slicelistHeader.data(), sizeof(size_t), 50, fp);
 
-    // write slice ranges
-    for (const size_t pos : sliceRanges)
-    {
-        fwrite(&pos, sizeof(size_t), 1, fp);
-    }
+    printf("Writing to disk...\n");
+    FILE* isslFp = fopen(argv[4], "wb");
+    // write the header, reserve the first 50 for header information
+    fwrite(slicelistHeader.data(), sizeof(size_t), 50, isslFp);
 
     // write the precalculated scores
     for (auto const& x : precalculatedScores) {
-        fwrite(&x.first, sizeof(uint64_t), 1, fp);
-        fwrite(&x.second, sizeof(double), 1, fp);
+        fwrite(&x.first, sizeof(uint64_t), 1, isslFp);
+        fwrite(&x.second, sizeof(double), 1, isslFp);
+    }
+
+    // write slice lengths
+    for (const vector<int>& mask : sliceMasks)
+    {
+        size_t sz = mask.size();
+        fwrite(&sz, sizeof(size_t), 1, isslFp);
+    }
+
+    // write slice positions
+    for (const vector<int>& mask : sliceMasks)
+    {
+        for (const int& pos : mask)
+        {
+            fwrite(&pos, sizeof(int), 1, isslFp);
+        }
     }
 
     // write the offtargets
-    fwrite(seqSignatures.data(), sizeof(uint64_t), seqSignatures.size(), fp);
+    fwrite(seqSignatures.data(), sizeof(uint64_t), seqSignatures.size(), isslFp);
 
     // write slice list lengths
-    for (size_t i = 0; i < sliceLens.size(); i++) { // Number of slices
-        for (size_t j = 0; j < (1ULL << sliceLens[i]); j++) { // Slice limit given slice width
+    for (size_t i = 0; i < sliceCount; i++) { // Number of slices
+        for (size_t j = 0; j < (1ULL << (sliceMasks[i].size() * 2)); j++) { // Slice limit given slice width
             size_t sz = sliceLists[i][j].size();
-            fwrite(&sz, sizeof(size_t), 1, fp);
+            fwrite(&sz, sizeof(size_t), 1, isslFp);
         }
     }
 
     // write slice list data
-    for (size_t i = 0; i < sliceLens.size(); i++) { // Number of slices
-        for (size_t j = 0; j < (1ULL << sliceLens[i]); j++) { // Slice limit given slice width
-            fwrite(sliceLists[i][j].data(), sizeof(uint64_t), sliceLists[i][j].size(), fp); // vector
+    for (size_t i = 0; i < sliceCount; i++) { // Number of slices
+        for (size_t j = 0; j < (1ULL << (sliceMasks[i].size() * 2)); j++) { // Slice limit given slice width
+            fwrite(sliceLists[i][j].data(), sizeof(uint64_t), sliceLists[i][j].size(), isslFp); // vector
         }
     }
 
-    printf("Writing to disk...\n");
+    
 
-    fclose(fp);
+    fclose(isslFp);
     printf("Done.\n");
     return 0;
 }

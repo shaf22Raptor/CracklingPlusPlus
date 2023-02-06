@@ -22,6 +22,7 @@ g++ -o isslCreateIndex isslCreateIndex.cpp -O3 -std=c++11 -fopenmp -mpopcnt
 #include <sys/stat.h>
 #include <map>
 #include <regex>
+#include <filesystem>
 
 #ifndef portableStat64
     #define portableStat64
