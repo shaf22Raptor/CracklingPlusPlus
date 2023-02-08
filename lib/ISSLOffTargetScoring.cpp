@@ -352,21 +352,6 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
             }
         }
 
-        // TODO: remove
-        // Mutex for thread safety
-        std::mutex countsMutex;
-        // Timing
-        std::chrono::duration<double> usefulTime;
-        std::chrono::duration<double> wastedTime;
-        // Neighbourhood counts
-        vector<uint64_t> neighbourhoodCountTotal(sliceCount);
-        vector<uint64_t> neighbourhoodCountUnique(sliceCount);
-        // Mismatch counts 
-        vector<vector<uint64_t>> offTargetCountTotal(sliceCount, vector<uint64_t>(21));
-        vector<vector<uint64_t>> offTargetCountUnique(sliceCount, vector<uint64_t>(21));
-        // Per guide counts 
-        vector<vector<uint64_t>> perGuideCountTotal(2, vector<uint64_t>(querySignatures.size()));
-        vector<vector<uint64_t>> perGuideCountUnique(2, vector<uint64_t>(querySignatures.size()));
         
         //// Neighbourhood counts
         //uint64_t neighbourhoodCount = 0;
@@ -528,6 +513,21 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
         //    }
         //}
 
+        // TODO: remove
+        // Mutex for thread safety
+        std::mutex countsMutex;
+        // Timing
+        std::chrono::duration<double> usefulTime;
+        std::chrono::duration<double> wastedTime;
+        // Neighbourhood counts
+        vector<uint64_t> neighbourhoodCountTotal(sliceCount);
+        vector<uint64_t> neighbourhoodCountUnique(sliceCount);
+        // Mismatch counts 
+        vector<vector<uint64_t>> offTargetCountTotal(sliceCount, vector<uint64_t>(21));
+        vector<vector<uint64_t>> offTargetCountUnique(sliceCount, vector<uint64_t>(21));
+        // Per guide counts 
+        vector<vector<uint64_t>> perGuideCountTotal(2, vector<uint64_t>(querySignatures.size()));
+        vector<vector<uint64_t>> perGuideCountUnique(2, vector<uint64_t>(querySignatures.size()));
 
         
         /** Begin scoring */
@@ -538,6 +538,20 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
             vector<uint64_t> offtargetToggles(numOfftargetToggles);
 
             uint64_t* offtargetTogglesTail = offtargetToggles.data() + numOfftargetToggles - 1;
+
+            // TODO: remove
+            // Timing
+            std::chrono::duration<double> usefulTimeLocal;
+            std::chrono::duration<double> wastedTimeLocal;
+            // Neighbourhood counts
+            vector<uint64_t> neighbourhoodCountTotalLocal(sliceCount);
+            vector<uint64_t> neighbourhoodCountUniqueLocal(sliceCount);
+            // Mismatch counts 
+            vector<vector<uint64_t>> offTargetCountTotalLocal(sliceCount, vector<uint64_t>(21));
+            vector<vector<uint64_t>> offTargetCountUniqueLocal(sliceCount, vector<uint64_t>(21));
+            // Per guide counts 
+            vector<vector<uint64_t>> perGuideCountTotalLocal(2, vector<uint64_t>(querySignatures.size()));
+            vector<vector<uint64_t>> perGuideCountUniqueLocal(2, vector<uint64_t>(querySignatures.size()));
 
             /** For each candidate guide */
             #pragma omp for
@@ -699,73 +713,68 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
 
                                 // TODO: uncomment
                                 /** Stop calculating global score early if possible */
-                                /*if (sm == ScoreMethod::mitAndCfd) {
-                                    if (totScoreMit > maximum_sum && totScoreCfd > maximum_sum) {
-                                        checkNextSlice = false;
-                                        break;
-                                    }
-                                }
-                                if (sm == ScoreMethod::mitOrCfd) {
-                                    if (totScoreMit > maximum_sum || totScoreCfd > maximum_sum) {
-                                        checkNextSlice = false;
-                                        break;
-                                    }
-                                }
-                                if (sm == ScoreMethod::avgMitCfd) {
-                                    if (((totScoreMit + totScoreCfd) / 2.0) > maximum_sum) {
-                                        checkNextSlice = false;
-                                        break;
-                                    }
-                                }
-                                if (sm == ScoreMethod::mit) {
-                                    if (totScoreMit > maximum_sum) {
-                                        checkNextSlice = false;
-                                        break;
-                                    }
-                                }
-                                if (sm == ScoreMethod::cfd) {
-                                    if (totScoreCfd > maximum_sum) {
-                                        checkNextSlice = false;
-                                        break;
-                                    }
-                                }*/
+                                //if (sm == ScoreMethod::mitAndCfd) {
+                                //    if (totScoreMit > maximum_sum && totScoreCfd > maximum_sum) {
+                                //        checkNextSlice = false;
+                                //        break;
+                                //    }
+                                //}
+                                //if (sm == ScoreMethod::mitOrCfd) {
+                                //    if (totScoreMit > maximum_sum || totScoreCfd > maximum_sum) {
+                                //        checkNextSlice = false;
+                                //        break;
+                                //    }
+                                //}
+                                //if (sm == ScoreMethod::avgMitCfd) {
+                                //    if (((totScoreMit + totScoreCfd) / 2.0) > maximum_sum) {
+                                //        checkNextSlice = false;
+                                //        break;
+                                //    }
+                                //}
+                                //if (sm == ScoreMethod::mit) {
+                                //    if (totScoreMit > maximum_sum) {
+                                //        checkNextSlice = false;
+                                //        break;
+                                //    }
+                                //}
+                                //if (sm == ScoreMethod::cfd) {
+                                //    if (totScoreCfd > maximum_sum) {
+                                //        checkNextSlice = false;
+                                //        break;
+                                //    }
+                                //}
                             }
                             // TODO: remove
                             // Updated counts and timings
                             std::chrono::duration<double> computeTime = high_resolution_clock::now() - start;
-                            countsMutex.lock();
                             // Timing
-                            usefulTime += computeTime;
+                            usefulTimeLocal += computeTime;
                             // Neighbourhood counts
-                            neighbourhoodCountTotal[i] += occurrences;
-                            neighbourhoodCountUnique[i]++;
+                            neighbourhoodCountTotalLocal[i] += occurrences;
+                            neighbourhoodCountUniqueLocal[i]++;
                             // Mismatch counts 
-                            offTargetCountTotal[i][dist] += occurrences;
-                            offTargetCountUnique[i][dist]++;
+                            offTargetCountTotalLocal[i][dist] += occurrences;
+                            offTargetCountUniqueLocal[i][dist]++;
                             // Per guide counts
-                            perGuideCountTotal[true][searchIdx] += occurrences;
-                            perGuideCountUnique[true][searchIdx]++;
-                            countsMutex.unlock();
+                            perGuideCountTotalLocal[true][searchIdx] += occurrences;
+                            perGuideCountUniqueLocal[true][searchIdx]++;
                         }
                         else
                         {
                             // TODO: remove
                             // Updated counts and timings
                             std::chrono::duration<double> computeTime = high_resolution_clock::now() - start;
-                            countsMutex.lock();
                             // Timing
-                            wastedTime += computeTime;
+                            wastedTimeLocal += computeTime;
                             // Neighbourhood counts
-                            neighbourhoodCountTotal[i] += occurrences;
-                            neighbourhoodCountUnique[i]++;
+                            neighbourhoodCountTotalLocal[i] += occurrences;
+                            neighbourhoodCountUniqueLocal[i]++;
                             // Mismatch counts 
-                            offTargetCountTotal[i][dist] += occurrences;
-                            offTargetCountUnique[i][dist]++;
+                            offTargetCountTotalLocal[i][dist] += occurrences;
+                            offTargetCountUniqueLocal[i][dist]++;
                             // Per guide counts
-                            perGuideCountTotal[false][searchIdx] += occurrences;
-                            perGuideCountUnique[false][searchIdx]++;
-                            countsMutex.unlock();
-                            
+                            perGuideCountTotalLocal[false][searchIdx] += occurrences;
+                            perGuideCountUniqueLocal[false][searchIdx]++;
                         }
                     }
 
@@ -779,7 +788,35 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
 
                 memset(offtargetToggles.data(), 0, sizeof(uint64_t) * offtargetToggles.size());
             }
+            countsMutex.lock();
+            usefulTime += usefulTimeLocal;
+            wastedTime += wastedTimeLocal;
+            for (size_t i = 0; i < neighbourhoodCountTotalLocal.size(); i++)
+            {
+                neighbourhoodCountTotal[i] += neighbourhoodCountTotalLocal[i];
+                neighbourhoodCountUnique[i] += neighbourhoodCountUniqueLocal[i];
+            }
 
+            for (size_t i = 0; i < offTargetCountTotalLocal.size(); i++)
+            {
+                for (size_t j = 0; j < offTargetCountTotalLocal[i].size(); j++)
+                {
+                    offTargetCountTotal[i][j] += offTargetCountTotalLocal[i][j];
+                    offTargetCountUnique[i][j] += offTargetCountUniqueLocal[i][j];
+
+                }
+            }
+
+            for (size_t i = 0; i < perGuideCountTotalLocal.size(); i++)
+            {
+                for (size_t j = 0; j < perGuideCountTotalLocal[i].size(); j++)
+                {
+                    perGuideCountTotal[i][j] += perGuideCountTotalLocal[i][j];
+                    perGuideCountUnique[i][j] += perGuideCountUniqueLocal[i][j];
+                }
+                
+            }
+            countsMutex.unlock();
         }
 
         printer("\tStarting to process the Off-target scoring results.");
