@@ -20,6 +20,22 @@ add_library(libsvm STATIC ${CMAKE_SOURCE_DIR}/lib/svm.cpp ${CMAKE_SOURCE_DIR}/in
 add_library(Logger STATIC ${CMAKE_SOURCE_DIR}/lib/Logger.cpp ${CMAKE_SOURCE_DIR}/include/Logger.hpp)
 
 
+####################
+# Consensus Module #
+####################
+add_library(consensusModule STATIC ${CMAKE_SOURCE_DIR}/lib/consensusModule.cpp ${CMAKE_SOURCE_DIR}/include/consensusModule.hpp ${CMAKE_SOURCE_DIR}/include/pipelineModule.hpp)
+
+
+
+###################
+# CHOPCHOP Module #
+###################
+add_library(chopchopModule STATIC ${CMAKE_SOURCE_DIR}/lib/chopchopModule.cpp ${CMAKE_SOURCE_DIR}/include/chopchopModule.hpp)
+target_link_libraries (chopchopModule PRIVATE consensusModule)
+
+
+
+
 ##################
 # INPUTPROCESSOR #
 ##################
