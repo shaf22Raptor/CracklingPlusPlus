@@ -9,7 +9,7 @@ Simply define by it's ability to be `run`.
 class pipeLineModule
 {
 protected:
-	run() = 0;
+	virtual void run() = 0;
 };
 
 
