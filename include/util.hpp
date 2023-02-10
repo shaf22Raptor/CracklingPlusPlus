@@ -2,9 +2,23 @@
 #define utilInclude
 #include <string>
 #include <filesystem>
+#include <unordered_map>
+
+template <class Char>
+class commaFormat : public std::numpunct<Char> {
+public:
+	std::string do_grouping() const { return "\3"; }
+	Char do_thousands_sep() const { return ','; }
+};
 
 enum otScoreMethod { unknown = 0, mit = 1, cfd = 2, mitAndCfd = 3, mitOrCfd = 4, avgMitCfd = 5 };
 enum optimisationLevel { unknown = 0, ultralow = 1, low = 2, medium = 3, high = 4};
+const static std::unordered_map<std::string, optimisationLevel> const table = { 
+	{"ultralow",optimisationLevel::ultralow}, 
+	{"low",optimisationLevel::low}, 
+	{"medium",optimisationLevel::medium},
+	{"high",optimisationLevel::high}
+};
 
 const char CODE_ACCEPTED = '1';
 const char CODE_REJECTED = '0';
@@ -105,11 +119,11 @@ struct guideResults
 	char passedBowtie = CODE_UNTESTED;
 	char passedOffTargetScore = CODE_UNTESTED;
 	double AT = NULL;
-	std::string ssL1 = CODE_UNTESTED;
-	std::string ssStructure = CODE_UNTESTED;
+	std::string ssL1 = &CODE_UNTESTED;
+	std::string ssStructure = &CODE_UNTESTED;
 	double ssEnergy = NULL;
 	double sgrnascorer2score = NULL;
-	std::string bowtieChr = CODE_UNTESTED;
+	std::string bowtieChr = &CODE_UNTESTED;
 	uint64_t bowtieStart = NULL;
 	uint64_t bowtieEnd = NULL;
 	double mitOfftargetscore = NULL;
