@@ -40,6 +40,11 @@ add_library(chopchopModule STATIC ${CMAKE_SOURCE_DIR}/lib/chopchopModule.cpp ${C
 target_link_libraries (chopchopModule PRIVATE consensusModule)
 
 
+#################
+# MM10DB Module #
+#################
+add_library(mm10dbModule STATIC ${CMAKE_SOURCE_DIR}/lib/mm10dbModule.cpp ${CMAKE_SOURCE_DIR}/include/mm10dbModule.hpp)
+target_link_libraries (mm10dbModule PRIVATE consensusModule PRIVTE Boost::boost PRIVATE Boost::regex)
 
 
 ##################
