@@ -15,7 +15,7 @@ public:
 };
 
 enum otScoreMethod { unknown = 0, mit = 1, cfd = 2, mitAndCfd = 3, mitOrCfd = 4, avgMitCfd = 5 };
-enum optimisationLevel { unknown = 0, ultralow = 1, low = 2, medium = 3, high = 4};
+enum optimisationLevel { invalid = 0, ultralow = 1, low = 2, medium = 3, high = 4};
 const static std::unordered_map<std::string, optimisationLevel> const table = { 
 	{"ultralow",optimisationLevel::ultralow}, 
 	{"low",optimisationLevel::low}, 
@@ -28,18 +28,6 @@ const char CODE_REJECTED = '0';
 const char CODE_UNTESTED = '?';
 const char CODE_AMBIGUOUS = '-';
 const char CODE_ERROR = '!';
-
-struct cracklingConfig
-{
-	generalConfig general;
-	consensusConfig consensus;
-	inputConfig input;
-	outputConfig output;
-	offtargetConfig offtarget;
-	sgrnascorer2Config sgrnascorer2;
-	bowtie2Config bowtie2;
-	rnafoldConfig rnafold;
-};
 
 struct generalConfig
 {
@@ -97,10 +85,24 @@ struct bowtie2Config
 struct rnafoldConfig
 {
 	std::filesystem::path binary;
+	std::filesystem::path inFile;
+	std::filesystem::path outFile;
 	uint8_t threads;
 	uint64_t pageLen;
 	int lowEngeryThreshold;
 	int highEngeryThreshold;
+};
+
+struct cracklingConfig
+{
+	generalConfig general;
+	consensusConfig consensus;
+	inputConfig input;
+	outputConfig output;
+	offtargetConfig offtarget;
+	sgrnascorer2Config sgrnascorer2;
+	bowtie2Config bowtie2;
+	rnafoldConfig rnafold;
 };
 
 struct guideResults
