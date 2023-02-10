@@ -135,4 +135,30 @@ struct guideResults
 	double cfdOfftargetscore = NULL;
 };
 
+class ReturnCode : public std::logic_error
+{
+public:
+	ReturnCode() : std::logic_error("The externally called program returned a non-zero value") { };
+};
+
+void runner(const char* args)
+{
+	std::cout << fmt::format("| Calling: {}", args) << std::endl;
+	try
+	{
+		int returnCode = system(args);
+		if (returnCode != 0)
+		{
+			throw ReturnCode();
+		}
+	}
+	catch (const ReturnCode& e)
+	{
+		std::cerr << e.what() << std::endl;
+		return;
+	}
+	std::cout << "| Finished" << std::endl;
+	return;
+}
+
 #endif // !utilInclude
