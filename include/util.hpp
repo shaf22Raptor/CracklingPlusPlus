@@ -33,6 +33,7 @@ struct generalConfig
 struct consensusConfig
 {
 	uint8_t n;
+	uint8_t toolCount;
 	bool mm10db;
 	bool sgrnascorer2;
 	bool chopchop;
