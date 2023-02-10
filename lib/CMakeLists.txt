@@ -1,4 +1,10 @@
 ﻿# CMakeList.txt : CMake file to build required libraries
+#########
+# Boost #
+#########
+find_package(Boost 1.79 REQUIRED COMPONENTS regex)
+
+
 ###########
 # HELPERS #
 ###########
