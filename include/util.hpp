@@ -6,6 +6,12 @@
 enum otScoreMethod { unknown = 0, mit = 1, cfd = 2, mitAndCfd = 3, mitOrCfd = 4, avgMitCfd = 5 };
 enum optimisationLevel { unknown = 0, ultralow = 1, low = 2, medium = 3, high = 4};
 
+const char CODE_ACCEPTED = '1';
+const char CODE_REJECTED = '0';
+const char CODE_UNTESTED = '?';
+const char CODE_AMBIGUOUS = '-';
+const char CODE_ERROR = '!';
+
 struct cracklingConfig
 {
 	generalConfig general;
@@ -77,6 +83,36 @@ struct rnafoldConfig
 	uint64_t pageLen;
 	int lowEngeryThreshold;
 	int highEngeryThreshold;
+};
+
+struct guideResults
+{
+	std::string seq;
+	std::string header = NULL;
+	uint64_t start = NULL;
+	uint64_t end = NULL;
+	char strand = CODE_AMBIGUOUS;
+	bool isUnique = false;
+	char passedG20 = CODE_UNTESTED;
+	char passedAvoidLeadingT = CODE_UNTESTED;
+	char passedATPercent = CODE_UNTESTED;
+	char passedTTTT = CODE_UNTESTED;
+	char passedSecondaryStructure = CODE_UNTESTED;
+	char acceptedByMm10db = CODE_UNTESTED;
+	char acceptedBySgRnaScorer = CODE_UNTESTED;
+	uint8_t consensusCount = NULL;
+	char passedBowtie = CODE_UNTESTED;
+	char passedOffTargetScore = CODE_UNTESTED;
+	double AT = NULL;
+	std::string ssL1 = CODE_UNTESTED;
+	std::string ssStructure = CODE_UNTESTED;
+	double ssEnergy = NULL;
+	double sgrnascorer2score = NULL;
+	std::string bowtieChr = CODE_UNTESTED;
+	uint64_t bowtieStart = NULL;
+	uint64_t bowtieEnd = NULL;
+	double mitOfftargetscore = NULL;
+	double cfdOfftargetscore = NULL;
 };
 
 #endif // !utilInclude
