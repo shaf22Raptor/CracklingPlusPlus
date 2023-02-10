@@ -7,6 +7,7 @@
 class consensusModule : private pipeLineModule
 {
 protected:
+	bool toolIsSelected;
 	optimisationLevel optimsationLevel;
 	uint8_t toolCount;
 	uint8_t consensusN;
