@@ -1,0 +1,82 @@
+#ifndef utilInclude
+#define utilInclude
+#include <string>
+#include <filesystem>
+
+enum otScoreMethod { unknown = 0, mit = 1, cfd = 2, mitAndCfd = 3, mitOrCfd = 4, avgMitCfd = 5 };
+enum optimisationLevel { unknown = 0, ultralow = 1, low = 2, medium = 3, high = 4};
+
+struct cracklingConfig
+{
+	generalConfig general;
+	consensusConfig consensus;
+	inputConfig input;
+	outputConfig output;
+	offtargetConfig offtarget;
+	sgrnascorer2Config sgrnascorer2;
+	bowtie2Config bowtie2;
+	rnafoldConfig rnafold;
+};
+
+struct generalConfig
+{
+	std::string name;
+	optimisationLevel optimisation;
+};
+
+struct consensusConfig
+{
+	uint8_t n;
+	bool mm10db;
+	bool sgrnascorer2;
+	bool chopchop;
+};
+
+struct inputConfig
+{
+	std::filesystem::path exonSequences;
+	std::filesystem::path offtargetSites;
+	std::filesystem::path gffAnnotation;
+	std::filesystem::path bowtie2Index;
+	uint64_t batchLen;
+};
+
+struct outputConfig
+{
+	std::filesystem::path dir;
+	std::string filename;
+	char delimiter;
+};
+
+struct offtargetConfig
+{
+	otScoreMethod method;
+	uint8_t threads;
+	uint64_t pageLen;
+	uint8_t scoreThreshold;
+	uint8_t maxDist;
+};
+
+struct sgrnascorer2Config
+{
+	std::filesystem::path model;
+	int scoreThreshold;
+};
+
+struct bowtie2Config
+{
+	std::filesystem::path binary;
+	uint8_t threads;
+	uint64_t pageLen;
+};
+
+struct rnafoldConfig
+{
+	std::filesystem::path binary;
+	uint8_t threads;
+	uint64_t pageLen;
+	int lowEngeryThreshold;
+	int highEngeryThreshold;
+};
+
+#endif // !utilInclude
