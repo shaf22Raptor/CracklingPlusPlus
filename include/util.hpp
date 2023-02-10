@@ -3,6 +3,9 @@
 #include <string>
 #include <filesystem>
 #include <unordered_map>
+#include <iostream>
+#define FMT_HEADER_ONLY
+#include "../include/fmt/format.h"
 
 template <class Char>
 class commaFormat : public std::numpunct<Char> {
