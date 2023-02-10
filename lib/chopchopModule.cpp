@@ -46,7 +46,7 @@ void chopchopModule::run(std::vector<guideResults>& candidateGuides)
 bool chopchopModule::processGuide(const guideResults& guide)
 {
     // Process all guides at this level
-    if (this->optimsationLevel == optimisationLevel::ultralow) { return true; }
+    if (optimsationLevel == optimisationLevel::ultralow) { return true; }
 
     // For all levels above `ultralow`
     if (!guide.isUnique)

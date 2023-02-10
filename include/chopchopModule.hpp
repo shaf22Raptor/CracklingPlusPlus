@@ -15,7 +15,6 @@ public:
 	chopchopModule(cracklingConfig config);
 	void run(std::vector<guideResults>& candidateGuides) final;
 private:
-	bool toolIsSelected;
 	bool G20(std::string_view guide);
 	bool processGuide(const guideResults& guide) final;
 };
