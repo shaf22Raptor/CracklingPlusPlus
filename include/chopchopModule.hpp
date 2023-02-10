@@ -1,13 +1,9 @@
 #ifndef chopchopModuleInclude
 #define chopchopModuleInclude
 
-#include <iostream>
 #include <string>
-#include <string_view>
 #include "../include/util.hpp"
 #include "../include/consensusModule.hpp"
-#define FMT_HEADER_ONLY
-#include "../include/fmt/format.h"
 
 class chopchopModule : private consensusModule
 {
