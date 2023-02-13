@@ -1,3 +1,5 @@
+#ifndef cfdPenaltiesInclude
+#define cfdPenaltiesInclude
 const double cfdPosPenalties[320] = {
 	// mask = pos << 4
 	// mask |= guide[pos] << 2
@@ -344,3 +346,5 @@ const double cfdPamPenalties[16] = {
 	0.0389610390, // (TG)
 	0.0000000000  // (TT)
 };
+
+#endif // !cfdPenaltiesInclude

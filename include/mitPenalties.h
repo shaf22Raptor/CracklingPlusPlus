@@ -1,3 +1,6 @@
+#ifndef mitPenaltiesInclude
+#define mitPenaltiesInclude
+
 #include<unordered_map>
 
 const std::unordered_map<uint64_t, double> precalculatedMITScores = {
@@ -6197,3 +6200,5 @@ const std::unordered_map<uint64_t, double> precalculatedMITScores = {
     {361850994688, 0.005864536856877323},
     {365072220160, 0.012934678413461539},
 };
+
+#endif // !mitPenaltiesInclude
