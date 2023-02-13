@@ -33,6 +33,8 @@ target_link_libraries (
 	PRIVATE sgrnascorer2 
 	PRIVATE bowtie2 
 	PRIVATE ISSLOffTargetScoring
+	PRIVATE ISSLClustering
+	PRIVATE ISSL2Stage
 	PRIVATE Boost::boost
 	PRIVATE Boost::regex
 )
