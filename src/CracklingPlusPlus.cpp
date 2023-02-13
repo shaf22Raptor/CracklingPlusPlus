@@ -9,6 +9,7 @@
 #include "../include/sgrnascorer2.hpp"
 #include "../include/bowtie2.hpp"
 #include "../include/ISSLOffTargetScoring.hpp"
+#include "../include/ISSL2Stage.hpp"
 
 #if defined(_WIN64)
 	#pragma push_macro("close")
@@ -48,7 +49,8 @@ int main(int argc, char** argv)
 		mm10db mm10dbModule(cm);
 		sgrnascorer2 sgRNAScorer2Module(cm);
 		bowtie2 bowtie2Module(cm);
-		ISSLOffTargetScoring OTSModule(cm);
+		//ISSLOffTargetScoring OTSModule(cm);
+		ISSL2Stage OTSModule(cm);
 
 		// Add header line to output file
 		std::ofstream outFile(cm.getString("output", "file"), std::ios_base::binary | std::ios_base::out);
@@ -112,19 +114,19 @@ int main(int argc, char** argv)
 			//sgRNAScorer2Module.run(candidateGuides);
 
 			// Complete consensus evaluation
-			printer("Evaluating efficiency via consensus approach.");
-			int failedCount = 0;
-			int testedCount = 0;
-			for (const auto& [target23, resultsMap] : candidateGuides)
-			{
-				candidateGuides[target23]["consensusCount"] = std::to_string((int)(candidateGuides[target23]["acceptedByMm10db"] == CODE_ACCEPTED) +
-					(int)(candidateGuides[target23]["acceptedBySgRnaScorer"] == CODE_ACCEPTED) +
-					(int)(candidateGuides[target23]["passedG20"] == CODE_ACCEPTED));
-				if (std::stoi(candidateGuides[target23]["consensusCount"]) < cm.getInt("consensus", "n")) { failedCount++; }
-				testedCount++;
-			}
+			//printer("Evaluating efficiency via consensus approach.");
+			//int failedCount = 0;
+			//int testedCount = 0;
+			//for (const auto& [target23, resultsMap] : candidateGuides)
+			//{
+			//	candidateGuides[target23]["consensusCount"] = std::to_string((int)(candidateGuides[target23]["acceptedByMm10db"] == CODE_ACCEPTED) +
+			//		(int)(candidateGuides[target23]["acceptedBySgRnaScorer"] == CODE_ACCEPTED) +
+			//		(int)(candidateGuides[target23]["passedG20"] == CODE_ACCEPTED));
+			//	if (std::stoi(candidateGuides[target23]["consensusCount"]) < cm.getInt("consensus", "n")) { failedCount++; }
+			//	testedCount++;
+			//}
 
-			printer(fmt::format("\t{} of {} failed here.", commaify(failedCount), commaify(testedCount)));
+			//printer(fmt::format("\t{} of {} failed here.", commaify(failedCount), commaify(testedCount)));
 
 			// TODO: uncomment
 			// Run Specifity (Off target) modules 

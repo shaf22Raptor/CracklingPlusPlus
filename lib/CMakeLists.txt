@@ -115,6 +115,21 @@ add_library(bowtie2 STATIC ${CMAKE_SOURCE_DIR}/lib/bowtie2.cpp ${CMAKE_SOURCE_DI
 target_link_libraries (bowtie2 PRIVATE Helpers PRIVATE ConfigManager)
 
 
+##############
+# ISSL2Stage #
+##############
+# Add Library
+add_library(ISSL2Stage STATIC ${CMAKE_SOURCE_DIR}/lib/ISSL2Stage.cpp ${CMAKE_SOURCE_DIR}/include/ISSL2Stage.hpp)
+# Link required librarires 
+target_link_libraries (ISSL2Stage PRIVATE Helpers PRIVATE ConfigManager)
+# Find OpenMP
+find_package(OpenMP)
+# Link OpenMP if available
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(ISSL2Stage PRIVATE OpenMP::OpenMP_CXX)
+endif()
+
+
 ########################
 # ISSLOFFTARGETSCORING #
 ########################
