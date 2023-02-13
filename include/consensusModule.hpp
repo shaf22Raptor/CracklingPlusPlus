@@ -4,7 +4,7 @@
 #include "../include/pipelineModule.hpp"
 #include "../include/util.hpp"
 
-class consensusModule : private pipeLineModule
+class consensusModule : private pipelineModule
 {
 protected:
 	bool toolIsSelected;

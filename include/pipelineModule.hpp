@@ -6,7 +6,7 @@ The simplest form of a pipeline module in Crackling.
 Simply define by it's ability to be `run`.
 */
 
-class pipeLineModule
+class pipelineModule
 {
 protected:
 	virtual void run() = 0;
