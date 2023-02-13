@@ -44,8 +44,14 @@ target_link_libraries (chopchopModule PRIVATE consensusModule)
 # MM10DB Module #
 #################
 add_library(mm10dbModule STATIC ${CMAKE_SOURCE_DIR}/lib/mm10dbModule.cpp ${CMAKE_SOURCE_DIR}/include/mm10dbModule.hpp)
-target_link_libraries (mm10dbModule PRIVATE consensusModule PRIVTE Boost::boost PRIVATE Boost::regex)
+target_link_libraries (mm10dbModule PRIVATE consensusModule PRIVATE Boost::boost PRIVATE Boost::regex)
 
+
+#######################
+# sgRNAScorer2 Module #
+#######################
+add_library(sgrnascorer2Module STATIC ${CMAKE_SOURCE_DIR}/lib/sgrnascorer2Module.cpp ${CMAKE_SOURCE_DIR}/include/sgrnascorer2Module.hpp)
+target_link_libraries (sgrnascorer2Module PRIVATE consensusModule)
 
 ##################
 # INPUTPROCESSOR #
