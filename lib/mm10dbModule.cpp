@@ -318,7 +318,7 @@ bool mm10dbModule::processGuide(const guideResults& guide)
 		return false;
 	}
 
-	// For all levels above `medium` and `high`
+	// For optimisation levels `medium` and `high`
 	if (optimsationLevel == optimisationLevel::medium || optimsationLevel == optimisationLevel::high)
 	{
 		bool failedMM10DBStage =
@@ -328,6 +328,26 @@ bool mm10dbModule::processGuide(const guideResults& guide)
 			guide.passedSecondaryStructure == CODE_REJECTED;
 		// Stop testing a guide if it has failed any stage of mm10db
 		if (failedMM10DBStage) { return false; }
+	}
+
+	// For optimisation level `high`
+	if (optimsationLevel = optimisationLevel::high)
+	{
+		int countAlreadyAccepted =
+			(int)guide.passedG20 == CODE_ACCEPTED +
+			(int)guide.acceptedByMm10db == CODE_ACCEPTED +
+			(int)guide.acceptedBySgRnaScorer == CODE_ACCEPTED;
+
+		int countAlreadyAssessed =
+			(int)guide.passedG20 != CODE_UNTESTED +
+			(int)guide.acceptedByMm10db != CODE_UNTESTED +
+			(int)guide.acceptedBySgRnaScorer != CODE_UNTESTED;
+
+		// Reject if the consensus has already been passed
+		if (countAlreadyAccepted >= consensusN) { return false; }
+
+		// Reject if there is not enough tests remaining to pass consensus
+		if (toolCount - countAlreadyAssessed < consensusN - countAlreadyAccepted) { return false; }
 	}
 
 	// None of the failure conditions have been meet, return true

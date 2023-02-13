@@ -42,6 +42,10 @@ void chopchopModule::run(std::vector<guideResults>& candidateGuides)
     return;
 }
 
+bool chopchopModule::G20(string_view guide)
+{
+	return guide[19] == 'G';
+}
 
 bool chopchopModule::processGuide(const guideResults& guide)
 {
@@ -55,11 +59,26 @@ bool chopchopModule::processGuide(const guideResults& guide)
         return false;
     }
 
+    // For optimisation level `high`
+    if (optimsationLevel = optimisationLevel::high)
+    {
+        int countAlreadyAccepted =
+            (int)guide.passedG20 == CODE_ACCEPTED +
+            (int)guide.acceptedByMm10db == CODE_ACCEPTED +
+            (int)guide.acceptedBySgRnaScorer == CODE_ACCEPTED;
+
+        int countAlreadyAssessed =
+            (int)guide.passedG20 != CODE_UNTESTED +
+            (int)guide.acceptedByMm10db != CODE_UNTESTED +
+            (int)guide.acceptedBySgRnaScorer != CODE_UNTESTED;
+
+        // Reject if the consensus has already been passed
+        if (countAlreadyAccepted >= consensusN) { return false; }
+
+        // Reject if there is not enough tests remaining to pass consensus
+        if (toolCount - countAlreadyAssessed < consensusN - countAlreadyAccepted) { return false; }
+    }
+
     // None of the failure conditions have been meet, return true
     return true;
-}
-
-bool chopchopModule::G20(string_view guide)
-{
-	return guide[19] == 'G';
 }
