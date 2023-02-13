@@ -115,6 +115,20 @@ add_library(bowtie2 STATIC ${CMAKE_SOURCE_DIR}/lib/bowtie2.cpp ${CMAKE_SOURCE_DI
 target_link_libraries (bowtie2 PRIVATE Helpers PRIVATE ConfigManager)
 
 
+##################
+# ISSLClustering #
+##################
+# Add Library
+add_library(ISSLClustering STATIC ${CMAKE_SOURCE_DIR}/lib/ISSLClustering.cpp ${CMAKE_SOURCE_DIR}/include/ISSLClustering.hpp)
+# Link required librarires 
+target_link_libraries (ISSLClustering PRIVATE Helpers PRIVATE ConfigManager)
+# Find OpenMP
+find_package(OpenMP)
+# Link OpenMP if available
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(ISSLClustering PRIVATE OpenMP::OpenMP_CXX)
+endif()
+
 ##############
 # ISSL2Stage #
 ##############
