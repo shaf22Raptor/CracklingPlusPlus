@@ -434,79 +434,56 @@ void ISSLClustering::run(unordered_map<string, unordered_map<string, string>>& c
 
         printer("\tStarting to process the Off-target scoring results.");
 
-        //printer(fmt::format("Offtargets tested {}", commaify(neighbourhoodCount)));
+        printer(fmt::format("Offtargets tested {}", commaify(neighbourhoodCount)));
 
-        //    for (int i = 0; i < 21; i++)
-        //    {
-        //        printer(fmt::format("\tMismatch {}\tTotal {}", i, commaify(offTargetCount[i])));
-        //    }
-
-        //std::filesystem::path outputPath(std::filesystem::path(ISSLIndex).parent_path());
-        //std::ofstream outputFile;
-
-        //std::map<long long, long long> truePerGuideCount;
-        //for (long long trueOTCount : perGuideCount[true])
-        //{
-        //    if (truePerGuideCount.count(trueOTCount))
-        //    {
-        //        truePerGuideCount[trueOTCount]++;
-        //    }
-        //    else
-        //    {
-        //        truePerGuideCount[trueOTCount] = 1;
-        //    }
-        //}
-
-        //outputFile.open(outputPath / "_output" / "truePerGuideCountTotal.txt");
-        //for (auto const& x : truePerGuideCount)
-        //{
-        //    outputFile << fmt::format("{}:{}\n",x.first,x.second);
-        //}
-        //outputFile.close();
-
-        //std::map<long long, long long> falsePerGuideCount;
-        //for (long long falseOTCount : perGuideCount[false])
-        //{
-        //    if (falsePerGuideCount.count(falseOTCount))
-        //    {
-        //        falsePerGuideCount[falseOTCount]++;
-        //    }
-        //    else
-        //    {
-        //        falsePerGuideCount[falseOTCount] = 1;
-        //    }
-        //}
-
-        //outputFile.open(outputPath / "_output" / "falsePerGuideCountTotal.txt");
-        //for (auto const& x : falsePerGuideCount)
-        //{
-        //    outputFile << fmt::format("{}:{}\n", x.first, x.second);
-        //}
-        //outputFile.close();
-
-        // TODO: remove
-        printer(fmt::format("Wasted time: {}\tUseful time: {}", wastedTime.count(), usefulTime.count()));
-
-        for (int i = 0; i < neighbourhoodCountTotal.size(); i++)
-        {
-            printer(fmt::format("Slice {}\tTotal {}\tUnique {}", i + 1, commaify(neighbourhoodCountTotal[i]), commaify(neighbourhoodCountUnique[i])));
-            for (int j = 0; j < 21; j++)
+            for (int i = 0; i < 21; i++)
             {
-                printer(fmt::format("\tMismatch {}\tTotal {}\tUnique {}", j, commaify(offTargetCountTotal[i][j]), commaify(offTargetCountUnique[i][j])));
+                printer(fmt::format("\tMismatch {}\tTotal {}", i, commaify(offTargetCount[i])));
+            }
+
+        std::filesystem::path outputPath(std::filesystem::path(ISSLIndex).parent_path());
+        std::ofstream outputFile;
+
+        std::map<long long, long long> truePerGuideCount;
+        for (long long trueOTCount : perGuideCount[true])
+        {
+            if (truePerGuideCount.count(trueOTCount))
+            {
+                truePerGuideCount[trueOTCount]++;
+            }
+            else
+            {
+                truePerGuideCount[trueOTCount] = 1;
             }
         }
 
-        std::filesystem::path outputPath(std::filesystem::path(ISSLIndex).parent_path());
+        outputFile.open(outputPath / "_output" / "truePerGuideCountTotal.txt");
+        for (auto const& x : truePerGuideCount)
+        {
+            outputFile << fmt::format("{}:{}\n",x.first,x.second);
+        }
+        outputFile.close();
 
-        std::thread countTrueTotalThread(countTrueTotal, outputPath, perGuideCountTotal);
-        std::thread countTrueUniqueThread(countTrueUnique, outputPath, perGuideCountUnique);
-        std::thread countFalseTotalThread(countFalseTotal, outputPath, perGuideCountTotal);
-        std::thread countFalseUniqueThread(countFalseUnique, outputPath, perGuideCountUnique);
+        std::map<long long, long long> falsePerGuideCount;
+        for (long long falseOTCount : perGuideCount[false])
+        {
+            if (falsePerGuideCount.count(falseOTCount))
+            {
+                falsePerGuideCount[falseOTCount]++;
+            }
+            else
+            {
+                falsePerGuideCount[falseOTCount] = 1;
+            }
+        }
 
-        countTrueTotalThread.join();
-        countTrueUniqueThread.join();
-        countFalseTotalThread.join();
-        countFalseUniqueThread.join();
+        outputFile.open(outputPath / "_output" / "falsePerGuideCountTotal.txt");
+        for (auto const& x : falsePerGuideCount)
+        {
+            outputFile << fmt::format("{}:{}\n", x.first, x.second);
+        }
+        outputFile.close();
+
 
         for (size_t searchIdx = 0; searchIdx < querySignatures.size(); searchIdx++) {
             string target20 = signatureToSequence(querySignatures[searchIdx], seqLength);
