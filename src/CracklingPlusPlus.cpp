@@ -50,9 +50,9 @@ int main(int argc, char** argv)
 		mm10db mm10dbModule(cm);
 		sgrnascorer2 sgRNAScorer2Module(cm);
 		bowtie2 bowtie2Module(cm);
-		//ISSLOffTargetScoring OTSModule(cm);
+		ISSLOffTargetScoring OTSModule(cm);
 		//ISSL2Stage OTSModule(cm);
-		ISSLClustering OTSModule(cm);
+		//ISSLClustering OTSModule(cm);
 
 		// Add header line to output file
 		std::ofstream outFile(cm.getString("output", "file"), std::ios_base::binary | std::ios_base::out);

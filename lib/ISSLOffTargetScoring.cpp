@@ -34,9 +34,9 @@ void countTrueTotal(std::filesystem::path& outputPath, vector<vector<uint64_t>>&
 {
     std::ofstream outputFile;
 
-    for (int64_t i = 0; i < perGuideCountTotal.size(); i++)
+    for (const uint64_t& count : perGuideCountTotal[true])
     {
-        truePerGuideCountTotal[perGuideCountTotal[true][i]]++;
+        truePerGuideCountTotal[count]++;
     }
 
     outputFile.open(outputPath / "_output" / "truePerGuideCountTotal.txt", std::ios::out | std::ios::binary);
@@ -51,9 +51,9 @@ void countTrueUnique(std::filesystem::path& outputPath, vector<vector<uint64_t>>
 {
     std::ofstream outputFile;
 
-    for (int64_t i = 0; i < perGuideCountUnique.size(); i++)
+    for (const int64_t& count : perGuideCountUnique[true])
     {
-        truePerGuideCountUnique[perGuideCountUnique[true][i]]++;
+        truePerGuideCountUnique[count]++;
     }
 
     outputFile.open(outputPath / "_output" / "truePerGuideCountUnique.txt", std::ios::out | std::ios::binary);
@@ -68,9 +68,8 @@ void countFalseTotal(std::filesystem::path& outputPath, vector<vector<uint64_t>>
 {
     std::ofstream outputFile;
 
-    for (int64_t i = 0; i < perGuideCountTotal.size(); i++)
+    for (int64_t count : perGuideCountTotal[false])
     {
-        uint64_t count = perGuideCountTotal[false][i];
         falsePerGuideCountTotal[count]++;
     }
 
@@ -86,9 +85,8 @@ void countFalseUnique(std::filesystem::path& outputPath, vector<vector<uint64_t>
 {
     std::ofstream outputFile;
 
-    for (int64_t i = 0; i < perGuideCountUnique.size(); i++)
+    for (int64_t count : perGuideCountUnique[false])
     {
-        uint64_t count = perGuideCountUnique[false][i];
         falsePerGuideCountUnique[count]++;
     }
 
