@@ -40,7 +40,7 @@ void sgrnascorer2Module::run(std::vector<guideResults>& candidateGuides)
 		return;
 	}
 
-	std::unique_ptr<svm_model> sgRNAScorer2Model = std::make_unique<svm_model>(svm_load_model(sgrnascorer2Config.model.string().c_str()));
+	struct svm_model* sgRNAScorer2Model = svm_load_model(sgrnascorer2Config.model.string().c_str());
 
 	cout << "sgRNAScorer2 - score using model." << endl;
 	uint64_t failedCount = 0;
@@ -70,7 +70,7 @@ void sgrnascorer2Module::run(std::vector<guideResults>& candidateGuides)
 		}
 		(*nodeToTest.get())[encodedSeq.size()].index = -1;//state the end of data vector
 
-		svm_predict_values(sgRNAScorer2Model.get(), (const struct svm_node*)nodeToTest.get(), &candidate.sgrnascorer2score);
+		svm_predict_values(sgRNAScorer2Model, (const struct svm_node*)nodeToTest.get(), &candidate.sgrnascorer2score);
 
 		if (candidate.sgrnascorer2score < sgrnascorer2Config.scoreThreshold)
 		{
@@ -84,6 +84,8 @@ void sgrnascorer2Module::run(std::vector<guideResults>& candidateGuides)
 		testedCount++;
 	}
 	cout << fmt::format("\t{} of {} failed here.", failedCount, testedCount) << endl;;
+
+	svm_free_and_destroy_model(&sgRNAScorer2Model);
 	return;
 
 }
