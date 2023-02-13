@@ -32,7 +32,6 @@ add_library(Logger STATIC ${CMAKE_SOURCE_DIR}/lib/Logger.cpp ${CMAKE_SOURCE_DIR}
 add_library(consensusModule STATIC ${CMAKE_SOURCE_DIR}/lib/consensusModule.cpp ${CMAKE_SOURCE_DIR}/include/consensusModule.hpp ${CMAKE_SOURCE_DIR}/include/pipelineModule.hpp)
 
 
-
 ###################
 # CHOPCHOP Module #
 ###################
@@ -52,6 +51,13 @@ target_link_libraries (mm10dbModule PRIVATE consensusModule PRIVATE Boost::boost
 #######################
 add_library(sgrnascorer2Module STATIC ${CMAKE_SOURCE_DIR}/lib/sgrnascorer2Module.cpp ${CMAKE_SOURCE_DIR}/include/sgrnascorer2Module.hpp)
 target_link_libraries (sgrnascorer2Module PRIVATE consensusModule)
+
+
+######################
+# Specificity Module #
+######################
+add_library(specificityModule STATIC ${CMAKE_SOURCE_DIR}/lib/specificityModule.cpp ${CMAKE_SOURCE_DIR}/include/specificityModule.hpp ${CMAKE_SOURCE_DIR}/include/pipelineModule.hpp)
+
 
 ##################
 # INPUTPROCESSOR #

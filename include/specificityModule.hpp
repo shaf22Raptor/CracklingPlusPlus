@@ -1,0 +1,19 @@
+#ifndef specificityModuleInclude
+#define sepcificityModuleInclude
+#include <vector>
+#include "../include/util.hpp"
+#include "../include/pipelineModule.hpp"
+
+class specificityModule : private pipelineModule
+{
+protected:
+	bool toolIsSelected;
+	optimisationLevel optimsationLevel;
+	specificityModule(cracklingConfig config);
+	virtual void run(std::vector<guideResults>& candidateGuides) = 0;
+	virtual bool processGuide(const guideResults& guide) = 0;
+private:
+	void run() final;
+};
+
+#endif // !specificityModuleInclude
