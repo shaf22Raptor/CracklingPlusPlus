@@ -18,7 +18,7 @@
 #include <chrono>
 #include <bitset>
 #include <iostream>
-#include <atomic>
+#include <thread>
 #include "../include/ConfigManager.hpp"
 #include "../include/Constants.hpp"
 #include "../include/Helpers.hpp"

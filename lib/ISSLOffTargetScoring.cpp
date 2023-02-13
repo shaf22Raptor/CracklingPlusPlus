@@ -25,11 +25,80 @@ using std::unordered_map;
 const vector<uint8_t> nucleotideIndex{ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,3 };
 const vector<char> signatureIndex{ 'A', 'C', 'G', 'T' };
 enum ScoreMethod { unknown = 0, mit = 1, cfd = 2, mitAndCfd = 3, mitOrCfd = 4, avgMitCfd = 5 };
-static std::map<uint64_t, std::atomic_uint64_t> truePerGuideCountTotal;
-static std::map<uint64_t, std::atomic_uint64_t> truePerGuideCountUnique;
-static std::map<uint64_t, std::atomic_uint64_t> falsePerGuideCountTotal;
-static std::map<uint64_t, std::atomic_uint64_t> falsePerGuideCountUnique;
+static std::map<uint64_t, uint64_t> truePerGuideCountTotal;
+static std::map<uint64_t, uint64_t> truePerGuideCountUnique;
+static std::map<uint64_t, uint64_t> falsePerGuideCountTotal;
+static std::map<uint64_t, uint64_t> falsePerGuideCountUnique;
 
+void countTrueTotal(std::filesystem::path& outputPath, vector<vector<uint64_t>>& perGuideCountTotal)
+{
+    std::ofstream outputFile;
+
+    for (int64_t i = 0; i < perGuideCountTotal.size(); i++)
+    {
+        truePerGuideCountTotal[perGuideCountTotal[true][i]]++;
+    }
+
+    outputFile.open(outputPath / "_output" / "truePerGuideCountTotal.txt", std::ios::out | std::ios::binary);
+    for (auto const& x : truePerGuideCountTotal)
+    {
+        outputFile << fmt::format("{}:{}\n", x.first, x.second);
+    }
+    outputFile.close();
+}
+
+void countTrueUnique(std::filesystem::path& outputPath, vector<vector<uint64_t>>& perGuideCountUnique)
+{
+    std::ofstream outputFile;
+
+    for (int64_t i = 0; i < perGuideCountUnique.size(); i++)
+    {
+        truePerGuideCountUnique[perGuideCountUnique[true][i]]++;
+    }
+
+    outputFile.open(outputPath / "_output" / "truePerGuideCountUnique.txt", std::ios::out | std::ios::binary);
+    for (auto const& x : truePerGuideCountUnique)
+    {
+        outputFile << fmt::format("{}:{}\n", x.first, x.second);
+    }
+    outputFile.close();
+}
+
+void countFalseTotal(std::filesystem::path& outputPath, vector<vector<uint64_t>>& perGuideCountTotal)
+{
+    std::ofstream outputFile;
+
+    for (int64_t i = 0; i < perGuideCountTotal.size(); i++)
+    {
+        uint64_t count = perGuideCountTotal[false][i];
+        falsePerGuideCountTotal[count]++;
+    }
+
+    outputFile.open(outputPath / "_output" / "falsePerGuideCountTotal.txt", std::ios::out | std::ios::binary);
+    for (auto const& x : falsePerGuideCountTotal)
+    {
+        outputFile << fmt::format("{}:{}\n", x.first, x.second);
+    }
+    outputFile.close();
+}
+
+void countFalseUnique(std::filesystem::path& outputPath, vector<vector<uint64_t>>& perGuideCountUnique)
+{
+    std::ofstream outputFile;
+
+    for (int64_t i = 0; i < perGuideCountUnique.size(); i++)
+    {
+        uint64_t count = perGuideCountUnique[false][i];
+        falsePerGuideCountUnique[count]++;
+    }
+
+    outputFile.open(outputPath / "_output" / "falsePerGuideCountUnique.txt", std::ios::out | std::ios::binary);
+    for (auto const& x : falsePerGuideCountUnique)
+    {
+        outputFile << fmt::format("{}:{}\n", x.first, x.second);
+    }
+    outputFile.close();
+}
 
 ISSLOffTargetScoring::ISSLOffTargetScoring(ConfigManager& cm) :
     toolIsSelected(cm.getBool("offtargetscore", "enabled")),
@@ -890,64 +959,15 @@ void ISSLOffTargetScoring::run(unordered_map<string, unordered_map<string, strin
 
         std::filesystem::path outputPath(std::filesystem::path(ISSLIndex).parent_path());
 
-        std::ofstream outputFile;
-        
-        #pragma omp parallel for
-        for (int64_t i = 0; i < perGuideCountTotal.size(); i++)
-        {
-            uint64_t count = perGuideCountTotal[true][i];
-            truePerGuideCountTotal[count]++;
-        }
+        std::thread countTrueTotalThread(countTrueTotal, outputPath, perGuideCountTotal);
+        std::thread countTrueUniqueThread(countTrueUnique, outputPath, perGuideCountUnique);
+        std::thread countFalseTotalThread(countFalseTotal, outputPath, perGuideCountTotal);
+        std::thread countFalseUniqueThread(countFalseUnique, outputPath, perGuideCountUnique);
 
-        outputFile.open(outputPath / "_output" / "truePerGuideCountTotal.txt", std::ios::out | std::ios::binary);
-        for (auto const& x : truePerGuideCountTotal)
-        {
-            outputFile << fmt::format("{}:{}\n",x.first,x.second);
-        }
-        outputFile.close();
-
-        #pragma omp parallel for
-        for (int64_t i = 0; i < perGuideCountUnique.size(); i++)
-        {
-            uint64_t count = perGuideCountUnique[true][i];
-            truePerGuideCountUnique[count]++;
-        }
-
-        outputFile.open(outputPath / "_output" / "truePerGuideCountUnique.txt", std::ios::out | std::ios::binary);
-        for (auto const& x : truePerGuideCountUnique)
-        {
-            outputFile << fmt::format("{}:{}\n", x.first, x.second);
-        }
-        outputFile.close();
-
-        #pragma omp parallel for
-        for (int64_t i = 0; i < perGuideCountTotal.size(); i++)
-        {
-            uint64_t count = perGuideCountTotal[false][i];
-            falsePerGuideCountTotal[count]++;
-        }
-
-        outputFile.open(outputPath / "_output" / "falsePerGuideCountTotal.txt", std::ios::out | std::ios::binary);
-        for (auto const& x : falsePerGuideCountTotal)
-        {
-            outputFile << fmt::format("{}:{}\n", x.first, x.second);
-        }
-        outputFile.close();
-
-        #pragma omp parallel for
-        for (int64_t i = 0; i < perGuideCountUnique.size(); i++)
-        {
-            uint64_t count = perGuideCountUnique[false][i];
-            falsePerGuideCountUnique[count]++;
-        }
-
-        outputFile.open(outputPath / "_output" / "falsePerGuideCountUnique.txt", std::ios::out | std::ios::binary);
-        for (auto const& x : falsePerGuideCountUnique)
-        {
-            outputFile << fmt::format("{}:{}\n", x.first, x.second);
-        }
-        outputFile.close();
-
+        countTrueTotalThread.join();
+        countTrueUniqueThread.join();
+        countFalseTotalThread.join();
+        countFalseUniqueThread.join();
 
         for (size_t searchIdx = 0; searchIdx < querySignatures.size(); searchIdx++) {
             string target20 = signatureToSequence(querySignatures[searchIdx], seqLength);
