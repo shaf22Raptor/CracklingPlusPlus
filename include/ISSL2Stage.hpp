@@ -27,8 +27,8 @@
 #include "../include/cfdPenalties.h"
 #include "../include/mitPenalties.h"
 
-#ifndef portableStat64
-#define portableStat64
+#ifndef portableStat64_1
+#define portableStat64_1
 #if defined(_WIN64)
 #include "../include/unistd.h"
 #define p_stat64 _stat64

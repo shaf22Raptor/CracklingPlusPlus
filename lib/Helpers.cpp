@@ -101,7 +101,16 @@ string rc(string DNA)
 bool filterCandidateGuides(unordered_map<string, string> candidateGuideResultMap, string_view selectedModule, string_view optimisation, const int& consensusN, const int& toolCount)
 {
 	// Ultralow optimisation, process all guides
-	if (optimisation == "ultralow") { return true; }
+	if (optimisation == "ultralow") 
+	{ 
+		// For specificty modules
+		if (selectedModule == MODULE_SPECIFICITY)
+		{
+			// Reject if off target scoring has failed
+			if (candidateGuideResultMap["passedOffTargetScore"] == CODE_REJECTED) { return false; }
+		}
+		return true; 
+	}
 
 	// For all modules
 	if (
@@ -151,6 +160,13 @@ bool filterCandidateGuides(unordered_map<string, string> candidateGuideResultMap
 
 		// Reject if there is not enough tests remaining to pass consensus
 		if (toolCount - countAlreadyAssessed < consensusN - countAlreadyAccepted) { return false; }
+	}
+
+	// For specificty modules
+	if (selectedModule == MODULE_SPECIFICITY)
+	{
+		// Reject if off target scoring has failed
+		if (candidateGuideResultMap["passedOffTargetScore"] == CODE_REJECTED) { return false; }
 	}
 
 	// For specificty modules
