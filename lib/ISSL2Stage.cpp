@@ -311,31 +311,6 @@ void ISSL2Stage::run(unordered_map<string, unordered_map<string, string>>& candi
         sliceLimitOffset += sliceLimit;
     }
 
-    // Load cluster results
-
-    //int seqLength = 20;
-
-    //unordered_map <string, vector<uint64_t>> kClusterLists;
-    //unordered_map <uint64_t, string> sigToCluster;
-    //std::ifstream inFile;
-    //inFile.open(ISSLIndex, std::ios::binary | std::ios_base::in);
-    //string cluster;
-
-    //for (std::string line; std::getline(inFile, line);)
-    //{
-    //    line = trim(line);
-    //    if (line[0] == '>')
-    //    {
-    //        cluster = line.substr(1);
-    //    }
-    //    else
-    //    {
-    //        uint64_t signature = sequenceToSignature(line.c_str(), line.length());
-    //        kClusterLists[cluster].push_back(signature);
-    //        sigToCluster[signature] = cluster;
-    //    }
-    //}
-
     printer("Beginning Off-target scoring.");
     int testedCount = 0;
     int failedCount = 0;
@@ -732,56 +707,6 @@ void ISSL2Stage::run(unordered_map<string, unordered_map<string, string>>& candi
 
         printer("\tStarting to process the Off-target scoring results.");
 
-        //printer(fmt::format("Offtargets tested {}", commaify(neighbourhoodCount)));
-
-        //    for (int i = 0; i < 21; i++)
-        //    {
-        //        printer(fmt::format("\tMismatch {}\tTotal {}", i, commaify(offTargetCount[i])));
-        //    }
-
-        //std::filesystem::path outputPath(std::filesystem::path(ISSLIndex).parent_path());
-        //std::ofstream outputFile;
-
-        //std::map<long long, long long> truePerGuideCount;
-        //for (long long trueOTCount : perGuideCount[true])
-        //{
-        //    if (truePerGuideCount.count(trueOTCount))
-        //    {
-        //        truePerGuideCount[trueOTCount]++;
-        //    }
-        //    else
-        //    {
-        //        truePerGuideCount[trueOTCount] = 1;
-        //    }
-        //}
-
-        //outputFile.open(outputPath / "_output" / "truePerGuideCountTotal.txt");
-        //for (auto const& x : truePerGuideCount)
-        //{
-        //    outputFile << fmt::format("{}:{}\n",x.first,x.second);
-        //}
-        //outputFile.close();
-
-        //std::map<long long, long long> falsePerGuideCount;
-        //for (long long falseOTCount : perGuideCount[false])
-        //{
-        //    if (falsePerGuideCount.count(falseOTCount))
-        //    {
-        //        falsePerGuideCount[falseOTCount]++;
-        //    }
-        //    else
-        //    {
-        //        falsePerGuideCount[falseOTCount] = 1;
-        //    }
-        //}
-
-        //outputFile.open(outputPath / "_output" / "falsePerGuideCountTotal.txt");
-        //for (auto const& x : falsePerGuideCount)
-        //{
-        //    outputFile << fmt::format("{}:{}\n", x.first, x.second);
-        //}
-        //outputFile.close();
-
         // TODO: remove
         printer(fmt::format("Wasted time: {}\tUseful time: {}", wastedTime.count(), usefulTime.count()));
 
@@ -892,7 +817,6 @@ void ISSL2Stage::run(unordered_map<string, unordered_map<string, string>>& candi
      *      - the number of slices
      *      - the number of precalculated MIT scores
      */
-    printer("reading header");
     if (fread(slicelistHeader.data(), sizeof(size_t), slicelistHeader.size(), isslFp) == 0) {
         throw std::runtime_error("Error reading index: header invalid\n");
     }
@@ -910,7 +834,6 @@ void ISSL2Stage::run(unordered_map<string, unordered_map<string, string>>& candi
      *
      *      - `score` is the local MIT score for this mismatch combination
      */
-    printer("reading mit scores");
     for (int i = 0; i < scoresCount; i++) {
         uint64_t mask = 0;
         double score = 0.0;
@@ -924,7 +847,6 @@ void ISSL2Stage::run(unordered_map<string, unordered_map<string, string>>& candi
     /**
     * Read the slice lengths from header
     */
-    printer("reading slice lengths");
     sliceLens.clear();
     for (int i = 0; i < sliceCount; i++)
     {
@@ -946,7 +868,6 @@ void ISSL2Stage::run(unordered_map<string, unordered_map<string, string>>& candi
     }
 
     /** Load in all of the off-target sites */
-    printer("reading off targets");
     if (fread(offtargets.data(), sizeof(uint64_t), offtargetsCount, isslFp) == 0) {
         throw std::runtime_error("Error reading index: loading off-target sequences failed\n");
     }
@@ -956,7 +877,6 @@ void ISSL2Stage::run(unordered_map<string, unordered_map<string, string>>& candi
      *      These counts are stored contiguously
      *
      */
-    printer("read slice list lengths");
     sliceListCount = 0;
     for (int i = 0; i < sliceCount; i++)
     {
@@ -975,7 +895,6 @@ void ISSL2Stage::run(unordered_map<string, unordered_map<string, string>>& candi
      *      Each signature (64-bit) is structured as:
      *          <occurrences 32-bit><off-target-id 32-bit>
      */
-    printer("read slice list data");
     allSignatures = vector<uint64_t>(offtargetsCount * sliceCount);
 
     if (fread(allSignatures.data(), sizeof(uint64_t), allSignatures.size(), isslFp) == 0) {
@@ -984,7 +903,6 @@ void ISSL2Stage::run(unordered_map<string, unordered_map<string, string>>& candi
 
     /** End reading the index */
     fclose(isslFp);
-    printer("INdex loaded");
     /** Prevent assessing an off-target site for multiple slices
      *
      *      Create enough 1-bit "seen" flags for the off-targets
