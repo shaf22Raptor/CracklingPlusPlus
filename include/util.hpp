@@ -60,7 +60,7 @@ struct outputConfig
 	char delimiter;
 };
 
-struct offtargetConfig
+struct offTargetConfig
 {
 	bool enabled;
 	otScoreMethod method;
@@ -100,7 +100,7 @@ struct cracklingConfig
 	consensusConfig consensus;
 	inputConfig input;
 	outputConfig output;
-	offtargetConfig offtarget;
+	offTargetConfig offTarget;
 	sgrnascorer2Config sgrnascorer2;
 	bowtie2Config bowtie2;
 	rnafoldConfig rnafold;
