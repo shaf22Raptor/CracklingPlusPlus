@@ -26,37 +26,37 @@ add_library(libsvm STATIC ${CMAKE_SOURCE_DIR}/lib/svm.cpp ${CMAKE_SOURCE_DIR}/in
 add_library(Logger STATIC ${CMAKE_SOURCE_DIR}/lib/Logger.cpp ${CMAKE_SOURCE_DIR}/include/Logger.hpp)
 
 
-####################
-# Consensus Module #
-####################
-add_library(consensusModule STATIC ${CMAKE_SOURCE_DIR}/lib/consensusModule.cpp ${CMAKE_SOURCE_DIR}/include/consensusModule.hpp ${CMAKE_SOURCE_DIR}/include/pipelineModule.hpp)
+# ####################
+# # Consensus Module #
+# ####################
+# add_library(consensusModule STATIC ${CMAKE_SOURCE_DIR}/lib/consensusModule.cpp ${CMAKE_SOURCE_DIR}/include/consensusModule.hpp ${CMAKE_SOURCE_DIR}/include/pipelineModule.hpp)
 
 
-###################
-# CHOPCHOP Module #
-###################
-add_library(chopchopModule STATIC ${CMAKE_SOURCE_DIR}/lib/chopchopModule.cpp ${CMAKE_SOURCE_DIR}/include/chopchopModule.hpp)
-target_link_libraries (chopchopModule PRIVATE consensusModule)
+# ###################
+# # CHOPCHOP Module #
+# ###################
+# add_library(chopchopModule STATIC ${CMAKE_SOURCE_DIR}/lib/chopchopModule.cpp ${CMAKE_SOURCE_DIR}/include/chopchopModule.hpp)
+# target_link_libraries (chopchopModule PRIVATE consensusModule)
 
 
-#################
-# MM10DB Module #
-#################
-add_library(mm10dbModule STATIC ${CMAKE_SOURCE_DIR}/lib/mm10dbModule.cpp ${CMAKE_SOURCE_DIR}/include/mm10dbModule.hpp)
-target_link_libraries (mm10dbModule PRIVATE consensusModule PRIVATE Boost::boost PRIVATE Boost::regex)
+# #################
+# # MM10DB Module #
+# #################
+# add_library(mm10dbModule STATIC ${CMAKE_SOURCE_DIR}/lib/mm10dbModule.cpp ${CMAKE_SOURCE_DIR}/include/mm10dbModule.hpp)
+# target_link_libraries (mm10dbModule PRIVATE consensusModule PRIVATE Boost::boost PRIVATE Boost::regex)
 
 
-#######################
-# sgRNAScorer2 Module #
-#######################
-add_library(sgrnascorer2Module STATIC ${CMAKE_SOURCE_DIR}/lib/sgrnascorer2Module.cpp ${CMAKE_SOURCE_DIR}/include/sgrnascorer2Module.hpp)
-target_link_libraries (sgrnascorer2Module PRIVATE consensusModule)
+# #######################
+# # sgRNAScorer2 Module #
+# #######################
+# add_library(sgrnascorer2Module STATIC ${CMAKE_SOURCE_DIR}/lib/sgrnascorer2Module.cpp ${CMAKE_SOURCE_DIR}/include/sgrnascorer2Module.hpp)
+# target_link_libraries (sgrnascorer2Module PRIVATE consensusModule)
 
 
-######################
-# Specificity Module #
-######################
-add_library(specificityModule STATIC ${CMAKE_SOURCE_DIR}/lib/specificityModule.cpp ${CMAKE_SOURCE_DIR}/include/specificityModule.hpp ${CMAKE_SOURCE_DIR}/include/pipelineModule.hpp)
+# ######################
+# # Specificity Module #
+# ######################
+# add_library(specificityModule STATIC ${CMAKE_SOURCE_DIR}/lib/specificityModule.cpp ${CMAKE_SOURCE_DIR}/include/specificityModule.hpp ${CMAKE_SOURCE_DIR}/include/pipelineModule.hpp)
 
 
 ##################
