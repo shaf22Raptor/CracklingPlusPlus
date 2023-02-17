@@ -16,7 +16,7 @@ public:
 
 enum otScoreMethod { unknown = 0, mit = 1, cfd = 2, mitAndCfd = 3, mitOrCfd = 4, avgMitCfd = 5 };
 enum optimisationLevel { invalid = 0, ultralow = 1, low = 2, medium = 3, high = 4};
-const static std::unordered_map<std::string, optimisationLevel> const table = { 
+const static std::unordered_map<std::string, optimisationLevel> table = { 
 	{"ultralow",optimisationLevel::ultralow}, 
 	{"low",optimisationLevel::low}, 
 	{"medium",optimisationLevel::medium},
