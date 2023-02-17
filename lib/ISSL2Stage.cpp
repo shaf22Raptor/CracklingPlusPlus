@@ -30,7 +30,7 @@ static std::map<uint64_t, uint64_t> truePerGuideCountUnique;
 static std::map<uint64_t, uint64_t> falsePerGuideCountTotal;
 static std::map<uint64_t, uint64_t> falsePerGuideCountUnique;
 
-void countTrueTotal(std::filesystem::path& outputPath, vector<vector<uint64_t>>& perGuideCountTotal)
+void countTrueTotal(const std::filesystem::path& outputPath, const vector<vector<uint64_t>>& perGuideCountTotal)
 {
     std::ofstream outputFile;
 
@@ -47,7 +47,7 @@ void countTrueTotal(std::filesystem::path& outputPath, vector<vector<uint64_t>>&
     outputFile.close();
 }
 
-void countTrueUnique(std::filesystem::path& outputPath, vector<vector<uint64_t>>& perGuideCountUnique)
+void countTrueUnique(const std::filesystem::path& outputPath, const vector<vector<uint64_t>>& perGuideCountUnique)
 {
     std::ofstream outputFile;
 
@@ -64,7 +64,7 @@ void countTrueUnique(std::filesystem::path& outputPath, vector<vector<uint64_t>>
     outputFile.close();
 }
 
-void countFalseTotal(std::filesystem::path& outputPath, vector<vector<uint64_t>>& perGuideCountTotal)
+void countFalseTotal(const std::filesystem::path& outputPath, const vector<vector<uint64_t>>& perGuideCountTotal)
 {
     std::ofstream outputFile;
 
@@ -81,7 +81,7 @@ void countFalseTotal(std::filesystem::path& outputPath, vector<vector<uint64_t>>
     outputFile.close();
 }
 
-void countFalseUnique(std::filesystem::path& outputPath, vector<vector<uint64_t>>& perGuideCountUnique)
+void countFalseUnique(const std::filesystem::path& outputPath, const vector<vector<uint64_t>>& perGuideCountUnique)
 {
     std::ofstream outputFile;
 
