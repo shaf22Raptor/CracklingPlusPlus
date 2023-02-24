@@ -58,6 +58,12 @@ add_library(Logger STATIC ${CMAKE_SOURCE_DIR}/lib/Logger.cpp ${CMAKE_SOURCE_DIR}
 # ######################
 # add_library(specificityModule STATIC ${CMAKE_SOURCE_DIR}/lib/specificityModule.cpp ${CMAKE_SOURCE_DIR}/include/specificityModule.hpp ${CMAKE_SOURCE_DIR}/include/pipelineModule.hpp)
 
+##################
+# Bowtie2 Module #
+##################
+add_library(bowtie2Module STATIC ${CMAKE_SOURCE_DIR}/lib/bowtie2Module.cpp ${CMAKE_SOURCE_DIR}/include/bowtie2Module.hpp)
+target_link_libraries (bowtie2Module PRIVATE Boost::boost)
+
 
 ##################
 # INPUTPROCESSOR #
