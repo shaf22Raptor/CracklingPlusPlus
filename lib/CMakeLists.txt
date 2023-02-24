@@ -161,5 +161,19 @@ target_link_libraries (ISSLOffTargetScoring PRIVATE Helpers PRIVATE ConfigManage
 find_package(OpenMP)
 # Link OpenMP if available
 if(OpenMP_CXX_FOUND)
-    target_link_libraries(ISSLOffTargetScoring PRIVATE OpenMP::OpenMP_CXX)
+    target_link_libraries(ISSLOffTargetScoring PRIVATE OpenMP::OpenMP_CXX PRIVATE Boost::boost)
+endif()
+
+########################
+# ISSLOFFTARGETSCORING #
+########################
+# Add Library
+add_library(ISSLScoringModule STATIC ${CMAKE_SOURCE_DIR}/lib/ISSLScoringModule.cpp ${CMAKE_SOURCE_DIR}/include/ISSLScoringModule.hpp)
+# Link required librarires 
+target_link_libraries (ISSLScoringModule PRIVATE Helpers PRIVATE ConfigManager)
+# Find OpenMP
+find_package(OpenMP)
+# Link OpenMP if available
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(ISSLScoringModule PRIVATE OpenMP::OpenMP_CXX PRIVATE Boost::boost)
 endif()
