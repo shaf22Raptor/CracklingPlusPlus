@@ -25,6 +25,11 @@ add_library(libsvm STATIC ${CMAKE_SOURCE_DIR}/lib/svm.cpp ${CMAKE_SOURCE_DIR}/in
 # Add Library
 add_library(Logger STATIC ${CMAKE_SOURCE_DIR}/lib/Logger.cpp ${CMAKE_SOURCE_DIR}/include/Logger.hpp)
 
+########################
+# Config Parser Module #
+########################
+add_library(configParserModule STATIC ${CMAKE_SOURCE_DIR}/lib/configParserModule.cpp ${CMAKE_SOURCE_DIR}/include/configParserModule.hpp ${CMAKE_SOURCE_DIR}/include/pipelineModule.hpp)
+target_link_libraries (configParserModule PRIVATE Boost::boost PRIVATE Boost::regex)
 
 # ####################
 # # Consensus Module #
