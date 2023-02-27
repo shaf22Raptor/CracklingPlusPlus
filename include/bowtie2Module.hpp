@@ -16,8 +16,8 @@ public:
 	void run(std::vector<guideResults>& candidateGuides) final;
 private:
 	bowtie2Config config;
-	std::filesystem::path input;
 	uint8_t consensusN;
+	std::filesystem::path indexFile;
 	bool processGuide(const guideResults& guide) final;
 };
 

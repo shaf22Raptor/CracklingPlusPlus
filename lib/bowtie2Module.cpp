@@ -12,6 +12,7 @@ bowtie2Module::bowtie2Module(cracklingConfig config) : specificityModule(config)
 {
 	this->config = config.bowtie2;
 	this->consensusN = config.consensus.n;
+	this->indexFile = config.input.bowtie2Index;
 }
 
 void bowtie2Module::run(std::vector<guideResults>& candidateGuides)
@@ -52,7 +53,7 @@ void bowtie2Module::run(std::vector<guideResults>& candidateGuides)
 		// Open input file 
 		cout << "\t\tConstructing the Bowtie input file." << endl;
 		ofstream inFile;
-		inFile.open(input, std::ios::binary | std::ios::out);
+		inFile.open(config.inFile, std::ios::binary | std::ios::out);
 		guidesInPage = 0;
 		while (paginatorIterator != pageEnd)
 		{
@@ -88,9 +89,8 @@ void bowtie2Module::run(std::vector<guideResults>& candidateGuides)
 
 		cout << fmt::format("\t\t{} guides in this page.", guidesInPage) << endl;
 
-		//TODO: use proper values here
 		// Call bowtie2
-		runner(fmt::format("{} -x {} -p {} --reorder --no-hd -t -r -U {} -S {}", config.binary, config, config.threads, config, config).c_str());
+		runner(fmt::format("{} -x {} -p {} --reorder --no-hd -t -r -U {} -S {}", config.binary, indexFile, config.threads, config.inFile, config.outFile).c_str());
 
 		cout << "\tStarting to process the Bowtie results." << endl;
 
@@ -98,8 +98,7 @@ void bowtie2Module::run(std::vector<guideResults>& candidateGuides)
 		paginatorIterator = pageStart;
 
 		std::ifstream outFile;
-		// TODO: use proper file here
-		outFile.open(input, std::ios::binary | std::ios::in);
+		outFile.open(config.outFile, std::ios::binary | std::ios::in);
 		while (paginatorIterator != pageEnd)
 		{
 			// Run time filtering
@@ -119,7 +118,7 @@ void bowtie2Module::run(std::vector<guideResults>& candidateGuides)
 			}
 
 			vector<string> bowtie2Output;
-			split(bowtie2Output, bowtie2Results[0], "\t");
+			split(bowtie2Output, bowtie2Results[0], boost::is_any_of("\t"));
 			string chr = bowtie2Output[2];
 			int pos = stoi(bowtie2Output[3]);
 			string read = bowtie2Output[9];
