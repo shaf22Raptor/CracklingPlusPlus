@@ -189,4 +189,23 @@ void runner(const char* args)
 	return;
 }
 
+const std::vector<char> nulceotideArray = { 'a', 'c', 'g', 't', 'r', 'y', 'm', 'k', 'b', 'd', 'h', 'v', 'A', 'C', 'G', 'T', 'R', 'Y', 'M', 'K', 'B', 'D', 'H', 'V' };
+const std::vector<char> complementArray = { 't', 'g', 'c', 'a', 'y', 'r', 'k', 'm', 'v', 'h', 'd', 'b', 'T', 'G', 'C', 'A', 'Y', 'R', 'K', 'M', 'V', 'H', 'D', 'B' };
+
+std::string rc(std::string DNA)
+{
+	// Reverse the input seqeuence 
+	std::reverse(DNA.begin(), DNA.end());
+	// Convert each character to the complement
+	std::for_each(DNA.begin(), DNA.end(), [](char& c) {
+		auto nulceotidePos = std::find(nulceotideArray.begin(), nulceotideArray.end(), c);
+		long long complementPos = std::distance(nulceotideArray.begin(), nulceotidePos);
+		c = complementArray[complementPos];
+		}
+	);
+
+	// Return reverse compliment
+	return DNA;
+}
+
 #endif // !utilInclude
