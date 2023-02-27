@@ -37,6 +37,12 @@ target_link_libraries (configParserModule PRIVATE Boost::boost PRIVATE Boost::re
 add_library(inputModule STATIC ${CMAKE_SOURCE_DIR}/lib/inputModule.cpp ${CMAKE_SOURCE_DIR}/include/inputModule.hpp)
 target_link_libraries (inputModule PRIVATE Boost::boost PRIVATE Boost::regex)
 
+#####################
+# Cas9 Input Module #
+#####################
+add_library(cas9InputModule STATIC ${CMAKE_SOURCE_DIR}/lib/cas9InputModule.cpp ${CMAKE_SOURCE_DIR}/include/cas9InputModule.hpp)
+target_link_libraries (cas9InputModule PRIVATE Boost::regex)
+
 # ####################
 # # Consensus Module #
 # ####################
