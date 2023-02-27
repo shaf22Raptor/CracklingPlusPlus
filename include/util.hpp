@@ -157,6 +157,18 @@ public:
 	ReturnCode() : std::logic_error("The externally called program returned a non-zero value") { };
 };
 
+class tempFileSystemError : public std::runtime_error
+{
+public:
+	tempFileSystemError() : std::runtime_error("Unable to create temp working dir") { };
+};
+
+class InvalidConfiguration : public std::runtime_error
+{
+public:
+	InvalidConfiguration(const std::string& error) : std::runtime_error(error) { };
+};
+
 void runner(const char* args)
 {
 	std::cout << fmt::format("| Calling: {}", args) << std::endl;

@@ -1,6 +1,4 @@
 #include "../include/configParserModule.hpp"
-
-
 using std::cout;
 using std::cerr;
 using std::endl;
@@ -18,15 +16,6 @@ using std::filesystem::create_directory;
 using boost::algorithm::trim;
 using boost::algorithm::to_lower;
 using boost::algorithm::split;
-
-
-
-class InvalidConfiguration : public std::runtime_error
-{
-public:
-	InvalidConfiguration(const string& error) : std::runtime_error(error) { };
-};
-
 
 cracklingConfig configParserModule::run(const string& configFile)
 {
@@ -156,6 +145,8 @@ cracklingConfig configParserModule::run(const string& configFile)
 	{
 		config.input.filesToProcess.push_back(config.input.exonSequences);
 	}
+
+	// Check selected off target scoring methods
 
 	// Generate tempfile names
 	config.rnafold.inFile = (outputDir / fmt::format("{}-rnafold-input.txt", config.general.name));
