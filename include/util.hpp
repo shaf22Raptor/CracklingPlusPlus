@@ -1,5 +1,6 @@
 #ifndef utilInclude
 #define utilInclude
+#include <vector>
 #include <string>
 #include <filesystem>
 #include <unordered_map>
@@ -14,13 +15,22 @@ public:
 	Char do_thousands_sep() const { return ','; }
 };
 
-enum otScoreMethod { unknown = 0, mit = 1, cfd = 2, mitAndCfd = 3, mitOrCfd = 4, avgMitCfd = 5 };
-enum optimisationLevel { invalid = 0, ultralow = 1, low = 2, medium = 3, high = 4};
-const static std::unordered_map<std::string, optimisationLevel> table = { 
+enum otScoreMethod { mit = 0, cfd = 1, mitAndCfd = 2, mitOrCfd = 3, avgMitCfd = 4 };
+enum optimisationLevel { ultralow = 0, low = 1, medium = 2, high = 3};
+
+const static std::unordered_map<std::string, optimisationLevel> optimisationMap = {
 	{"ultralow",optimisationLevel::ultralow}, 
 	{"low",optimisationLevel::low}, 
 	{"medium",optimisationLevel::medium},
 	{"high",optimisationLevel::high}
+};
+
+const static std::unordered_map<std::string, otScoreMethod> otScoreMethodMap = {
+	{"mit",otScoreMethod::mit},
+	{"cfd",otScoreMethod::cfd},
+	{"mitAndCfd",otScoreMethod::mitAndCfd},
+	{"mitOrCfd",otScoreMethod::mitOrCfd},
+	{"avgMitCfd",otScoreMethod::avgMitCfd}
 };
 
 const char CODE_ACCEPTED = '1';
@@ -50,13 +60,16 @@ struct inputConfig
 	std::filesystem::path offtargetSites;
 	std::filesystem::path gffAnnotation;
 	std::filesystem::path bowtie2Index;
+	std::vector<std::filesystem::path> filesToProcess;
 	uint64_t batchLen;
 };
 
 struct outputConfig
 {
 	std::filesystem::path dir;
-	std::string filename;
+	std::filesystem::path filename;
+	std::filesystem::path log;
+	std::filesystem::path errLog;
 	char delimiter;
 };
 
@@ -66,19 +79,21 @@ struct offTargetConfig
 	otScoreMethod method;
 	uint8_t threads;
 	uint64_t pageLen;
-	uint8_t scoreThreshold;
+	double scoreThreshold;
 	uint8_t maxDist;
 };
 
 struct sgrnascorer2Config
 {
 	std::filesystem::path model;
-	int scoreThreshold;
+	int8_t scoreThreshold;
 };
 
 struct bowtie2Config
 {
 	std::filesystem::path binary;
+	std::filesystem::path inFile;
+	std::filesystem::path outFile;
 	uint8_t threads;
 	uint64_t pageLen;
 };
