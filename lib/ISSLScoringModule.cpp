@@ -233,8 +233,9 @@ void ISSLScoringModule::run(std::vector<guideResults>& candidateGuides)
         vector<uint64_t> offtargetToggles(numOfftargetToggles);
         uint64_t* offtargetTogglesTail = offtargetToggles.data() + numOfftargetToggles - 1;
         /** For each candidate guide */
+        // TODO: update to openMP > v2 (Use clang compiler)
         #pragma omp for
-        for (uint64_t guideIdx = 0; guideIdx < candidateGuides.size(); guideIdx++) {
+        for (int guideIdx = 0; guideIdx < candidateGuides.size(); guideIdx++) {
 
             // Run time filtering
             if (!processGuide(candidateGuides[guideIdx])) { continue; }
