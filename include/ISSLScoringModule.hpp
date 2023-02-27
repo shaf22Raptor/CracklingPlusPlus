@@ -20,7 +20,6 @@ public:
 private:
 	offTargetConfig config;
 	std::filesystem::path ISSLIndex;
-	uint8_t consensusN;
 	bool calcMIT;
 	bool calcCFD;
 	uint64_t sequenceToSignature(const std::string& seq, uint64_t seqLen);

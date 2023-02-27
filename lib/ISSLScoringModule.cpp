@@ -14,7 +14,6 @@ const vector<char> signatureIndex{ 'A', 'C', 'G', 'T' };
 ISSLScoringModule::ISSLScoringModule(cracklingConfig config) : specificityModule(config)
 {
     this->config = config.offTarget;
-    this->consensusN = config.consensus.n;
     this->ISSLIndex = config.input.offtargetSites;
     /** Scoring methods. To exit early:
      *      - only CFD must drop below `threshold`

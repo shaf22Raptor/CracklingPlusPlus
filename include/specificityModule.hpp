@@ -9,6 +9,7 @@ class specificityModule : private pipelineModule
 protected:
 	bool toolIsSelected;
 	optimisationLevel optimsationLevel;
+	uint8_t consensusN;
 	specificityModule(cracklingConfig config);
 	virtual void run(std::vector<guideResults>& candidateGuides) = 0;
 	virtual bool processGuide(const guideResults& guide) = 0;

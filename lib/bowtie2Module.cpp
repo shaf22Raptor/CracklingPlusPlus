@@ -11,7 +11,6 @@ using boost::algorithm::split;
 bowtie2Module::bowtie2Module(cracklingConfig config) : specificityModule(config)
 {
 	this->config = config.bowtie2;
-	this->consensusN = config.consensus.n;
 	this->indexFile = config.input.bowtie2Index;
 }
 
