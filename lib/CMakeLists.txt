@@ -31,6 +31,12 @@ add_library(Logger STATIC ${CMAKE_SOURCE_DIR}/lib/Logger.cpp ${CMAKE_SOURCE_DIR}
 add_library(configParserModule STATIC ${CMAKE_SOURCE_DIR}/lib/configParserModule.cpp ${CMAKE_SOURCE_DIR}/include/configParserModule.hpp ${CMAKE_SOURCE_DIR}/include/pipelineModule.hpp)
 target_link_libraries (configParserModule PRIVATE Boost::boost PRIVATE Boost::regex)
 
+################
+# Input Module #
+################
+add_library(inputModule STATIC ${CMAKE_SOURCE_DIR}/lib/inputModule.cpp ${CMAKE_SOURCE_DIR}/include/inputModule.hpp)
+target_link_libraries (inputModule PRIVATE Boost::boost PRIVATE Boost::regex)
+
 # ####################
 # # Consensus Module #
 # ####################
