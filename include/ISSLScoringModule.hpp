@@ -1,5 +1,6 @@
 #ifndef ISSLScoringModuleInclude
 #define ISSLScoringModuleInclude
+#include <atomic>
 #include <filesystem>
 #include <string>
 #include <unordered_map>

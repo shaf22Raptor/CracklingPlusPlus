@@ -74,12 +74,12 @@ void sgrnascorer2Module::run(std::vector<guideResults>& candidateGuides)
 
 		if (candidate.sgrnascorer2score < sgrnascorer2Config.scoreThreshold)
 		{
-			candidate.acceptedBySgRnaScorer = CODE_REJECTED;
+			candidate.acceptedBySgRnaScorer2 = CODE_REJECTED;
 			failedCount++;
 		}
 		else
 		{
-			candidate.acceptedBySgRnaScorer = CODE_ACCEPTED;
+			candidate.acceptedBySgRnaScorer2 = CODE_ACCEPTED;
 		}
 		testedCount++;
 	}
@@ -108,12 +108,12 @@ bool sgrnascorer2Module::processGuide(const guideResults& guide)
 		int countAlreadyAccepted =
 			(int)guide.passedG20 == CODE_ACCEPTED +
 			(int)guide.acceptedByMm10db == CODE_ACCEPTED +
-			(int)guide.acceptedBySgRnaScorer == CODE_ACCEPTED;
+			(int)guide.acceptedBySgRnaScorer2 == CODE_ACCEPTED;
 
 		int countAlreadyAssessed =
 			(int)guide.passedG20 != CODE_UNTESTED +
 			(int)guide.acceptedByMm10db != CODE_UNTESTED +
-			(int)guide.acceptedBySgRnaScorer != CODE_UNTESTED;
+			(int)guide.acceptedBySgRnaScorer2 != CODE_UNTESTED;
 
 		// Reject if the consensus has already been passed
 		if (countAlreadyAccepted >= consensusN) { return false; }

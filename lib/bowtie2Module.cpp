@@ -89,7 +89,7 @@ void bowtie2Module::run(std::vector<guideResults>& candidateGuides)
 		cout << fmt::format("\t\t{} guides in this page.", guidesInPage) << endl;
 
 		// Call bowtie2
-		runner(fmt::format("{} -x {} -p {} --reorder --no-hd -t -r -U {} -S {}", config.binary, indexFile, config.threads, config.inFile, config.outFile).c_str());
+		runner(fmt::format("{} -x {} -p {} --reorder --no-hd -t -r -U {} -S {}", config.binary.string(), indexFile.string(), config.threads, config.inFile.string(), config.outFile.string()).c_str());
 
 		cout << "\tStarting to process the Bowtie results." << endl;
 
@@ -156,6 +156,7 @@ void bowtie2Module::run(std::vector<guideResults>& candidateGuides)
 				paginatorIterator->passedBowtie2 = CODE_ACCEPTED;
 			}
 			testedCount++;
+			paginatorIterator++;
 		}
 
 		// Point paginatorIterator to page end for next loop

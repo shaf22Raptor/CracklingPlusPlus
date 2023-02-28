@@ -6,7 +6,6 @@ using std::string;
 using std::vector;
 using std::pair;
 using std::unordered_map;
-namespace fs = std::filesystem;
 
 const vector<uint8_t> nucleotideIndex{ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,3 };
 const vector<char> signatureIndex{ 'A', 'C', 'G', 'T' };
@@ -222,8 +221,9 @@ void ISSLScoringModule::run(std::vector<guideResults>& candidateGuides)
 
     cout << "Beginning Off-target scoring." << endl;
 
-    uint64_t testedCount = 0;
-    uint64_t failedCount = 0;
+
+    std::atomic_ullong testedCount = 0;
+    std::atomic_ullong failedCount = 0;
 
     /** Begin scoring */
     omp_set_num_threads(config.threads);
@@ -457,7 +457,7 @@ void ISSLScoringModule::run(std::vector<guideResults>& candidateGuides)
     }
 
     cout << fmt::format("\t{} of {} failed here.", failedCount, testedCount) << endl;
-}
+    }
 
 
 uint64_t ISSLScoringModule::sequenceToSignature(const std::string& seq, uint64_t seqLen)
@@ -497,7 +497,9 @@ bool ISSLScoringModule::processGuide(const guideResults& guide)
 		// Reject if the consensus was not passed
 		if (guide.consensusCount < consensusN) { return false; }
 		// Reject if bowtie2 was not passed
-		if (guide.passedBowtie2 == CODE_REJECTED) { return false; }
+		if (guide.passedBowtie2 == CODE_REJECTED) { 
+            return false;
+        }
 	}
 
 	// None of the failure conditions have been meet, return true

@@ -7,6 +7,8 @@ class cas9InputModule : private inputModule
 {
 public:
 	cas9InputModule(cracklingConfig config);
+	void run();
+	std::vector<guideResults>* next();
 };
 
 

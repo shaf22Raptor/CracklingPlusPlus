@@ -5,6 +5,7 @@ using std::endl;
 using std::string;
 using std::ifstream;
 using std::ofstream;
+using std::fstream;
 using std::vector;
 using std::unordered_set;
 using std::filesystem::path;
@@ -24,6 +25,7 @@ using boost::smatch;
 inputModule::inputModule(cracklingConfig config)
 {
 	this->filesToProcess = config.input.filesToProcess;
+	this->batchSize = config.input.batchLen;
 	this->tempWorkingDir = path(temp_directory_path() / "Crackling");
 }
 
@@ -44,7 +46,7 @@ void inputModule::run()
 	if (is_directory(tempWorkingDir)) { remove_all(tempWorkingDir); }
 	if (!create_directory(tempWorkingDir)) { throw tempFileSystemError(); }
 
-	cout << fmt::format("Storing batch files in: {}", tempWorkingDir) << endl;
+	cout << fmt::format("Storing batch files in: {}", tempWorkingDir.string()) << endl;
 
 	// Create first batch file
 	path outFileName = tempWorkingDir / fmt::format("{}_batchFile.txt", batchFiles.size());
@@ -58,7 +60,7 @@ void inputModule::run()
 	// Begin processing files
 	for (const path& file : filesToProcess)
 	{
-		cout << fmt::format("Identifying possible target sites in : {}", file);
+		cout << fmt::format("Identifying possible target sites in : {}", file.string());
 		ifstream inFile;
 		string inputLine;
 
@@ -68,7 +70,7 @@ void inputModule::run()
 		if (inputLine[0] == '>')
 		{
 			// Remove all line breaks between sequences segments
-			ofstream tempFasta;
+			fstream tempFasta;
 			tempFasta.open(tempWorkingDir / "tempFastsa.fa", std::ios::binary | std::ios::out);
 			trim(inputLine);
 			tempFasta << inputLine << "\n";
@@ -123,17 +125,15 @@ void inputModule::run()
 
 	// Finished processing files
 	currentBatchFile.close();
-	candidateGuides.clear();
-	recordedSequences.clear();
 
 	// Report results
 	double duplicatePercent = (static_cast<double>(numDuplicateGuides) / static_cast<double>(numIdentifiedGuides)) * 100.0;
 	cout << 
 		fmt::format(
-			"\tIdentified {} possible target sites.\n"
-			"\tOf these, {} are not unique. These sites occur a total of {} times.\n"
-			"\t{} of {} ({:.2f}%) of guides will be ignored for optimisation levels over ultralow.\n"
-			"\t{} distinct guides were identified.",
+			"\tIdentified {:L} possible target sites.\n"
+			"\tOf these, {:L} are not unique. These sites occur a total of {:L} times.\n"
+			"\t{:L} of {:L} ({:.2f}%) of guides will be ignored for optimisation levels over ultralow.\n"
+			"\t{:L} distinct guides were identified.",
 			numIdentifiedGuides,
 			duplicateGuides.size(),
 			numDuplicateGuides,
@@ -143,6 +143,9 @@ void inputModule::run()
 			candidateGuides.size()
 		)
 		<< endl;
+	// Remove unneed sets
+	candidateGuides.clear();
+	recordedSequences.clear();
 }
 
 void inputModule::processSeqeunce(const std::string& seqeunce, const std::string& header)
@@ -150,7 +153,7 @@ void inputModule::processSeqeunce(const std::string& seqeunce, const std::string
 	for (sregex_iterator regexItr(seqeunce.begin(), seqeunce.end(), fwdExp); regexItr != sregex_iterator(); regexItr++)
 	{
 		numIdentifiedGuides++;
-		string guide = regexItr->str();
+		string guide = (*regexItr)[1].str();
 		uint64_t pos = regexItr->position();
 		if (candidateGuides.find(guide) == candidateGuides.end())
 		{
@@ -158,7 +161,7 @@ void inputModule::processSeqeunce(const std::string& seqeunce, const std::string
 			if (++guidesInBatch > batchSize)
 			{
 				currentBatchFile.close();
-				path outFileName = tempWorkingDir / fmt::format("{}_batchFile.txt", batchFiles.size());
+				path outFileName = tempWorkingDir / fmt::format("{}_batchFile.txt", std::to_string(batchFiles.size()));
 				batchFiles.push_back(outFileName);
 				currentBatchFile.open(outFileName, std::ios::binary | std::ios::out);
 				guidesInBatch = 1;
@@ -175,7 +178,7 @@ void inputModule::processSeqeunce(const std::string& seqeunce, const std::string
 	for (sregex_iterator regexItr(seqeunce.begin(), seqeunce.end(), bwdExp); regexItr != sregex_iterator(); regexItr++)
 	{
 		numIdentifiedGuides++;
-		string guide = rc(regexItr->str());
+		string guide = rc((*regexItr)[1].str());
 		uint64_t pos = regexItr->position();
 		if (candidateGuides.find(guide) == candidateGuides.end())
 		{
@@ -183,7 +186,7 @@ void inputModule::processSeqeunce(const std::string& seqeunce, const std::string
 			if (++guidesInBatch > batchSize)
 			{
 				currentBatchFile.close();
-				path outFileName = tempWorkingDir / fmt::format("{}_batchFile.txt", batchFiles.size());
+				path outFileName = tempWorkingDir / fmt::format("{}_batchFile.txt", std::to_string(batchFiles.size()));
 				batchFiles.push_back(outFileName);
 				currentBatchFile.open(outFileName, std::ios::binary | std::ios::out);
 				guidesInBatch = 1;

@@ -25,62 +25,6 @@ add_library(libsvm STATIC ${CMAKE_SOURCE_DIR}/lib/svm.cpp ${CMAKE_SOURCE_DIR}/in
 # Add Library
 add_library(Logger STATIC ${CMAKE_SOURCE_DIR}/lib/Logger.cpp ${CMAKE_SOURCE_DIR}/include/Logger.hpp)
 
-########################
-# Config Parser Module #
-########################
-add_library(configParserModule STATIC ${CMAKE_SOURCE_DIR}/lib/configParserModule.cpp ${CMAKE_SOURCE_DIR}/include/configParserModule.hpp ${CMAKE_SOURCE_DIR}/include/pipelineModule.hpp)
-target_link_libraries (configParserModule PRIVATE Boost::boost PRIVATE Boost::regex)
-
-################
-# Input Module #
-################
-add_library(inputModule STATIC ${CMAKE_SOURCE_DIR}/lib/inputModule.cpp ${CMAKE_SOURCE_DIR}/include/inputModule.hpp)
-target_link_libraries (inputModule PRIVATE Boost::boost PRIVATE Boost::regex)
-
-#####################
-# Cas9 Input Module #
-#####################
-add_library(cas9InputModule STATIC ${CMAKE_SOURCE_DIR}/lib/cas9InputModule.cpp ${CMAKE_SOURCE_DIR}/include/cas9InputModule.hpp)
-target_link_libraries (cas9InputModule PRIVATE Boost::regex)
-
-# ####################
-# # Consensus Module #
-# ####################
-# add_library(consensusModule STATIC ${CMAKE_SOURCE_DIR}/lib/consensusModule.cpp ${CMAKE_SOURCE_DIR}/include/consensusModule.hpp ${CMAKE_SOURCE_DIR}/include/pipelineModule.hpp)
-
-
-# ###################
-# # CHOPCHOP Module #
-# ###################
-# add_library(chopchopModule STATIC ${CMAKE_SOURCE_DIR}/lib/chopchopModule.cpp ${CMAKE_SOURCE_DIR}/include/chopchopModule.hpp)
-# target_link_libraries (chopchopModule PRIVATE consensusModule)
-
-
-# #################
-# # MM10DB Module #
-# #################
-# add_library(mm10dbModule STATIC ${CMAKE_SOURCE_DIR}/lib/mm10dbModule.cpp ${CMAKE_SOURCE_DIR}/include/mm10dbModule.hpp)
-# target_link_libraries (mm10dbModule PRIVATE consensusModule PRIVATE Boost::boost PRIVATE Boost::regex)
-
-
-# #######################
-# # sgRNAScorer2 Module #
-# #######################
-# add_library(sgrnascorer2Module STATIC ${CMAKE_SOURCE_DIR}/lib/sgrnascorer2Module.cpp ${CMAKE_SOURCE_DIR}/include/sgrnascorer2Module.hpp)
-# target_link_libraries (sgrnascorer2Module PRIVATE consensusModule)
-
-
-# ######################
-# # Specificity Module #
-# ######################
-# add_library(specificityModule STATIC ${CMAKE_SOURCE_DIR}/lib/specificityModule.cpp ${CMAKE_SOURCE_DIR}/include/specificityModule.hpp ${CMAKE_SOURCE_DIR}/include/pipelineModule.hpp)
-
-##################
-# Bowtie2 Module #
-##################
-add_library(bowtie2Module STATIC ${CMAKE_SOURCE_DIR}/lib/bowtie2Module.cpp ${CMAKE_SOURCE_DIR}/include/bowtie2Module.hpp)
-target_link_libraries (bowtie2Module PRIVATE Boost::boost)
-
 
 ##################
 # INPUTPROCESSOR #
@@ -187,16 +131,71 @@ if(OpenMP_CXX_FOUND)
     target_link_libraries(ISSLOffTargetScoring PRIVATE OpenMP::OpenMP_CXX PRIVATE Boost::boost)
 endif()
 
+#############
+# Utilities #
+#############
+add_library(utils STATIC ${CMAKE_SOURCE_DIR}/lib/util.cpp ${CMAKE_SOURCE_DIR}/include/util.hpp)
+
+########################
+# Config Parser Module #
+########################
+add_library(configParserModule STATIC ${CMAKE_SOURCE_DIR}/lib/configParserModule.cpp ${CMAKE_SOURCE_DIR}/include/configParserModule.hpp ${CMAKE_SOURCE_DIR}/include/pipelineModule.hpp)
+target_link_libraries (configParserModule PRIVATE utils PRIVATE Boost::boost PRIVATE Boost::regex)
+
+################
+# Input Module #
+################
+add_library(inputModule STATIC ${CMAKE_SOURCE_DIR}/lib/inputModule.cpp ${CMAKE_SOURCE_DIR}/include/inputModule.hpp)
+target_link_libraries (inputModule PRIVATE utils PRIVATE Boost::boost PRIVATE Boost::regex)
+
+#####################
+# Cas9 Input Module #
+#####################
+add_library(cas9InputModule STATIC ${CMAKE_SOURCE_DIR}/lib/cas9InputModule.cpp ${CMAKE_SOURCE_DIR}/include/cas9InputModule.hpp)
+target_link_libraries (cas9InputModule PRIVATE utils PRIVATE Boost::regex PRIVATE inputModule)
+
+####################
+# Consensus Module #
+####################
+add_library(consensusModule STATIC ${CMAKE_SOURCE_DIR}/lib/consensusModule.cpp ${CMAKE_SOURCE_DIR}/include/consensusModule.hpp ${CMAKE_SOURCE_DIR}/include/pipelineModule.hpp)
+
+###################
+# CHOPCHOP Module #
+###################
+add_library(chopchopModule STATIC ${CMAKE_SOURCE_DIR}/lib/chopchopModule.cpp ${CMAKE_SOURCE_DIR}/include/chopchopModule.hpp)
+target_link_libraries (chopchopModule PRIVATE consensusModule)
+
+#################
+# MM10DB Module #
+#################
+add_library(mm10dbModule STATIC ${CMAKE_SOURCE_DIR}/lib/mm10dbModule.cpp ${CMAKE_SOURCE_DIR}/include/mm10dbModule.hpp)
+target_link_libraries (mm10dbModule PRIVATE consensusModule PRIVATE Boost::boost PRIVATE Boost::regex)
+
+#######################
+# sgRNAScorer2 Module #
+#######################
+add_library(sgrnascorer2Module STATIC ${CMAKE_SOURCE_DIR}/lib/sgrnascorer2Module.cpp ${CMAKE_SOURCE_DIR}/include/sgrnascorer2Module.hpp)
+target_link_libraries (sgrnascorer2Module PRIVATE consensusModule PRIVATE libsvm)
+
+######################
+# Specificity Module #
+######################
+add_library(specificityModule STATIC ${CMAKE_SOURCE_DIR}/lib/specificityModule.cpp ${CMAKE_SOURCE_DIR}/include/specificityModule.hpp ${CMAKE_SOURCE_DIR}/include/pipelineModule.hpp)
+
+##################
+# Bowtie2 Module #
+##################
+add_library(bowtie2Module STATIC ${CMAKE_SOURCE_DIR}/lib/bowtie2Module.cpp ${CMAKE_SOURCE_DIR}/include/bowtie2Module.hpp)
+target_link_libraries (bowtie2Module PRIVATE specificityModule PRIVATE Boost::boost)
+
 ########################
 # ISSLOFFTARGETSCORING #
 ########################
 # Add Library
 add_library(ISSLScoringModule STATIC ${CMAKE_SOURCE_DIR}/lib/ISSLScoringModule.cpp ${CMAKE_SOURCE_DIR}/include/ISSLScoringModule.hpp)
-# Link required librarires 
-target_link_libraries (ISSLScoringModule PRIVATE Helpers PRIVATE ConfigManager)
 # Find OpenMP
 find_package(OpenMP)
 # Link OpenMP if available
 if(OpenMP_CXX_FOUND)
-    target_link_libraries(ISSLScoringModule PRIVATE OpenMP::OpenMP_CXX PRIVATE Boost::boost)
+    target_link_libraries(ISSLScoringModule PRIVATE specificityModule PRIVATE OpenMP::OpenMP_CXX PRIVATE Boost::boost)
 endif()

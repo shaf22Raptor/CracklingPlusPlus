@@ -2,7 +2,7 @@
 
 specificityModule::specificityModule(cracklingConfig config)
 {
-	this->toolIsSelected = config.offtarget.enabled;
+	this->toolIsSelected = config.offTarget.enabled;
 	this->optimsationLevel = config.general.optimisation;
 	this->consensusN = config.consensus.n;
 }

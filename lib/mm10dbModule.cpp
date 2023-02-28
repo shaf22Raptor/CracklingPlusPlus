@@ -188,7 +188,7 @@ void mm10dbModule::run(std::vector<guideResults>& candidateGuides)
 
 			paginatorIterator->ssL1 = L1;
 			paginatorIterator->ssStructure = L2_split[0];
-			paginatorIterator->ssEnergy = std::stod(L2_split[1]);
+			paginatorIterator->ssEnergy = std::stod(L2_split[1].substr(1, L2_split[1].length() - 1));
 
 			if ((transToDNA(target) != paginatorIterator->seq.substr(0, 20)) &&
 				((transToDNA("C" + target.substr(1))) != paginatorIterator->seq.substr(0, 20)) &&
@@ -336,12 +336,12 @@ bool mm10dbModule::processGuide(const guideResults& guide)
 		int countAlreadyAccepted =
 			(int)guide.passedG20 == CODE_ACCEPTED +
 			(int)guide.acceptedByMm10db == CODE_ACCEPTED +
-			(int)guide.acceptedBySgRnaScorer == CODE_ACCEPTED;
+			(int)guide.acceptedBySgRnaScorer2 == CODE_ACCEPTED;
 
 		int countAlreadyAssessed =
 			(int)guide.passedG20 != CODE_UNTESTED +
 			(int)guide.acceptedByMm10db != CODE_UNTESTED +
-			(int)guide.acceptedBySgRnaScorer != CODE_UNTESTED;
+			(int)guide.acceptedBySgRnaScorer2 != CODE_UNTESTED;
 
 		// Reject if the consensus has already been passed
 		if (countAlreadyAccepted >= consensusN) { return false; }

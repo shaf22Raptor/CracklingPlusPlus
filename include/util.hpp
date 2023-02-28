@@ -8,12 +8,13 @@
 #define FMT_HEADER_ONLY
 #include "../include/fmt/format.h"
 
-template <class Char>
-class commaFormat : public std::numpunct<Char> {
+class commaFormat : public std::numpunct<char> {
 public:
 	std::string do_grouping() const { return "\3"; }
-	Char do_thousands_sep() const { return ','; }
+	char do_thousands_sep() const { return ','; }
 };
+
+extern const std::locale comma_locale;
 
 enum otScoreMethod { mit = 0, cfd = 1, mitAndCfd = 2, mitOrCfd = 3, avgMitCfd = 4 };
 enum optimisationLevel { ultralow = 0, low = 1, medium = 2, high = 3};
@@ -33,11 +34,11 @@ const static std::unordered_map<std::string, otScoreMethod> otScoreMethodMap = {
 	{"avgMitCfd",otScoreMethod::avgMitCfd}
 };
 
-const char CODE_ACCEPTED = '1';
-const char CODE_REJECTED = '0';
-const char CODE_UNTESTED = '?';
-const char CODE_AMBIGUOUS = '-';
-const char CODE_ERROR = '!';
+extern const char CODE_ACCEPTED;
+extern const char CODE_REJECTED;
+extern const char CODE_UNTESTED;
+extern const char CODE_AMBIGUOUS;
+extern const char CODE_ERROR;
 
 struct generalConfig
 {
@@ -123,10 +124,10 @@ struct cracklingConfig
 
 struct guideResults
 {
-	std::string seq;
-	std::string header = NULL;
-	uint64_t start = NULL;
-	uint64_t end = NULL;
+	std::string seq = &CODE_AMBIGUOUS;
+	std::string header = &CODE_AMBIGUOUS;
+	uint64_t start = ULLONG_MAX;
+	uint64_t end = ULLONG_MAX;
 	char strand = CODE_AMBIGUOUS;
 	bool isUnique = false;
 	char passedG20 = CODE_UNTESTED;
@@ -135,21 +136,21 @@ struct guideResults
 	char passedTTTT = CODE_UNTESTED;
 	char passedSecondaryStructure = CODE_UNTESTED;
 	char acceptedByMm10db = CODE_UNTESTED;
-	char acceptedBySgRnaScorer = CODE_UNTESTED;
-	uint8_t consensusCount = NULL;
+	char acceptedBySgRnaScorer2 = CODE_UNTESTED;
+	int8_t consensusCount = -1;
 	char passedBowtie2 = CODE_UNTESTED;
 	char passedOffTargetScore = CODE_UNTESTED;
-	double AT = NULL;
+	double AT = -DBL_MAX;
 	std::string ssL1 = &CODE_UNTESTED;
 	std::string ssStructure = &CODE_UNTESTED;
-	double ssEnergy = NULL;
-	double sgrnascorer2score = NULL;
+	double ssEnergy = -DBL_MAX;
+	double sgrnascorer2score = -DBL_MAX;
 	std::string bowtie2Chr = &CODE_UNTESTED;
-	uint64_t bowtie2Start = NULL;
-	uint64_t bowtie2End = NULL;
-	double mitOfftargetscore = NULL;
-	double cfdOfftargetscore = NULL;
-};
+	uint64_t bowtie2Start = ULLONG_MAX;
+	uint64_t bowtie2End = ULLONG_MAX;
+	double mitOfftargetscore = -1;
+	double cfdOfftargetscore = -1;
+};	
 
 class ReturnCode : public std::logic_error
 {
@@ -169,43 +170,8 @@ public:
 	InvalidConfiguration(const std::string& error) : std::runtime_error(error) { };
 };
 
-void runner(const char* args)
-{
-	std::cout << fmt::format("| Calling: {}", args) << std::endl;
-	try
-	{
-		int returnCode = system(args);
-		if (returnCode != 0)
-		{
-			throw ReturnCode();
-		}
-	}
-	catch (const ReturnCode& e)
-	{
-		std::cerr << e.what() << std::endl;
-		return;
-	}
-	std::cout << "| Finished" << std::endl;
-	return;
-}
+void runner(const char* args);
 
-const std::vector<char> nulceotideArray = { 'a', 'c', 'g', 't', 'r', 'y', 'm', 'k', 'b', 'd', 'h', 'v', 'A', 'C', 'G', 'T', 'R', 'Y', 'M', 'K', 'B', 'D', 'H', 'V' };
-const std::vector<char> complementArray = { 't', 'g', 'c', 'a', 'y', 'r', 'k', 'm', 'v', 'h', 'd', 'b', 'T', 'G', 'C', 'A', 'Y', 'R', 'K', 'M', 'V', 'H', 'D', 'B' };
-
-std::string rc(std::string DNA)
-{
-	// Reverse the input seqeuence 
-	std::reverse(DNA.begin(), DNA.end());
-	// Convert each character to the complement
-	std::for_each(DNA.begin(), DNA.end(), [](char& c) {
-		auto nulceotidePos = std::find(nulceotideArray.begin(), nulceotideArray.end(), c);
-		long long complementPos = std::distance(nulceotideArray.begin(), nulceotidePos);
-		c = complementArray[complementPos];
-		}
-	);
-
-	// Return reverse compliment
-	return DNA;
-}
+std::string rc(std::string DNA);
 
 #endif // !utilInclude

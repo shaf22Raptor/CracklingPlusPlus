@@ -18,6 +18,7 @@ const std::string nullDir("/dev/null");
 class configParserModule : private pipelineModule
 {
 public:
+	configParserModule() {};
 	cracklingConfig run(const std::string& configFile);
 private:
 	void run() final;

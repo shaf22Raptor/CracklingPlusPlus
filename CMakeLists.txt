@@ -29,19 +29,26 @@ find_package(Boost 1.79 REQUIRED COMPONENTS regex)
 # Link Libraries to main executable
 target_link_libraries (
 	${PROJECT_NAME} 
-	PRIVATE Helpers 
-	PRIVATE ConfigManager 
+	#PRIVATE Helpers 
+	#PRIVATE ConfigManager 
 	PRIVATE Logger 
-	PRIVATE cas9InputProcessor 
-	PRIVATE CHOPCHOP 
-	PRIVATE mm10db 
-	PRIVATE sgrnascorer2 
-	PRIVATE bowtie2 
-	PRIVATE ISSLOffTargetScoring
-	PRIVATE ISSLClustering
-	PRIVATE ISSL2Stage
+	#PRIVATE cas9InputProcessor 
+	#PRIVATE CHOPCHOP 
+	#PRIVATE mm10db 
+	#PRIVATE sgrnascorer2 
+	#PRIVATE bowtie2 
+	#PRIVATE ISSLOffTargetScoring
+	#PRIVATE ISSLClustering
+	#PRIVATE ISSL2Stage
 	PRIVATE Boost::boost
 	PRIVATE Boost::regex
+	PRIVATE configParserModule
+	PRIVATE cas9InputModule
+	PRIVATE chopchopModule
+	PRIVATE mm10dbModule
+	PRIVATE sgrnascorer2Module
+	PRIVATE bowtie2Module
+	PRIVATE ISSLScoringModule
 )
 
 # Added ISSLCreateIndex subdirectory

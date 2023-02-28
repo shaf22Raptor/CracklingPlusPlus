@@ -1,5 +1,5 @@
 #ifndef specificityModuleInclude
-#define sepcificityModuleInclude
+#define specificityModuleInclude
 #include <vector>
 #include "../include/util.hpp"
 #include "../include/pipelineModule.hpp"
