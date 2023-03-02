@@ -15,7 +15,7 @@ public:
 	mm10dbModule(cracklingConfig config);
 	void run(std::vector<guideResults>& candidateGuides) final;
 private:
-	rnafoldConfig rnafoldConfig;
+	rnafoldConfig config;
 	bool leadingT(std::string_view guide);
 	double AT_percent(std::string_view guide);
 	bool polyT(std::string_view guide);

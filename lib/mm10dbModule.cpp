@@ -23,7 +23,7 @@ const regex pattern_RNAenergy("\\s\\((.+)\\)");
 mm10dbModule::mm10dbModule(cracklingConfig config) : consensusModule(config)
 {
 	this->toolIsSelected = config.consensus.mm10db;
-	this->rnafoldConfig = config.rnafold;
+	this->config = config.rnafold;
 }
 
 void mm10dbModule::run(std::vector<guideResults>& candidateGuides)
@@ -113,14 +113,14 @@ void mm10dbModule::run(std::vector<guideResults>& candidateGuides)
 	// Outer loop deals with changing iterator start and end points (Pagination)
 	while (pageEnd != candidateGuides.end())
 	{
-		if (rnafoldConfig.pageLen > 0)
+		if (config.pageLen > 0)
 		{
 			// Advance the pageEnd pointer
-			std::advance(pageEnd, std::min((uint64_t)std::distance(pageEnd, candidateGuides.end()), rnafoldConfig.pageLen));
+			std::advance(pageEnd, std::min((uint64_t)std::distance(pageEnd, candidateGuides.end()), config.pageLen));
 			// Record page start
 			pageStart = paginatorIterator;
 			// Print page information
-			cout << fmt::format("\tProcessing page {} ({} per page).", pgIdx, rnafoldConfig.pageLen) << endl;
+			cout << fmt::format("\tProcessing page {} ({} per page).", pgIdx, config.pageLen) << endl;
 		}
 		else {
 			// Process all guides at once
@@ -129,8 +129,8 @@ void mm10dbModule::run(std::vector<guideResults>& candidateGuides)
 		cout << "\t\tConstructing the RNAfold input file." << endl;
 
 		// Open input file 
-		ofstream out;
-		out.open(rnafoldConfig.inFile, ios::binary | ios::out);
+		ofstream inFile;
+		inFile.open(config.inFile, ios::binary | ios::out);
 
 		guidesInPage = 0;
 		while (paginatorIterator != pageEnd)
@@ -145,17 +145,16 @@ void mm10dbModule::run(std::vector<guideResults>& candidateGuides)
 				paginatorIterator++;
 				continue;
 			}
-			out << "G" << paginatorIterator->seq.substr(1, 19) << guide << "\n";
+			inFile << "G" << paginatorIterator->seq.substr(1, 19) << guide << "\n";
 			guidesInPage++;
 			paginatorIterator++;
 		}
-
-		out.close();
+		inFile.close();
 
 		cout << fmt::format("\t\t{} guides in this page.", guidesInPage) << endl;
 
 		// Call RNAFold
-		runner(fmt::format("{} --noPS -j{} -i {} > {}", rnafoldConfig.binary.string(), rnafoldConfig.threads, rnafoldConfig.inFile.string(), rnafoldConfig.outFile.string()).c_str());
+		runner(fmt::format("{} --noPS -j{} -i {} > {}", config.binary.string(), config.threads, config.inFile.string(), config.outFile.string()).c_str());
 
 		cout << "\t\tStarting to process the RNAfold results." << endl;
 
@@ -163,8 +162,8 @@ void mm10dbModule::run(std::vector<guideResults>& candidateGuides)
 		paginatorIterator = pageStart;
 
 		// Open output file
-		ifstream in;
-		in.open(rnafoldConfig.outFile, ios::binary | ios::in);
+		ifstream outFile;
+		outFile.open(config.outFile, ios::binary | ios::in);
 
 		while (paginatorIterator != pageEnd)
 		{
@@ -178,8 +177,8 @@ void mm10dbModule::run(std::vector<guideResults>& candidateGuides)
 			string L1;
 			string L2;
 			string target;
-			std::getline(in, L1);
-			std::getline(in, L2);
+			std::getline(outFile, L1);
+			std::getline(outFile, L2);
 			trim_right(L1);
 			trim_right(L2);
 			target = L1.substr(0, 20);
@@ -205,7 +204,7 @@ void mm10dbModule::run(std::vector<guideResults>& candidateGuides)
 			if (regex_search(L2, match_structure, pattern_RNAstructure))
 			{
 				double energy = std::stod(match_structure[1].str());
-				if (energy < rnafoldConfig.lowEngeryThreshold)
+				if (energy < config.lowEngeryThreshold)
 				{
 					paginatorIterator->passedSecondaryStructure = CODE_REJECTED;
 					failedCount++;
@@ -218,7 +217,7 @@ void mm10dbModule::run(std::vector<guideResults>& candidateGuides)
 			else if (regex_search(L2, match_energy, pattern_RNAenergy))
 			{
 				double energy = std::stod(match_energy[1].str());
-				if (energy <= rnafoldConfig.highEngeryThreshold)
+				if (energy <= config.highEngeryThreshold)
 				{
 					paginatorIterator->passedSecondaryStructure = CODE_REJECTED;
 					failedCount++;
@@ -231,7 +230,10 @@ void mm10dbModule::run(std::vector<guideResults>& candidateGuides)
 			testedCount++;
 			paginatorIterator++;
 		}
-
+		outFile.close();
+		// Clean up intermediate files
+		remove(config.inFile);
+		remove(config.outFile);
 		// Advance paginatorIterator to page end for next loop
 		paginatorIterator = pageEnd;
 		pgIdx++;
