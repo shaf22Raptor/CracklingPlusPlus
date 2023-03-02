@@ -124,8 +124,8 @@ struct cracklingConfig
 
 struct guideResults
 {
-	std::string seq = &CODE_AMBIGUOUS;
-	std::string header = &CODE_AMBIGUOUS;
+	std::string seq = std::string(1, CODE_AMBIGUOUS);
+	std::string header = std::string(1, CODE_AMBIGUOUS);
 	uint64_t start = ULLONG_MAX;
 	uint64_t end = ULLONG_MAX;
 	char strand = CODE_AMBIGUOUS;
@@ -141,15 +141,15 @@ struct guideResults
 	char passedBowtie2 = CODE_UNTESTED;
 	char passedOffTargetScore = CODE_UNTESTED;
 	double AT = -DBL_MAX;
-	std::string ssL1 = &CODE_UNTESTED;
-	std::string ssStructure = &CODE_UNTESTED;
+	std::string ssL1 = std::string(1, CODE_UNTESTED);
+	std::string ssStructure = std::string(1, CODE_UNTESTED);
 	double ssEnergy = -DBL_MAX;
 	double sgrnascorer2score = -DBL_MAX;
-	std::string bowtie2Chr = &CODE_UNTESTED;
+	std::string bowtie2Chr = std::string(1, CODE_UNTESTED);
 	uint64_t bowtie2Start = ULLONG_MAX;
 	uint64_t bowtie2End = ULLONG_MAX;
-	double mitOfftargetscore = -1;
-	double cfdOfftargetscore = -1;
+	double mitOfftargetscore = -DBL_MAX;
+	double cfdOfftargetscore = -DBL_MAX;
 };	
 
 class ReturnCode : public std::logic_error

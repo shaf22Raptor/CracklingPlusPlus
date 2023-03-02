@@ -18,6 +18,7 @@
 #include "../include/sgrnascorer2Module.hpp"
 #include "../include/bowtie2Module.hpp"
 #include "../include/ISSLScoringModule.hpp"
+#include "../include/outputModule.hpp"
 
 #if defined(_WIN64)
 	#pragma push_macro("close")
@@ -48,6 +49,7 @@ int main(int argc, char** argv)
 	sgrnascorer2Module	sgrnascorer2(config);
 	bowtie2Module		bowtie2(config);
 	ISSLScoringModule	ISSLScoring(config);
+	outputModule		output(config);
 
 	cas9IM.run();
 
@@ -78,7 +80,7 @@ int main(int argc, char** argv)
 		bowtie2.run(*currentBatch);
 		ISSLScoring.run(*currentBatch);
 
-
+		output.run(*currentBatch);
 	}
 
 	std::cout << "Config in " << std::endl;

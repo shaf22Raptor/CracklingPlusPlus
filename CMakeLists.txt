@@ -49,6 +49,7 @@ target_link_libraries (
 	PRIVATE sgrnascorer2Module
 	PRIVATE bowtie2Module
 	PRIVATE ISSLScoringModule
+	PRIVATE outputModule
 )
 
 # Added ISSLCreateIndex subdirectory

@@ -145,7 +145,7 @@ target_link_libraries (configParserModule PRIVATE utils PRIVATE Boost::boost PRI
 ################
 # Input Module #
 ################
-add_library(inputModule STATIC ${CMAKE_SOURCE_DIR}/lib/inputModule.cpp ${CMAKE_SOURCE_DIR}/include/inputModule.hpp)
+add_library(inputModule STATIC ${CMAKE_SOURCE_DIR}/lib/inputModule.cpp ${CMAKE_SOURCE_DIR}/include/inputModule.hpp ${CMAKE_SOURCE_DIR}/include/pipelineModule.hpp)
 target_link_libraries (inputModule PRIVATE utils PRIVATE Boost::boost PRIVATE Boost::regex)
 
 #####################
@@ -188,9 +188,9 @@ add_library(specificityModule STATIC ${CMAKE_SOURCE_DIR}/lib/specificityModule.c
 add_library(bowtie2Module STATIC ${CMAKE_SOURCE_DIR}/lib/bowtie2Module.cpp ${CMAKE_SOURCE_DIR}/include/bowtie2Module.hpp)
 target_link_libraries (bowtie2Module PRIVATE specificityModule PRIVATE Boost::boost)
 
-########################
-# ISSLOFFTARGETSCORING #
-########################
+##################################
+# ISSL Off-target Scoring Module #
+##################################
 # Add Library
 add_library(ISSLScoringModule STATIC ${CMAKE_SOURCE_DIR}/lib/ISSLScoringModule.cpp ${CMAKE_SOURCE_DIR}/include/ISSLScoringModule.hpp)
 # Find OpenMP
@@ -199,3 +199,8 @@ find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
     target_link_libraries(ISSLScoringModule PRIVATE specificityModule PRIVATE OpenMP::OpenMP_CXX PRIVATE Boost::boost)
 endif()
+
+#################
+# Output Module #
+#################
+add_library(outputModule STATIC ${CMAKE_SOURCE_DIR}/lib/outputModule.cpp ${CMAKE_SOURCE_DIR}/include/outputModule.hpp ${CMAKE_SOURCE_DIR}/include/pipelineModule.hpp)
