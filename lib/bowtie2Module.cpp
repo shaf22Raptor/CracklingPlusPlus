@@ -6,6 +6,7 @@ using std::vector;
 using std::string;
 using std::ofstream;
 using std::unordered_map;
+using std::filesystem::remove;
 using boost::algorithm::split;
 
 bowtie2Module::bowtie2Module(cracklingConfig config) : specificityModule(config)
@@ -83,7 +84,6 @@ void bowtie2Module::run(std::vector<guideResults>& candidateGuides)
 			guidesInPage++;
 			paginatorIterator++;
 		}
-
 		inFile.close();
 
 		cout << fmt::format("\t\t{} guides in this page.", guidesInPage) << endl;
@@ -158,7 +158,10 @@ void bowtie2Module::run(std::vector<guideResults>& candidateGuides)
 			testedCount++;
 			paginatorIterator++;
 		}
-
+		outFile.close();
+		// Clean up intermediate files
+		remove(config.inFile);
+		remove(config.outFile);
 		// Point paginatorIterator to page end for next loop
 		paginatorIterator = pageEnd;
 		pgIdx++;

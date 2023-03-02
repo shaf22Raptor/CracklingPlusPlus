@@ -80,10 +80,13 @@ int main(int argc, char** argv)
 		bowtie2.run(*currentBatch);
 		ISSLScoring.run(*currentBatch);
 
+		// Print output
 		output.run(*currentBatch);
 	}
 
 	std::cout << "Config in " << std::endl;
+
+
 	//try
 	//{
 	//	// Check input arguments
