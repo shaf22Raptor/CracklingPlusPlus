@@ -18,6 +18,7 @@
 #include "../include/sgrnascorer2Module.hpp"
 #include "../include/bowtie2Module.hpp"
 #include "../include/ISSLScoringModule.hpp"
+#include "../include/ISSLScoringModuleMMF.hpp"
 #include "../include/outputModule.hpp"
 
 #if defined(_WIN64)
@@ -40,7 +41,8 @@ int main(int argc, char** argv)
 	// Create logger objects and apply number formatting
 	Logger coutLogger(std::cout, config.output.log.string());
 	Logger cerrLogger(std::cerr, config.output.errLog.string());
-	std::locale::global(comma_locale);
+	std::cout.imbue(comma_locale);
+	std::cerr.imbue(comma_locale);
 
 	// Create pipeline modules
 	cas9InputModule		cas9IM(config);
@@ -49,6 +51,7 @@ int main(int argc, char** argv)
 	sgrnascorer2Module	sgrnascorer2(config);
 	bowtie2Module		bowtie2(config);
 	ISSLScoringModule	ISSLScoring(config);
+	ISSLScoringModuleMMF ISSLScoringMMF(config);
 	outputModule		output(config);
 
 	cas9IM.run();
@@ -60,25 +63,26 @@ int main(int argc, char** argv)
 		std::cout << "Processing batch " << ++i << std::endl;
 
 		// Consensus scoring
-		chopchop.run(*currentBatch);
-		mm10db.run(*currentBatch);
-		sgrnascorer2.run(*currentBatch);
+		//chopchop.run(*currentBatch);
+		//mm10db.run(*currentBatch);
+		//sgrnascorer2.run(*currentBatch);
 
 		// Complete consensus evaluation
-		std::cout << "Evaluating efficiency via consensus approach." << std::endl;
-		uint64_t failedCount = 0;
-		uint64_t testedCount = 0;
-		for (guideResults& candidate : *currentBatch)
-		{
-			candidate.consensusCount = (candidate.passedG20 == CODE_ACCEPTED) + (candidate.acceptedByMm10db == CODE_ACCEPTED) + (candidate.acceptedBySgRnaScorer2 == CODE_ACCEPTED);
-			if (candidate.consensusCount < config.consensus.n) { failedCount++; }
-			testedCount++;
-		}
-		std::cout << fmt::format("\t{:L} of {:L} failed here.", failedCount, testedCount) << std::endl;
+		//std::cout << "Evaluating efficiency via consensus approach." << std::endl;
+		//uint64_t failedCount = 0;
+		//uint64_t testedCount = 0;
+		//for (guideResults& candidate : *currentBatch)
+		//{
+		//	candidate.consensusCount = (candidate.passedG20 == CODE_ACCEPTED) + (candidate.acceptedByMm10db == CODE_ACCEPTED) + (candidate.acceptedBySgRnaScorer2 == CODE_ACCEPTED);
+		//	if (candidate.consensusCount < config.consensus.n) { failedCount++; }
+		//	testedCount++;
+		//}
+		//std::cout << fmt::format("\t{:L} of {:L} failed here.", failedCount, testedCount) << std::endl;
 
 		// Specificity scoring
-		bowtie2.run(*currentBatch);
+		//bowtie2.run(*currentBatch);
 		ISSLScoring.run(*currentBatch);
+		//ISSLScoringMMF.run(*currentBatch);
 
 		// Print output
 		output.run(*currentBatch);

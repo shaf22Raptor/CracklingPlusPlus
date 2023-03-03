@@ -200,6 +200,18 @@ if(OpenMP_CXX_FOUND)
     target_link_libraries(ISSLScoringModule PRIVATE specificityModule PRIVATE OpenMP::OpenMP_CXX PRIVATE Boost::boost)
 endif()
 
+#####################################################
+# ISSL Off-target Scoring Module Memory Mapped File #
+#####################################################
+# Add Library
+add_library(ISSLScoringModuleMMF STATIC ${CMAKE_SOURCE_DIR}/lib/ISSLScoringModuleMMF.cpp ${CMAKE_SOURCE_DIR}/include/ISSLScoringModuleMMF.hpp)
+# Find OpenMP
+find_package(OpenMP)
+# Link OpenMP if available
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(ISSLScoringModuleMMF PRIVATE specificityModule PRIVATE OpenMP::OpenMP_CXX PRIVATE Boost::boost)
+endif()
+
 #################
 # Output Module #
 #################
