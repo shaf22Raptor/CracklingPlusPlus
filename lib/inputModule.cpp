@@ -91,6 +91,7 @@ void inputModule::run()
 			{
 				trim(inputLine);
 				string header = inputLine.substr(1);
+				boost::erase_all(header, ",");
 				std::getline(inFile, inputLine);
 				trim(inputLine);
 				string seq = inputLine;
