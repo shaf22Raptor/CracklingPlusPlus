@@ -11,15 +11,9 @@ To compile:
 g++ -o isslCreateIndex isslCreateIndex.cpp -O3 -std=c++11 -fopenmp -mpopcnt
 
 */
-#include <cstdio>
-#include <cstdlib>
-#include <cstdint>
 #include <iostream>
 #include <vector>
 #include <string>
-#include <string_view>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <map>
 #include <regex>
 #include <filesystem>

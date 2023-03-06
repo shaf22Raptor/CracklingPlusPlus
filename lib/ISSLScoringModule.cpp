@@ -74,22 +74,28 @@ void ISSLScoringModule::run(std::vector<guideResults>& candidateGuides)
 
     /** The index contains a fixed-sized header
      *      - the number of unique off-targets in the index
-     *      - the length of an off-target
      *      - the total number of off-targets
-     *      - the number of slices
+     *      - the length of an off-target
      *      - the number of precalculated MIT scores
+     *      - the number of slices
      */
-    vector<size_t> slicelistHeader(50);
+    vector<size_t> slicelistHeader(5);
 
     if (fread(slicelistHeader.data(), sizeof(size_t), slicelistHeader.size(), isslFp) == 0) {
         throw std::runtime_error("Error reading index: header invalid\n");
     }
 
     size_t offtargetsCount = slicelistHeader[0];
-    size_t seqLength = slicelistHeader[1];
-    size_t seqCount = slicelistHeader[2];
-    size_t sliceCount = slicelistHeader[3];
-    size_t scoresCount = slicelistHeader[4];
+    size_t seqCount = slicelistHeader[1];
+    size_t seqLength = slicelistHeader[2];
+    size_t scoresCount = slicelistHeader[3];
+    size_t sliceCount = slicelistHeader[4];
+    
+    /** Load in all of the off-target sites */
+    vector<uint64_t> offtargets(offtargetsCount);
+    if (fread(offtargets.data(), sizeof(uint64_t), offtargetsCount, isslFp) == 0) {
+        throw std::runtime_error("Error reading index: loading off-target sequences failed\n");
+    }
 
     /** Read in the precalculated MIT scores
      *      - `mask` is a 2-bit encoding of mismatch positions
@@ -109,32 +115,30 @@ void ISSLScoringModule::run(std::vector<guideResults>& candidateGuides)
 
 
     /**
-    * Read the slice lengths from header
+    * Read the slices
     */
-    vector<size_t> sliceLens;
-    for (int i = 0; i < sliceCount; i++)
+    vector<vector<uint64_t>> sliceMasks;
+    vector<uint64_t> sliceMasksBinary;
+    for (size_t i = 0; i < sliceCount; i++)
     {
-        size_t sliceLen;
-        fread(&sliceLen, sizeof(size_t), 1, isslFp);
-        sliceLens.push_back(sliceLen);
-    }
+        uint64_t maskBinary;
+        fread(&maskBinary, sizeof(uint64_t), 1, isslFp);
 
-    vector<vector<int>> sliceMasks;
-    for (int i = 0; i < sliceCount; i++) {
-        vector<int> mask;
-        for (int j = 0; j < sliceLens[i]; j++)
+        vector<uint64_t> mask;
+        for (uint64_t j = 0; j < seqLength; j++)
         {
-            int pos;
-            fread(&pos, sizeof(int), 1, isslFp);
-            mask.push_back(pos);
+            if (maskBinary & (1ULL << j))
+            {
+                mask.push_back(j);
+            }
         }
         sliceMasks.push_back(mask);
     }
 
-    /** Load in all of the off-target sites */
-    vector<uint64_t> offtargets(offtargetsCount);
-    if (fread(offtargets.data(), sizeof(uint64_t), offtargetsCount, isslFp) == 0) {
-        throw std::runtime_error("Error reading index: loading off-target sequences failed\n");
+    size_t sliceListCount = 0;
+    for (size_t i = 0; i < sliceCount; i++)
+    {
+        sliceListCount += 1ULL << (sliceMasks[i].size() * 2);
     }
 
     /** The number of signatures embedded per slice
@@ -142,16 +146,7 @@ void ISSLScoringModule::run(std::vector<guideResults>& candidateGuides)
      *      These counts are stored contiguously
      *
      */
-    size_t sliceListCount = 0;
-    for (int i = 0; i < sliceCount; i++)
-    {
-        sliceListCount += 1ULL << (sliceLens[i] * 2);
-    }
     vector<size_t> allSlicelistSizes(sliceListCount);
-
-    if (fread(allSlicelistSizes.data(), sizeof(size_t), allSlicelistSizes.size(), isslFp) == 0) {
-        throw std::runtime_error("Error reading index: reading slice list sizes failed\n");
-    }
 
     /** The contents of the slices
      *
@@ -162,8 +157,19 @@ void ISSLScoringModule::run(std::vector<guideResults>& candidateGuides)
      */
     vector<uint64_t> allSignatures(offtargetsCount * sliceCount);
 
-    if (fread(allSignatures.data(), sizeof(uint64_t), allSignatures.size(), isslFp) == 0) {
-        throw std::runtime_error("Error reading index: reading slice contents failed\n");
+    sliceListCount = 0;
+    for (size_t i = 0; i < sliceCount; i++)
+    {
+        size_t sliceListSize = 1ULL << (sliceMasks[i].size() * 2);
+        if (fread(allSlicelistSizes.data() + sliceListCount, sizeof(size_t), sliceListSize, isslFp) == 0) {
+            throw std::runtime_error("Error reading index: reading slice list sizes failed\n");
+        }
+
+        if (fread(allSignatures.data() + (offtargetsCount * i), sizeof(uint64_t), offtargetsCount, isslFp) == 0) {
+            throw std::runtime_error("Error reading index: reading slice contents failed\n");
+        }
+
+        sliceListCount += 1ULL << (sliceMasks[i].size() * 2);
     }
 
     /** End reading the index */
@@ -203,13 +209,13 @@ void ISSLScoringModule::run(std::vector<guideResults>& candidateGuides)
     // Assign sliceLists size based on each slice length
     for (int i = 0; i < sliceCount; i++)
     {
-        sliceLists[i] = vector<uint64_t*>(1ULL << (sliceLens[i] * 2));
+        sliceLists[i] = vector<uint64_t*>(1ULL << (sliceMasks[i].size() * 2));
     }
 
     uint64_t* offset = allSignatures.data();
     size_t sliceLimitOffset = 0;
     for (size_t i = 0; i < sliceCount; i++) {
-        size_t sliceLimit = 1ULL << (sliceLens[i] * 2);
+        size_t sliceLimit = 1ULL << (sliceMasks[i].size() * 2);
         for (size_t j = 0; j < sliceLimit; j++) {
             size_t idx = sliceLimitOffset + j;
             sliceLists[i][j] = offset;
@@ -254,7 +260,7 @@ void ISSLScoringModule::run(std::vector<guideResults>& candidateGuides)
             size_t sliceLimitOffset = 0;
             /** For each ISSL slice */
             for (size_t i = 0; i < sliceCount; i++) {
-                vector<int>& sliceMask = sliceMasks[i];
+                vector<uint64_t>& sliceMask = sliceMasks[i];
                 auto& sliceList = sliceLists[i];
 
                 uint64_t searchSlice = 0ULL;
@@ -392,7 +398,7 @@ void ISSLScoringModule::run(std::vector<guideResults>& candidateGuides)
                 }
                 if (!checkNextSlice)
                     break;
-                sliceLimitOffset += 1ULL << (sliceLens[i] * 2);
+                sliceLimitOffset += 1ULL << (sliceMasks[i].size() * 2);
             }
             // Finished processing off targets, update results
             switch (this->config.method)

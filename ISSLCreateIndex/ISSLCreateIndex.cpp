@@ -431,6 +431,10 @@ int main(int argc, char** argv)
     isslIndex.write(reinterpret_cast<char*>(&sliceCount), sizeof(size_t));
     std::cout << "Finished!" << std::endl;
 
+    std::cout << "Writing offtargets to file..." << std::endl;
+    isslIndex.write(reinterpret_cast<char*>(seqSignatures.data()), sizeof(uint64_t) * seqSignatures.size());
+    std::cout << "Finished!" << std::endl;
+
     std::cout << "Writing precalculated scores to file..." << std::endl;
     for (pair<uint64_t, double> score : precalculatedScores) {
         isslIndex.write(reinterpret_cast<char*>(&score.first), sizeof(uint64_t));
@@ -443,10 +447,6 @@ int main(int argc, char** argv)
     {
         isslIndex.write(reinterpret_cast<char*>(&maskBinary), sizeof(uint64_t));
     }
-    std::cout << "Finished!" << std::endl;
-
-    std::cout << "Writing offtargets to file..." << std::endl;
-    isslIndex.write(reinterpret_cast<char*>(seqSignatures.data()), sizeof(uint64_t) * seqSignatures.size());
     std::cout << "Finished!" << std::endl;
 
     isslIndex.close();
