@@ -4,9 +4,12 @@ using std::vector;
 using std::map;
 using std::pair;
 using std::string;
-using std::string_view;
+using std::ifstream;
 using std::regex;
 using std::regex_iterator;
+using std::filesystem::path;
+using std::filesystem::exists;
+using std::filesystem::file_size;
 
 const regex extractNumbers("[1234567890]+");
 const vector<uint8_t> nucleotideIndex{ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,3 };
@@ -14,19 +17,39 @@ const vector<char> signatureIndex{ 'A', 'C', 'G', 'T' };
 // 3bit
 // const vector<uint8_t> nucleotideIndex{ 1,0,2,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,7 };
 // const vector<char> signatureIndex{ '0','A','C','3','G','5','6','T' };
-size_t seqLength;
+uint64_t seqLength;
 
 /**
- * getFileSize
+ * getLineEnding
  *
- * @param path, The path to the file
- * @return The size of the file (in Bytes) at `path`
+ * Determines what line ending the provided file is using.
+ *
+ * @param file The file to check
+ * @return The linefeed charater(s) that the file is using.
  */
-size_t getFileSize(const char* path)
+string getLineEnding(const path& file)
 {
-    std::filesystem::path p{ path };
-    return std::filesystem::file_size(p);
+    string lineEnding;
+    char currentChar;
+    ifstream inFile;
+    inFile.open(file);
+    inFile.ignore(seqLength);
+    for (;;)
+    {
+        inFile.read(&currentChar, 1);
+        if (currentChar == '\r' || currentChar == '\n')
+        {
+            lineEnding.push_back(currentChar);
+        }
+        else
+        {
+            break;
+        }  
+    }
+    inFile.close();
+    return lineEnding;
 }
+
 
 /**
  * encode3Bit
@@ -39,7 +62,7 @@ size_t getFileSize(const char* path)
 uint64_t encode3Bit(const char* ptr)
 {
     uint64_t signature = 0;
-    for (size_t j = 0; j < seqLength; j++) {
+    for (uint64_t j = 0; j < seqLength; j++) {
         signature |= (uint64_t)(nucleotideIndex[(ptr[j]) - 65]) << (j * 3);
     }
     return signature;
@@ -56,7 +79,7 @@ uint64_t encode3Bit(const char* ptr)
 string decode3Bit(uint64_t signature)
 {
     string sequence = string(seqLength, ' ');
-    for (size_t j = 0; j < seqLength; j++) {
+    for (uint64_t j = 0; j < seqLength; j++) {
         sequence[j] = signatureIndex[(signature >> (j * 3)) & 0x7];
     }
     return sequence;
@@ -73,31 +96,10 @@ string decode3Bit(uint64_t signature)
 string decode3Bit(uint64_t signature, int len)
 {
     string sequence = string(len, ' ');
-    for (size_t j = 0; j < len; j++) {
+    for (uint64_t j = 0; j < len; j++) {
         sequence[j] = signatureIndex[(signature >> (j * 3)) & 0x7];
     }
     return sequence;
-}
-
-/**
- * parseSlice
- *
- * Converts from a sequence of '1' and '0' to binary mask
- *
- * @param ptr A pointer to the beginning of a char seqeuence
- * @return The three bit encoded signature of the sequence at `ptr`
- */
-vector<int> parseSlice(const char* ptr)
-{
-    vector<int> mask;
-    for (size_t j = 0; j < seqLength; j++) {
-        if (ptr[j] == '1')
-        {
-            mask.push_back(j);
-        }
-    }
-    mask.shrink_to_fit();
-    return mask;
 }
 
 /**
@@ -136,19 +138,6 @@ vector<uint64_t> computeMasksThreeBit(int seqLength, int mismatches) {
     return masks;
 }
 
-///**
-// * getFileSize
-// *
-// * @param path, The path to the file
-// * @return The size of the file (in Bytes) at `path`
-// */
-//size_t getFileSize(const char* path)
-//{
-//    struct p_stat64 statBuf;
-//    p_stat64(path, &statBuf);
-//    return statBuf.st_size;
-//}
-
 /**
  * sequenceToSignature
  * 
@@ -160,7 +149,7 @@ vector<uint64_t> computeMasksThreeBit(int seqLength, int mismatches) {
 uint64_t sequenceToSignature(const char* ptr)
 {
     uint64_t signature = 0;
-    for (size_t j = 0; j < seqLength; j++) {
+    for (uint64_t j = 0; j < seqLength; j++) {
         signature |= (uint64_t)(nucleotideIndex[*ptr]) << (j * 2);
         ptr++;
     }
@@ -178,7 +167,7 @@ uint64_t sequenceToSignature(const char* ptr)
 string signatureToSequence(uint64_t signature)
 {
     string sequence = string(seqLength, ' ');
-    for (size_t j = 0; j < seqLength; j++) {
+    for (uint64_t j = 0; j < seqLength; j++) {
         sequence[j] = signatureIndex[(signature >> (j * 2)) & 0x3];
     }
     return sequence;
@@ -193,7 +182,7 @@ string signatureToSequence(uint64_t signature)
  * @param mismatches, The number of mismatches allowed 
  * @return A vector of two bit combinations
  */
-vector<uint64_t> computeMasksTwoBit(int seqLength, int mismatches) {
+vector<uint64_t> computeMasksTwoBit(uint64_t seqLength, uint64_t mismatches) {
     vector<uint64_t> masks;
 
     // There will only be one valid combination when mismatches == seqLength.
@@ -201,78 +190,13 @@ vector<uint64_t> computeMasksTwoBit(int seqLength, int mismatches) {
 
         // There are more mismatchs to assign.
         if (mismatches > 0) {
-            /** 
-            * This loop assigns a mismatch to the end of the seqeunce length.
-            * It will then recursively call itself, reducing the seqeunce length and mismatch count.
-            * (1ULL << (seqLength - 1) * 2) is responsible for assigning a mismatch at the end of the current seq length.
-            * By adding the term above to the recursively returned, it will combine them into a unique combination.
-            * E.g 
-            *   Starting with empty seq, seqeunce length 20, mismatch 2: 
-            *   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-            * 
-            *   Assign (1ULL << (seqLength - 1) * 2):
-            *   10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-            * 
-            *   Recursively call function on remaining seq length, seqeunce length 19, mismatch 1:
-            *   10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-            * 
-            *   Input to next call, length 19, mismatch 1:
-            *   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-            * 
-            *   Eventually returned values will be:
-            *   00 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-            *   00 00 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-            *      ....................................................................................................................
-            *                                                                                                                     10 00
-            *                                                                                                                        10
-            *   The loop will add all the recursively genereated values with the original value will give unique combinations:
-            *   10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-            * +
-            *   00 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-            * 
-            *   10 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-            * 
-            *   TL:DR This loop reduces both mismatches and total sequence length to generate all combinations from original sequence.
-            */
+            // This loop reduces assigns a mismatch and reduces the remaining free positions and calls itself.
             for (auto mask : computeMasksTwoBit(seqLength - 1, mismatches - 1)) {
 
                 masks.push_back((1ULL << (seqLength - 1) * 2) + mask);
             }
 
-            /** 
-            * This loop is run after all combinations are generated with the mismatch base on the first sequence length.
-            * By shrinking the sequence length it will shift the last possible mismatch and generate a new sequence.
-            * This recursive call will result in the process being repeated on this new sequence.
-            * E.g
-            *   Considered the first mask genereated by (1ULL << (seqLength - 1) * 2):
-            *   10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-            * 
-            *   By reducing the sequence size the result of (1ULL << (seqLength - 1) * 2) will be:
-            *   00 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-            * 
-            *   This sequence will then be used as the starting point for the first loop and the process will repeat:
-            *   (First loop in recursive call)
-            *   Recursively call function on remaining seq length, seqeunce length 19, mismatch 1:
-            *   00 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-            *
-            *   Input to next call, length 18, mismatch 1:
-            *   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-            *
-            *   Eventually returned values will be:
-            *   00 00 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-            *   00 00 00 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-            *      ....................................................................................................................
-            *                                                                                                                     10 00
-            *                                                                                                                        10
-            *   The loop will add all the recursively genereated values with the original value will give unique combinations:
-            *   00 00 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-            *
-            *   00 00 00 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-            *
-            *   00 00 10 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-            * 
-            * TL:DR This loop only reduces the sequence length, in order to repeat the first loop process with a new sequence.
-            */
+            // In order to repeat the first loop process with a new sequence, shift the position of the first mismatch.
             for (auto mask : computeMasksTwoBit(seqLength - 1, mismatches)) {
                 masks.push_back(mask);
             }
@@ -307,8 +231,8 @@ vector<uint64_t> computeMasksTwoBit(int seqLength, int mismatches) {
  * @param length, The length of the param `mismatch_array`
  * @return The local MIT score
  */
-double calcMITLocalScore(int* mismatch_array, int length) {
-    int i;
+double calcMITLocalScore(uint64_t* mismatch_array, uint64_t length) {
+    uint64_t i;
     double T1 = 1.0, T2, T3, d = 0.0, score;
     /* Mismatch penalty array */
     double M[] = { 0.0, 0.0, 0.014, 0.0, 0.0, 0.395, 0.317, 0.0, 0.389, 0.079, 0.445, 0.508, 0.613, 0.851, 0.732, 0.828, 0.615, 0.804, 0.685, 0.583 };
@@ -345,163 +269,148 @@ double calcMITLocalScore(int* mismatch_array, int length) {
  */
 double predictMITLocalScore(uint64_t xoredSignatures)
 {
-    int mismatch_array[20], m = 0;
-    for (size_t j = 0; j < seqLength; j++) {
+    std::vector<uint64_t> mismatch_array(20);
+    uint64_t m = 0;
+    for (uint64_t j = 0; j < seqLength; j++) {
         if ((xoredSignatures >> (j * 2)) & 0x3) {
             mismatch_array[m++] = j;
         }
     }
     if (m == 0) return 0.0;
-    return calcMITLocalScore(mismatch_array, m);
+    return calcMITLocalScore(mismatch_array.data(), m);
 }
 
 int main(int argc, char** argv)
 {
-
     // Check number of args
-    if (argc < 5) {
-        fprintf(stderr, "Usage: %s [offtargetSites.txt] [sliceconfig.txt] [sequence length] [sissltable]\n", argv[0]);
+    if (argc < 5)
+    {
+        std::cerr << fmt::format("Usage: {} [offtargetSites.txt] [sliceconfig.txt] [sequence length] [sissltable]\n", argv[0]) << std::endl;
         exit(1);
     }
+
 
     // Check seq length 
     seqLength = atoi(argv[3]);
-    if (seqLength > 21) {
-        fprintf(stderr, "Sequence length is greater than 21, which is the maximum supported currently\n");
+    if (seqLength > 21)
+    {
+        std::cerr << "Sequence length is greater than 21, which is the maximum supported currently\n" << std::endl;
         exit(1);
     }
 
-    // Check offtarget sites file size
-    size_t otFileSize = getFileSize(argv[1]);
-    size_t seqLineLength = seqLength + 1; // '\n'
-    if (otFileSize % seqLineLength != 0) {
-        fprintf(stderr, "fileSize: %zu\n", otFileSize);
-        fprintf(stderr, "Error: offtargetSites.txt file does is not a multiple of the expected line length (%zu)\n", seqLineLength);
-        fprintf(stderr, "The sequence length may be incorrect; alternatively, the line endings\n");
-        fprintf(stderr, "may be something other than LF, or there may be junk at the end of the file.\n");
+
+    // Check offtarget sites exists
+    path otFile(argv[1]);
+    if (!exists(otFile))
+    {
+        std::cerr << fmt::format("Could not find the specified offtarget sites file: {}", otFile.string()) << std::endl;
         exit(1);
     }
+
+
+    // Chek offtarget sites file size
+    uintmax_t otFileSize = file_size(otFile);
+    uint64_t seqLineLength = seqLength + getLineEnding(otFile).size();
+    if (otFileSize % seqLineLength != 0)
+    {
+        std::cerr << fmt::format("fileSize: {}\n", otFileSize);
+        std::cerr << fmt::format("Error: offtargetSites.txt file does is not a multiple of the expected line length ({})\n", seqLineLength);
+        std::cerr << "The sequence length may be incorrect; alternatively, the line endings\n";
+        std::cerr << fmt::format("may be something other than {}, or there may be junk at the end of the file.", getLineEnding(otFile)) << std::endl;
+        exit(1);
+    }
+
+    // Slice config file exists
+    path scFile(argv[2]);
+    if (!exists(scFile))
+    {
+        std::cerr << fmt::format("Could not find the specified slice config file: {}", scFile.string()) << std::endl;
+        exit(1);
+    }
+
 
     // Check slice config file size
-    size_t scFileSize = getFileSize(argv[2]);
-    if (scFileSize % seqLineLength != 0) {
-        fprintf(stderr, "fileSize: %zu\n", scFileSize);
-        fprintf(stderr, "Error: sliceconfig.txt file does is not a multiple of the expected line length (%zu)\n", seqLineLength);
-        fprintf(stderr, "The sequence length may be incorrect; alternatively, the line endings\n");
-        fprintf(stderr, "may be something other than LF, or there may be junk at the end of the file.\n");
+    uintmax_t scFileSize = file_size(scFile);
+    uint64_t scLineLength = seqLength + getLineEnding(scFile).size();
+    if (scFileSize % scLineLength != 0) {
+        std::cerr << fmt::format("fileSize: {}\n", scFileSize);
+        std::cerr << fmt::format("Error: sliceconfig.txt file does is not a multiple of the expected line length ({})\n", scLineLength);
+        std::cerr << "The sequence length may be incorrect; alternatively, the line endings\n";
+        std::cerr << fmt::format("may be something other than {}, or there may be junk at the end of the file.", getLineEnding(scFile)) << std::endl;
         exit(1);
     }
 
-    FILE* scFp = fopen(argv[2], "rb");
-    vector<char> sliceConfig(scFileSize);
-    if (fread(sliceConfig.data(), scFileSize, 1, scFp) < 1) {
-        fclose(scFp);
-        fprintf(stderr, "Failed to read in file.\n");
-        exit(1);
-    }
-    fclose(scFp);
-
-    size_t sliceCount = scFileSize / seqLineLength;
-    vector<vector<int>> sliceMasks;
-    for (int i = 0; i < sliceCount; i++)
+    // Read in and genereate slice masks
+    ifstream scInFile;
+    scInFile.open(argv[2], std::ios::in | std::ios::binary);
+    vector<vector<uint64_t>> sliceMasks;
+    vector<uint64_t> sliceMasksBinary;
+    for (string line; std::getline(scInFile, line);)
     {
-        char* slicePtr = &sliceConfig[i * seqLineLength];
-        sliceMasks.push_back(parseSlice(slicePtr));
+        vector<uint64_t> mask;
+        uint64_t maskBinary = 0ULL;
+        for (uint64_t j = 0; j < seqLength; j++)
+        {
+            if (line[j] == '1')
+            {
+                maskBinary |= 1ULL << j;
+                mask.push_back(j);
+            }   
+        }
+        sliceMasks.push_back(mask);
+        sliceMasksBinary.push_back(maskBinary);
     }
+    scInFile.close();
+    size_t sliceCount = sliceMasks.size();
 
-    size_t seqCount = otFileSize / seqLineLength;
-    fprintf(stderr, "Number of sequences: %zu\n", seqCount);
 
-    size_t globalCount = 0;
+    // Begin counting off targets
+    uint64_t seqCount = otFileSize / seqLineLength;
+    std::cout << fmt::format("Number of sequences: {}", seqCount) << std::endl;
 
+    uint64_t globalCount = 0;
+    uint64_t offtargetsCount = 0;
     vector<uint64_t> seqSignatures;
     vector<uint32_t> seqSignaturesOccurrences;
 
-    size_t offtargetsCount = 0;
-    FILE* otFp = fopen(argv[1], "rb");
-    {
-        vector<char> entireDataSet(otFileSize);
+    // Read off targets into memory
+    ifstream otInFile;
+    otInFile.open(argv[1], std::ios::in | std::ios::binary);
+    vector<char> entireDataSet(otFileSize);
+    otInFile.read(entireDataSet.data(), otFileSize);
+    otInFile.close();
 
-        if (fread(entireDataSet.data(), otFileSize, 1, otFp) < 1) {
-            fclose(otFp);
-            fprintf(stderr, "Failed to read in file.\n");
-            exit(1);
-        }
-        fclose(otFp);
+    uint64_t progressCount = 0;
+    uint64_t offtargetId = 0;
 
-        size_t progressCount = 0;
-        size_t offtargetId = 0;
-        while (progressCount < seqCount) {
-            char* ptr = &entireDataSet[progressCount * seqLineLength];
-
-            uint64_t signature = sequenceToSignature(ptr);
-
-            // check how many times the off-target appears
-            // (assumed the list is sorted)
-            uint32_t occurrences = 1;
-            while (memcmp(ptr, ptr + (seqLineLength * occurrences), seqLength) == 0) {
-                occurrences++;
-                if ((seqCount - progressCount - occurrences) < 100)
-                    fprintf(stderr, "%zu/%zu : %zu\n", (progressCount + occurrences), seqCount, offtargetsCount);
-
-            }
-
-            seqSignatures.push_back(signature);
-            seqSignaturesOccurrences.push_back(occurrences);
-
-            offtargetsCount++;
-            if (progressCount % 10000 == 0)
-                fprintf(stderr, "%zu/%zu : %zu\n", progressCount, seqCount, offtargetsCount);
-
-            progressCount += occurrences;
+    std::cout << "Counting occurrences..." << std::endl;
+    while (progressCount < seqCount) {
+        char* ptr = &entireDataSet[progressCount * seqLineLength];
+        uint64_t signature = sequenceToSignature(ptr);
+        // check how many times the off-target appears
+        // (assumed the list is sorted)
+        uint32_t occurrences = 1;
+        while (memcmp(ptr, ptr + (seqLineLength * occurrences), seqLength) == 0) {
+            occurrences++;
+            if ((seqCount - progressCount - occurrences) < 100)
+                std::cout << fmt::format("{}/{} : {}", (progressCount + occurrences), seqCount, offtargetsCount) << std::endl;
         }
 
+        seqSignatures.push_back(signature);
+        seqSignaturesOccurrences.push_back(occurrences);
+        offtargetsCount++;
+        if (progressCount % 10000 == 0)
+            std::cout << fmt::format("{}/{} : {}", progressCount, seqCount, offtargetsCount) << std::endl;
+        progressCount += occurrences;
     }
-    printf("Finished counting occurrences, now constructing index...\n");
-
-    vector<vector<vector<uint64_t>>> sliceLists(sliceCount);
-    // Assign sliceLists size based on each slice length
-    for (int i = 0; i < sliceMasks.size(); i++)
-    {
-        sliceLists[i] = vector<vector<uint64_t>>(1ULL << (sliceMasks[i].size() * 2));
-    }
-
-    // Generate ISSL Index
-    #pragma omp parallel for
-    for (int i = 0; i < sliceCount; i++) {
-        vector<int>& sliceMask = sliceMasks[i];
-        vector<vector<uint64_t>>& sliceList = sliceLists[i];
-        uint32_t signatureId = 0;
-        for (uint64_t signature : seqSignatures) {
-            uint32_t occurrences = seqSignaturesOccurrences[signatureId];
-            // Right shift to target position specified by slice mask list.
-            // & it with 3ULL to extract the two bits of interest.
-            // Left shift it back to its position in the slice value.
-            uint32_t sliceVal = 0ULL;
-            for (int j = 0; j < sliceMask.size(); j++)
-            {
-                sliceVal |= ((signature >> (sliceMask[j] * 2)) & 3ULL) << (j * 2);
-            }
-            // seqSigIdVal represnets the sequence signature ID and number of occurrences of the associated sequence.
-            // (((uint64_t)occurrences) << 32), the most significant 32 bits is the count of the occurrences.
-            // (uint64_t)signatureId, the index of the sequence in `seqSignatures`
-            uint64_t seqSigIdVal = ((uint64_t)occurrences << 32) | (uint64_t)signatureId;
-            sliceList[sliceVal].push_back(seqSigIdVal);
-            signatureId++;
-        }
-    }
-
-    printf("Finished constructing index, now precalculating scores...\n");
-
-    printf("Finished constructing index, now precalculating scores...\n");
-
+    std::cout << "Finished!" << std::endl;
+   
     // Precalculate all the scores
+    std::cout << "Precalculating scores..." << std::endl;
     map<uint64_t, double> precalculatedScores;
-
-    int maxDist = 4;
+    uint64_t maxDist = 4;
     size_t scoresCount = 0;
-
-    for (int i = 1; i <= maxDist; i++) {
+    for (uint64_t i = 1; i <= maxDist; i++) {
         vector<uint64_t> tempMasks;
         tempMasks = computeMasksTwoBit(20, i);
         for (auto mask : tempMasks) {
@@ -510,65 +419,76 @@ int main(int argc, char** argv)
             scoresCount++;
         }
     }
+    std::cout << "Finished!" << std::endl;
 
-    printf("Finished calculating scores, now preparing to write to disk...\n");
+    std::cout << "Writing index header to file..." << std::endl;
+    std::ofstream isslIndex;
+    isslIndex.open(argv[4], std::ios::out | std::ios::binary);
+    isslIndex.write(reinterpret_cast<char*>(&offtargetsCount), sizeof(uint64_t));
+    isslIndex.write(reinterpret_cast<char*>(&seqCount), sizeof(uint64_t));
+    isslIndex.write(reinterpret_cast<char*>(&seqLength), sizeof(uint64_t));
+    isslIndex.write(reinterpret_cast<char*>(&scoresCount), sizeof(uint64_t));
+    isslIndex.write(reinterpret_cast<char*>(&sliceCount), sizeof(size_t));
+    std::cout << "Finished!" << std::endl;
 
-    // Generate Header list
-    vector<size_t> slicelistHeader;
-    slicelistHeader.push_back(offtargetsCount);
-    slicelistHeader.push_back(seqLength);
-    slicelistHeader.push_back(seqCount);
-    slicelistHeader.push_back(sliceCount);
-    slicelistHeader.push_back(scoresCount);
-
-    printf("Writing to disk...\n");
-    FILE* isslFp = fopen(argv[4], "wb");
-    // write the header, reserve the first 50 for header information
-    fwrite(slicelistHeader.data(), sizeof(size_t), 50, isslFp);
-
-    // write the precalculated scores
-    for (auto const& x : precalculatedScores) {
-        fwrite(&x.first, sizeof(uint64_t), 1, isslFp);
-        fwrite(&x.second, sizeof(double), 1, isslFp);
+    std::cout << "Writing precalculated scores to file..." << std::endl;
+    for (pair<uint64_t, double> score : precalculatedScores) {
+        isslIndex.write(reinterpret_cast<char*>(&score.first), sizeof(uint64_t));
+        isslIndex.write(reinterpret_cast<char*>(&score.second), sizeof(double));
     }
+    std::cout << "Finished!" << std::endl;
 
-    // write slice lengths
-    for (const vector<int>& mask : sliceMasks)
+    std::cout << "Writing slice masks to file..." << std::endl;
+    for (uint64_t& maskBinary : sliceMasksBinary)
     {
-        size_t sz = mask.size();
-        fwrite(&sz, sizeof(size_t), 1, isslFp);
+        isslIndex.write(reinterpret_cast<char*>(&maskBinary), sizeof(uint64_t));
     }
+    std::cout << "Finished!" << std::endl;
 
-    // write slice positions
-    for (const vector<int>& mask : sliceMasks)
+    std::cout << "Writing offtargets to file..." << std::endl;
+    isslIndex.write(reinterpret_cast<char*>(seqSignatures.data()), sizeof(uint64_t) * seqSignatures.size());
+    std::cout << "Finished!" << std::endl;
+
+    isslIndex.close();
+
+    std::cout << "Constructing index..." << std::endl;
+    for (size_t i = 0; i < sliceMasks.size(); i++)
     {
-        for (const int& pos : mask)
-        {
-            fwrite(&pos, sizeof(int), 1, isslFp);
+        std::cout << fmt::format("\tBuilding slice list {}", i+1) << std::endl;
+        size_t sliceListSize = 1ULL << (sliceMasks[i].size() * 2);
+        vector<vector<uint64_t>> sliceList(sliceListSize);
+        uint32_t signatureId = 0;
+        for (uint64_t signature : seqSignatures) {
+            uint32_t occurrences = seqSignaturesOccurrences[signatureId];
+            uint32_t sliceVal = 0ULL;
+            for (size_t j = 0; j < sliceMasks[i].size(); j++)
+            {
+                sliceVal |= ((signature >> (sliceMasks[i][j] * 2)) & 3ULL) << (j * 2);
+            }
+            // seqSigIdVal represnets the sequence signature ID and number of occurrences of the associated sequence.
+            // (((uint64_t)occurrences) << 32), the most significant 32 bits is the count of the occurrences.
+            // (uint64_t)signatureId, the index of the sequence in `seqSignatures`
+            uint64_t seqSigIdVal = ((uint64_t)occurrences << 32) | (uint64_t)signatureId;
+            sliceList[sliceVal].push_back(seqSigIdVal);
+            signatureId++;
         }
-    }
+        std::cout << "\tFinished!" << std::endl;
 
-    // write the offtargets
-    fwrite(seqSignatures.data(), sizeof(uint64_t), seqSignatures.size(), isslFp);
-
-    // write slice list lengths
-    for (size_t i = 0; i < sliceCount; i++) { // Number of slices
-        for (size_t j = 0; j < (1ULL << (sliceMasks[i].size() * 2)); j++) { // Slice limit given slice width
-            size_t sz = sliceLists[i][j].size();
-            fwrite(&sz, sizeof(size_t), 1, isslFp);
+        std::cout << fmt::format("\tWriting slice list {} to file...", i+1) << std::endl;
+        isslIndex.open(argv[4], std::ios::out | std::ios::binary | std::ios::app);
+        // Write slice list lengths
+        for (size_t j = 0; j < sliceListSize; j++) { // Slice limit given slice width
+            size_t sz = sliceList[j].size();
+            isslIndex.write(reinterpret_cast<char*>(&sz), sizeof(size_t));
         }
-    }
-
-    // write slice list data
-    for (size_t i = 0; i < sliceCount; i++) { // Number of slices
-        for (size_t j = 0; j < (1ULL << (sliceMasks[i].size() * 2)); j++) { // Slice limit given slice width
-            fwrite(sliceLists[i][j].data(), sizeof(uint64_t), sliceLists[i][j].size(), isslFp); // vector
+        // write slice list data
+        for (size_t j = 0; j < sliceListSize; j++) { // Slice limit given slice width
+            isslIndex.write(reinterpret_cast<char*>(sliceList[j].data()), sizeof(uint64_t) * sliceList[j].size());
         }
+        isslIndex.close();
+        std::cout << "\tFinished!" << std::endl;
     }
-
-    
-
-    fclose(isslFp);
-    printf("Done.\n");
+    std::cout << "Finished!" << std::endl;
+    std::cout << "Done" << std::endl;
     return 0;
 }
