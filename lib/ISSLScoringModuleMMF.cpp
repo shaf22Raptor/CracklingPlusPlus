@@ -79,17 +79,14 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
      *      - the number of slices
      */
     size_t* headerPtr = static_cast<size_t*>(inFileFp);
-    size_t* headerReadPtr = headerPtr;
-
-    size_t offtargetsCount = *headerReadPtr++;
-    size_t seqCount = *headerReadPtr++;
-    size_t seqLength = *headerReadPtr++;
-    size_t scoresCount = *headerReadPtr++;
-    size_t sliceCount = *headerReadPtr++;
+    size_t offtargetsCount = *headerPtr++;
+    size_t seqCount = *headerPtr++;
+    size_t seqLength = *headerPtr++;
+    size_t scoresCount = *headerPtr++;
+    size_t sliceCount = *headerPtr++;
 
     /** Load in all of the off-target sites */
-    uint64_t* offtargetsPtr = reinterpret_cast<uint64_t*>(headerReadPtr);
-
+    uint64_t* offtargetsPtr = reinterpret_cast<uint64_t*>(headerPtr);
 
     /** Read in the precalculated MIT scores
      *      - `mask` is a 2-bit encoding of mismatch positions
@@ -99,11 +96,10 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
      *      - `score` is the local MIT score for this mismatch combination
      */
     uint64_t* preCalcdScorePtr = static_cast<uint64_t*>(offtargetsPtr + offtargetsCount);
-    uint64_t* preCalcdScoreReadPtr = preCalcdScorePtr;
     phmap::flat_hash_map<uint64_t, double> precalculatedScores;
     for (int i = 0; i < scoresCount; i++) {
-        uint64_t mask = *preCalcdScoreReadPtr++;
-        double score = *preCalcdScoreReadPtr++;
+        uint64_t mask = *preCalcdScorePtr++;
+        double score = *preCalcdScorePtr++;
         precalculatedScores.insert(pair<uint64_t, double>(mask, score));
     }
 
@@ -111,20 +107,20 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
     /**
     * Read the slices
     */
-    uint64_t* sliceMasksPtr = static_cast<uint64_t*>(preCalcdScoreReadPtr);
-    uint64_t* sliceMasksReadPtr = sliceMasksPtr;
+    uint64_t* sliceMasksPtr = static_cast<uint64_t*>(preCalcdScorePtr);
     vector<vector<uint64_t>> sliceMasks;
     for (size_t i = 0; i < sliceCount; i++)
     {
         vector<uint64_t> mask;
         for (uint64_t j = 0; j < seqLength; j++)
         {
-            if (*sliceMasksReadPtr++ & (1ULL << j))
+            if (*sliceMasksPtr & (1ULL << j))
             {
                 mask.push_back(j);
             }
         }
         sliceMasks.push_back(mask);
+        sliceMasksPtr++;
     }
 
     /** The contents of the slices
@@ -134,8 +130,8 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
     */
     vector<size_t*> allSlicelistSizes(sliceCount);
     vector<uint64_t*> allSliceSignatures(sliceCount);
-    size_t* listSizePtr = static_cast<size_t*>(sliceMasksReadPtr);
-    uint64_t* signaturePtr = static_cast<uint64_t*>(sliceMasksReadPtr);
+    size_t* listSizePtr = static_cast<size_t*>(sliceMasksPtr);
+    uint64_t* signaturePtr = static_cast<uint64_t*>(sliceMasksPtr);
     for (size_t i = 0; i < sliceCount; i++)
     {
         allSlicelistSizes[i] = listSizePtr;
@@ -181,16 +177,13 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
         sliceLists[i] = vector<uint64_t*>(1ULL << (sliceMasks[i].size() * 2));
     }
 
-    size_t sliceLimitOffset = 0;
     for (size_t i = 0; i < sliceCount; i++) {
-        uint64_t* offset = allSliceSignatures[i];
+        uint64_t* sliceList = allSliceSignatures[i];
         size_t sliceLimit = 1ULL << (sliceMasks[i].size() * 2);
         for (size_t j = 0; j < sliceLimit; j++) {
-            size_t idx = sliceLimitOffset + j;
-            sliceLists[i][j] = offset;
-            offset += allSlicelistSizes[i][idx];
+            sliceLists[i][j] = sliceList;
+            sliceList += allSlicelistSizes[i][j];
         }
-        sliceLimitOffset += sliceLimit;
     }
 
 
@@ -201,27 +194,27 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
     std::atomic_ullong failedCount = 0;
 
     /** Begin scoring */
-    omp_set_num_threads(config.threads);
-    #pragma omp parallel
+    //omp_set_num_threads(config.threads);
+    //#pragma omp parallel
     {
         vector<uint64_t> offtargetToggles(numOfftargetToggles);
         uint64_t* offtargetTogglesTail = offtargetToggles.data() + numOfftargetToggles - 1;
         /** For each candidate guide */
         // TODO: update to openMP > v2 (Use clang compiler)
-        #pragma omp for
-        for (int guideIdx = 0; guideIdx < candidateGuides.size(); guideIdx++) {
+        //#pragma omp for
+        for (int64_t guideIdx = 0; guideIdx < candidateGuides.size(); guideIdx++) {
 
             // Run time filtering
             if (!processGuide(candidateGuides[guideIdx])) { continue; }
 
             // Encode seqeunce to search signature
-            auto searchSignature = sequenceToSignature(candidateGuides[guideIdx].seq, candidateGuides[guideIdx].seq.length());
+            uint64_t searchSignature = sequenceToSignature(candidateGuides[guideIdx].seq, candidateGuides[guideIdx].seq.length());
 
             /** Global scores */
             double totScoreMit = 0.0;
             double totScoreCfd = 0.0;
 
-            int numOffTargetSitesScored = 0;
+            uint64_t numOffTargetSitesScored = 0;
             double maximum_sum = (10000.0 - config.scoreThreshold * 100) / config.scoreThreshold;
 
             bool checkNextSlice = true;
@@ -233,14 +226,14 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
                 auto& sliceList = sliceLists[i];
 
                 uint64_t searchSlice = 0ULL;
-                for (int j = 0; j < sliceMask.size(); j++)
+                for (size_t j = 0; j < sliceMask.size(); j++)
                 {
                     searchSlice |= ((searchSignature >> (sliceMask[j] * 2)) & 3ULL) << (j * 2);
                 }
 
                 size_t idx = sliceLimitOffset + searchSlice;
 
-                size_t signaturesInSlice = allSlicelistSizes[i][idx];
+                size_t signaturesInSlice = allSlicelistSizes[i][searchSlice];
                 uint64_t* sliceOffset = sliceList[searchSlice];
 
                 /** For each off-target signature in slice */
@@ -288,7 +281,7 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
                         uint64_t evenBits = xoredSignatures & 0xAAAAAAAAAAAAAAAAULL;
                         uint64_t oddBits = xoredSignatures & 0x5555555555555555ULL;
                         uint64_t mismatches = (evenBits >> 1) | oddBits;
-                        int dist = popcount64(mismatches);
+                        uint64_t dist = popcount64(mismatches);
 
                         if (dist >= 0 && dist <= config.maxDist) {
                             // Begin calculating MIT score

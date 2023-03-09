@@ -81,8 +81,8 @@ int main(int argc, char** argv)
 
 		// Specificity scoring
 		//bowtie2.run(*currentBatch);
-		ISSLScoring.run(*currentBatch);
-		//ISSLScoringMMF.run(*currentBatch);
+		//ISSLScoring.run(*currentBatch);
+		ISSLScoringMMF.run(*currentBatch);
 
 		// Print output
 		output.run(*currentBatch);

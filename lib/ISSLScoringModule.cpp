@@ -206,7 +206,7 @@ void ISSLScoringModule::run(std::vector<guideResults>& candidateGuides)
 
     vector<vector<uint64_t*>> sliceLists(sliceCount);
     // Assign sliceLists size based on each slice length
-    for (int i = 0; i < sliceCount; i++)
+    for (size_t i = 0; i < sliceCount; i++)
     {
         sliceLists[i] = vector<uint64_t*>(1ULL << (sliceMasks[i].size() * 2));
     }
@@ -231,14 +231,14 @@ void ISSLScoringModule::run(std::vector<guideResults>& candidateGuides)
     std::atomic_ullong failedCount = 0;
 
     /** Begin scoring */
-    omp_set_num_threads(config.threads);
-    #pragma omp parallel
+    //omp_set_num_threads(config.threads);
+    //#pragma omp parallel
     {
         vector<uint64_t> offtargetToggles(numOfftargetToggles);
         uint64_t* offtargetTogglesTail = offtargetToggles.data() + numOfftargetToggles - 1;
         /** For each candidate guide */
         // TODO: update to openMP > v2 (Use clang compiler)
-        #pragma omp for
+        //#pragma omp for
         for (int guideIdx = 0; guideIdx < candidateGuides.size(); guideIdx++) {
 
             // Run time filtering
