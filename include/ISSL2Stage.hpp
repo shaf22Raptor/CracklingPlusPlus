@@ -24,8 +24,7 @@
 #include "../include/Helpers.hpp"
 #include "../include/phmap/phmap.h"
 #include "../include/libpopcnt.h"
-#include "../include/cfdPenalties.h"
-#include "../include/mitPenalties.h"
+#include "../include/otScorePenalties.hpp"
 
 #ifndef portableStat64_1
 #define portableStat64_1

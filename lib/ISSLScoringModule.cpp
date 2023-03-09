@@ -118,7 +118,6 @@ void ISSLScoringModule::run(std::vector<guideResults>& candidateGuides)
     * Read the slices
     */
     vector<vector<uint64_t>> sliceMasks;
-    vector<uint64_t> sliceMasksBinary;
     for (size_t i = 0; i < sliceCount; i++)
     {
         uint64_t maskBinary;
@@ -325,9 +324,7 @@ void ISSLScoringModule::run(std::vector<guideResults>& candidateGuides)
                             // Begin calculating MIT score
                             if (calcMIT) {
                                 if (dist > 0) {
-                                    auto penalty = precalculatedScores[mismatches];
-                                    auto occur = static_cast<double>(occurrences);
-                                    totScoreMit += precalculatedScores[mismatches] * (double)occurrences;
+                                    totScoreMit += precalculatedMITScores.at(mismatches) * (double)occurrences;
                                 }
                             }
 

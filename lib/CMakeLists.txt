@@ -136,6 +136,12 @@ endif()
 #############
 add_library(utils STATIC ${CMAKE_SOURCE_DIR}/lib/util.cpp ${CMAKE_SOURCE_DIR}/include/util.hpp)
 
+
+########################
+# Off-target Penalties #
+########################
+add_library(otScorePenalties STATIC ${CMAKE_SOURCE_DIR}/lib/otScorePenalties.cpp ${CMAKE_SOURCE_DIR}/include/otScorePenalties.hpp)
+
 ########################
 # Config Parser Module #
 ########################
@@ -197,7 +203,7 @@ add_library(ISSLScoringModule STATIC ${CMAKE_SOURCE_DIR}/lib/ISSLScoringModule.c
 find_package(OpenMP)
 # Link OpenMP if available
 if(OpenMP_CXX_FOUND)
-    target_link_libraries(ISSLScoringModule PRIVATE specificityModule PRIVATE OpenMP::OpenMP_CXX PRIVATE Boost::boost)
+    target_link_libraries(ISSLScoringModule PRIVATE specificityModule PRIVATE otScorePenalties PRIVATE OpenMP::OpenMP_CXX PRIVATE Boost::boost)
 endif()
 
 #####################################################
@@ -209,7 +215,7 @@ add_library(ISSLScoringModuleMMF STATIC ${CMAKE_SOURCE_DIR}/lib/ISSLScoringModul
 find_package(OpenMP)
 # Link OpenMP if available
 if(OpenMP_CXX_FOUND)
-    target_link_libraries(ISSLScoringModuleMMF PRIVATE specificityModule PRIVATE OpenMP::OpenMP_CXX PRIVATE Boost::boost)
+    target_link_libraries(ISSLScoringModuleMMF PRIVATE specificityModule PRIVATE otScorePenalties PRIVATE OpenMP::OpenMP_CXX PRIVATE Boost::boost)
 endif()
 
 #################

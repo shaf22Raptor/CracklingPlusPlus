@@ -8,8 +8,7 @@
 #include <omp.h>
 #include "../include/phmap/phmap.h"
 #include "../include/libpopcnt.h"
-#include "../include/cfdPenalties.h"
-#include "../include/mitPenalties.h"
+#include "../include/otScorePenalties.hpp"
 #include "../include/specificityModule.hpp"
 #include "../include/util.hpp"
 

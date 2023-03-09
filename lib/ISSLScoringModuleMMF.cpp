@@ -71,31 +71,25 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
     mapped_region region(isslFp, read_only);
     void* inFileFp = region.get_address();
 
-    //FILE* isslFp = fopen(ISSLIndex.string().c_str(), "rb");
-
-    //if (isslFp == NULL) {
-    //    throw std::runtime_error("Error reading index: could not open file\n");
-    //}
-
     /** The index contains a fixed-sized header
      *      - the number of unique off-targets in the index
-     *      - the length of an off-target
      *      - the total number of off-targets
-     *      - the number of slices
+     *      - the length of an off-target
      *      - the number of precalculated MIT scores
+     *      - the number of slices
      */
-    //vector<size_t> slicelistHeader(50);
-
-    //if (fread(slicelistHeader.data(), sizeof(size_t), slicelistHeader.size(), isslFp) == 0) {
-    //    throw std::runtime_error("Error reading index: header invalid\n");
-    //}
     size_t* headerPtr = static_cast<size_t*>(inFileFp);
     size_t* headerReadPtr = headerPtr;
+
     size_t offtargetsCount = *headerReadPtr++;
-    size_t seqLength = *headerReadPtr++;
     size_t seqCount = *headerReadPtr++;
-    size_t sliceCount = *headerReadPtr++;
+    size_t seqLength = *headerReadPtr++;
     size_t scoresCount = *headerReadPtr++;
+    size_t sliceCount = *headerReadPtr++;
+
+    /** Load in all of the off-target sites */
+    uint64_t* offtargetsPtr = reinterpret_cast<uint64_t*>(headerReadPtr);
+
 
     /** Read in the precalculated MIT scores
      *      - `mask` is a 2-bit encoding of mismatch positions
@@ -104,7 +98,7 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
      *
      *      - `score` is the local MIT score for this mismatch combination
      */
-    uint64_t* preCalcdScorePtr = static_cast<uint64_t*>(headerPtr + 50);
+    uint64_t* preCalcdScorePtr = static_cast<uint64_t*>(offtargetsPtr + offtargetsCount);
     uint64_t* preCalcdScoreReadPtr = preCalcdScorePtr;
     phmap::flat_hash_map<uint64_t, double> precalculatedScores;
     for (int i = 0; i < scoresCount; i++) {
@@ -115,69 +109,40 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
 
 
     /**
-    * Read the slice lengths from header
+    * Read the slices
     */
-    size_t* sliceLenPtr = static_cast<size_t*>(preCalcdScoreReadPtr);
-    size_t* sliceLenReadPtr = sliceLenPtr;
-    vector<size_t> sliceLens;
-    for (int i = 0; i < sliceCount; i++)
+    uint64_t* sliceMasksPtr = static_cast<uint64_t*>(preCalcdScoreReadPtr);
+    uint64_t* sliceMasksReadPtr = sliceMasksPtr;
+    vector<vector<uint64_t>> sliceMasks;
+    for (size_t i = 0; i < sliceCount; i++)
     {
-        sliceLens.push_back(*sliceLenReadPtr++);
-    }
-
-    int* sliceMasksPtr = reinterpret_cast<int*>(sliceLenPtr);
-    int* sliceMasksReadPtr = sliceMasksPtr;
-    vector<vector<int>> sliceMasks;
-    for (int i = 0; i < sliceCount; i++) {
-        vector<int> mask;
-        for (int j = 0; j < sliceLens[i]; j++)
+        vector<uint64_t> mask;
+        for (uint64_t j = 0; j < seqLength; j++)
         {
-            mask.push_back(*sliceMasksReadPtr++);
+            if (*sliceMasksReadPtr++ & (1ULL << j))
+            {
+                mask.push_back(j);
+            }
         }
         sliceMasks.push_back(mask);
     }
 
-    /** Load in all of the off-target sites */
-    uint64_t* offtargetsPtr = reinterpret_cast<uint64_t*>(sliceMasksReadPtr);
-    vector<uint64_t> offtargets(offtargetsCount);
-    //if (fread(offtargets.data(), sizeof(uint64_t), offtargetsCount, isslFp) == 0) {
-    //    throw std::runtime_error("Error reading index: loading off-target sequences failed\n");
-    //}
-
-    /** The number of signatures embedded per slice
-     *
-     *      These counts are stored contiguously
-     *
-     */
-    size_t sliceListCount = 0;
-    for (int i = 0; i < sliceCount; i++)
-    {
-        sliceListCount += 1ULL << (sliceLens[i] * 2);
-    }
-    vector<size_t> allSlicelistSizes(sliceListCount);
-
-    size_t* allSlicelistSizesPtr = static_cast<size_t*>(offtargetsPtr + offtargetsCount);
-    //if (fread(allSlicelistSizes.data(), sizeof(size_t), allSlicelistSizes.size(), isslFp) == 0) {
-    //    throw std::runtime_error("Error reading index: reading slice list sizes failed\n");
-    //}
-
     /** The contents of the slices
-     *
-     *      Stored contiguously
-     *
-     *      Each signature (64-bit) is structured as:
-     *          <occurrences 32-bit><off-target-id 32-bit>
-     */
-    uint64_t* allSignaturesPtr = static_cast<uint64_t*>(allSlicelistSizesPtr + sliceListCount);
-    //vector<uint64_t> allSignatures(offtargetsCount * sliceCount);
-
-
-    //if (fread(allSignatures.data(), sizeof(uint64_t), allSignatures.size(), isslFp) == 0) {
-    //    throw std::runtime_error("Error reading index: reading slice contents failed\n");
-    //}
-
-    /** End reading the index */
-    //fclose(isslFp);
+    *
+    *      Size of each list within the slice stored contiguously
+    *      followed by all the signatures in that slice
+    */
+    vector<size_t*> allSlicelistSizes(sliceCount);
+    vector<uint64_t*> allSliceSignatures(sliceCount);
+    size_t* listSizePtr = static_cast<size_t*>(sliceMasksReadPtr);
+    uint64_t* signaturePtr = static_cast<uint64_t*>(sliceMasksReadPtr);
+    for (size_t i = 0; i < sliceCount; i++)
+    {
+        allSlicelistSizes[i] = listSizePtr;
+        signaturePtr = static_cast<uint64_t*>(listSizePtr + (1ULL << (sliceMasks[i].size() * 2)));
+        allSliceSignatures[i] = signaturePtr;
+        listSizePtr = static_cast<uint64_t*>(signaturePtr + offtargetsCount);
+    }
 
     cout << "ISSL Index Loaded." << endl;
 
@@ -213,17 +178,17 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
     // Assign sliceLists size based on each slice length
     for (int i = 0; i < sliceCount; i++)
     {
-        sliceLists[i] = vector<uint64_t*>(1ULL << (sliceLens[i] * 2));
+        sliceLists[i] = vector<uint64_t*>(1ULL << (sliceMasks[i].size() * 2));
     }
 
-    uint64_t* offset = allSignaturesPtr;
     size_t sliceLimitOffset = 0;
     for (size_t i = 0; i < sliceCount; i++) {
-        size_t sliceLimit = 1ULL << (sliceLens[i] * 2);
+        uint64_t* offset = allSliceSignatures[i];
+        size_t sliceLimit = 1ULL << (sliceMasks[i].size() * 2);
         for (size_t j = 0; j < sliceLimit; j++) {
             size_t idx = sliceLimitOffset + j;
             sliceLists[i][j] = offset;
-            offset += allSlicelistSizes[idx];
+            offset += allSlicelistSizes[i][idx];
         }
         sliceLimitOffset += sliceLimit;
     }
@@ -264,7 +229,7 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
             size_t sliceLimitOffset = 0;
             /** For each ISSL slice */
             for (size_t i = 0; i < sliceCount; i++) {
-                vector<int>& sliceMask = sliceMasks[i];
+                vector<uint64_t>& sliceMask = sliceMasks[i];
                 auto& sliceList = sliceLists[i];
 
                 uint64_t searchSlice = 0ULL;
@@ -275,7 +240,7 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
 
                 size_t idx = sliceLimitOffset + searchSlice;
 
-                size_t signaturesInSlice = allSlicelistSizes[idx];
+                size_t signaturesInSlice = allSlicelistSizes[i][idx];
                 uint64_t* sliceOffset = sliceList[searchSlice];
 
                 /** For each off-target signature in slice */
@@ -319,7 +284,7 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
                             *
                             *   popcount(mismatches):   4
                             */
-                        uint64_t xoredSignatures = searchSignature ^ offtargets[signatureId];
+                        uint64_t xoredSignatures = searchSignature ^ offtargetsPtr[signatureId];
                         uint64_t evenBits = xoredSignatures & 0xAAAAAAAAAAAAAAAAULL;
                         uint64_t oddBits = xoredSignatures & 0x5555555555555555ULL;
                         uint64_t mismatches = (evenBits >> 1) | oddBits;
@@ -381,7 +346,7 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
                                             *      shift           00 00 00 00 00 01
                                             *      rev comp 3UL    00 00 00 00 00 10 (done below)
                                             */
-                                        uint64_t offtargetIdentityPos = offtargets[signatureId];
+                                        uint64_t offtargetIdentityPos = offtargetsPtr[signatureId];
                                         offtargetIdentityPos &= (3UL << (pos * 2));
                                         offtargetIdentityPos = offtargetIdentityPos >> (pos * 2);
 
@@ -402,7 +367,7 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
                 }
                 if (!checkNextSlice)
                     break;
-                sliceLimitOffset += 1ULL << (sliceLens[i] * 2);
+                sliceLimitOffset += 1ULL << (sliceMasks[i].size() * 2);
             }
             // Finished processing off targets, update results
             switch (this->config.method)
