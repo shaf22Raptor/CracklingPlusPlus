@@ -188,27 +188,26 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
 
 
     cout << "Beginning Off-target scoring." << endl;
-    cout << candidateGuides.size() << endl;
 
     std::atomic_ullong testedCount = 0;
     std::atomic_ullong failedCount = 0;
 
     /** Begin scoring */
-    //omp_set_num_threads(config.threads);
-    //#pragma omp parallel
+    omp_set_num_threads(config.threads);
+    #pragma omp parallel
     {
         vector<uint64_t> offtargetToggles(numOfftargetToggles);
         uint64_t* offtargetTogglesTail = offtargetToggles.data() + numOfftargetToggles - 1;
         /** For each candidate guide */
         // TODO: update to openMP > v2 (Use clang compiler)
-        //#pragma omp for
+        #pragma omp for
         for (int64_t guideIdx = 0; guideIdx < candidateGuides.size(); guideIdx++) {
 
             // Run time filtering
             if (!processGuide(candidateGuides[guideIdx])) { continue; }
 
             // Encode seqeunce to search signature
-            uint64_t searchSignature = sequenceToSignature(candidateGuides[guideIdx].seq, candidateGuides[guideIdx].seq.length());
+            uint64_t searchSignature = sequenceToSignature(candidateGuides[guideIdx].seq, 20);
 
             /** Global scores */
             double totScoreMit = 0.0;
@@ -230,8 +229,6 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
                 {
                     searchSlice |= ((searchSignature >> (sliceMask[j] * 2)) & 3ULL) << (j * 2);
                 }
-
-                size_t idx = sliceLimitOffset + searchSlice;
 
                 size_t signaturesInSlice = allSlicelistSizes[i][searchSlice];
                 uint64_t* sliceOffset = sliceList[searchSlice];
@@ -287,7 +284,7 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
                             // Begin calculating MIT score
                             if (calcMIT) {
                                 if (dist > 0) {
-                                    totScoreMit += precalculatedScores[mismatches] * (double)occurrences;
+                                    totScoreMit += precalculatedMITScores.at(mismatches) * (double)occurrences;
                                 }
                             }
 
