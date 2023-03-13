@@ -438,7 +438,7 @@ uint64_t ISSLScoringModuleMMF::sequenceToSignature(const std::string& seq, uint6
 {
     uint64_t signature = 0;
     for (uint64_t j = 0; j < seqLen; j++) {
-        signature |= (uint64_t)(nucleotideIndex[seq[j]]) << (j * 2);
+        signature |= static_cast<uint64_t>(nucleotideIndex[seq[j]]) << (j * 2);
     }
     return signature;
 }

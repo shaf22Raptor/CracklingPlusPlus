@@ -116,7 +116,7 @@ void mm10dbModule::run(std::vector<guideResults>& candidateGuides)
 		if (config.pageLen > 0)
 		{
 			// Advance the pageEnd pointer
-			std::advance(pageEnd, std::min((uint64_t)std::distance(pageEnd, candidateGuides.end()), config.pageLen));
+			std::advance(pageEnd, std::min(static_cast<uint64_t>(std::distance(pageEnd, candidateGuides.end())), config.pageLen));
 			// Record page start
 			pageStart = paginatorIterator;
 			// Print page information
