@@ -3,12 +3,12 @@
 #include <string>
 #include <vector>
 #include <fstream>
-#include <unordered_set>
 #include <filesystem>
 #include <boost/algorithm/string.hpp>
 #include <boost/regex.hpp>
 #include "../include/util.hpp"
 #include "../include/pipelineModule.hpp"
+#include "../include/phmap/phmap.h"
 
 class inputModule : private pipelineModule
 {
@@ -25,9 +25,9 @@ protected:
 	uint64_t guidesInBatch;
 	uint64_t numDuplicateGuides;
 	uint64_t numIdentifiedGuides;
-	std::unordered_set<std::string> candidateGuides;
-	std::unordered_set<std::string> recordedSequences;
-	std::unordered_set<std::string> duplicateGuides;
+	phmap::flat_hash_set<std::string> candidateGuides;
+	phmap::flat_hash_set<std::string> recordedSequences;
+	phmap::flat_hash_set<std::string> duplicateGuides;
 	std::fstream currentBatchFile;
 	std::vector<std::filesystem::path> batchFiles;
 	std::vector<std::filesystem::path> filesToProcess;

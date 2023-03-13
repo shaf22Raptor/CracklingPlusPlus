@@ -7,7 +7,7 @@ using std::ifstream;
 using std::ofstream;
 using std::fstream;
 using std::vector;
-using std::unordered_set;
+using phmap::flat_hash_set;
 using std::filesystem::path;
 using std::filesystem::file_size;
 using std::filesystem::is_directory;
