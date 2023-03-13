@@ -336,14 +336,14 @@ bool mm10dbModule::processGuide(const guideResults& guide)
 	if (optimsationLevel = optimisationLevel::high)
 	{
 		int countAlreadyAccepted =
-			(int)guide.passedG20 == CODE_ACCEPTED +
-			(int)guide.acceptedByMm10db == CODE_ACCEPTED +
-			(int)guide.acceptedBySgRnaScorer2 == CODE_ACCEPTED;
+			static_cast<int>(guide.passedG20 == CODE_ACCEPTED) +
+			static_cast<int>(guide.acceptedByMm10db == CODE_ACCEPTED) +
+			static_cast<int>(guide.acceptedBySgRnaScorer2 == CODE_ACCEPTED);
 
 		int countAlreadyAssessed =
-			(int)guide.passedG20 != CODE_UNTESTED +
-			(int)guide.acceptedByMm10db != CODE_UNTESTED +
-			(int)guide.acceptedBySgRnaScorer2 != CODE_UNTESTED;
+			static_cast<int>(guide.passedG20 != CODE_UNTESTED) +
+			static_cast<int>(guide.acceptedByMm10db != CODE_UNTESTED) +
+			static_cast<int>(guide.acceptedBySgRnaScorer2 != CODE_UNTESTED);
 
 		// Reject if the consensus has already been passed
 		if (countAlreadyAccepted >= consensusN) { return false; }
