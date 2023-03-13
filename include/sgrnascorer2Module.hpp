@@ -14,7 +14,7 @@ public:
 	sgrnascorer2Module(const cracklingConfig& config);
 	void run(std::vector<guideResults>& candidateGuides) final;
 private:
-	sgrnascorer2Config sgrnascorer2Config;
+	sgrnascorer2Config config;
 	bool processGuide(const guideResults& guide) final;
 };
 

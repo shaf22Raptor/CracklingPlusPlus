@@ -27,7 +27,7 @@ const unordered_map <char, string> encoding = {
 sgrnascorer2Module::sgrnascorer2Module(const cracklingConfig& config) : consensusModule(config)
 {
 	this->toolIsSelected = config.consensus.sgrnascorer2;
-	this->sgrnascorer2Config = config.sgrnascorer2;
+	this->config = config.sgrnascorer2;
 }
 
 void sgrnascorer2Module::run(std::vector<guideResults>& candidateGuides)
@@ -39,7 +39,7 @@ void sgrnascorer2Module::run(std::vector<guideResults>& candidateGuides)
 		return;
 	}
 
-	struct svm_model* sgRNAScorer2Model = svm_load_model(sgrnascorer2Config.model.string().c_str());
+	struct svm_model* sgRNAScorer2Model = svm_load_model(config.model.string().c_str());
 
 	cout << "sgRNAScorer2 - score using model." << endl;
 	uint64_t failedCount = 0;
@@ -70,7 +70,7 @@ void sgrnascorer2Module::run(std::vector<guideResults>& candidateGuides)
 
 		svm_predict_values(sgRNAScorer2Model, (const struct svm_node*)nodeToTest.get(), &candidate.sgrnascorer2score);
 
-		if (candidate.sgrnascorer2score < sgrnascorer2Config.scoreThreshold)
+		if (candidate.sgrnascorer2score < config.scoreThreshold)
 		{
 			candidate.acceptedBySgRnaScorer2 = CODE_REJECTED;
 			failedCount++;
