@@ -124,7 +124,7 @@ struct guideResults
 	char passedSecondaryStructure = CODE_UNTESTED;
 	char acceptedByMm10db = CODE_UNTESTED;
 	char acceptedBySgRnaScorer2 = CODE_UNTESTED;
-	int8_t consensusCount = -1;
+	int8_t consensusCount = 0;
 	char passedBowtie2 = CODE_UNTESTED;
 	char passedOffTargetScore = CODE_UNTESTED;
 	double AT = -DBL_MAX;

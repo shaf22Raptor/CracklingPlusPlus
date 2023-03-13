@@ -9,6 +9,7 @@
 #include "../include/ISSLScoringModule.hpp"
 #include "../include/ISSLScoringModuleMMF.hpp"
 #include "../include/outputModule.hpp"
+#include <chrono>
 
 int main(int argc, char** argv)
 {
@@ -53,26 +54,25 @@ int main(int argc, char** argv)
 		std::cout << "Processing batch " << ++i << std::endl;
 
 		// Consensus scoring
-		//chopchop.run(*currentBatch);
-		//mm10db.run(*currentBatch);
-		//sgrnascorer2.run(*currentBatch);
+		chopchop.run(*currentBatch);
+		mm10db.run(*currentBatch);
+		sgrnascorer2.run(*currentBatch);
 
 		// Complete consensus evaluation
-		//std::cout << "Evaluating efficiency via consensus approach." << std::endl;
-		//uint64_t failedCount = 0;
-		//uint64_t testedCount = 0;
-		//for (guideResults& candidate : *currentBatch)
-		//{
-		//	candidate.consensusCount = (candidate.passedG20 == CODE_ACCEPTED) + (candidate.acceptedByMm10db == CODE_ACCEPTED) + (candidate.acceptedBySgRnaScorer2 == CODE_ACCEPTED);
-		//	if (candidate.consensusCount < config.consensus.n) { failedCount++; }
-		//	testedCount++;
-		//}
-		//std::cout << fmt::format("\t{:L} of {:L} failed here.", failedCount, testedCount) << std::endl;
+		std::cout << "Evaluating efficiency via consensus approach." << std::endl;
+		uint64_t failedCount = 0;
+		uint64_t testedCount = 0;
+		for (guideResults& candidate : *currentBatch)
+		{
+			if (candidate.consensusCount < config.consensus.n) { failedCount++; }
+			testedCount++;
+		}
+		std::cout << fmt::format("\t{:L} of {:L} failed here.", failedCount, testedCount) << std::endl;
 
 		// Specificity scoring
-		//bowtie2.run(*currentBatch);
-		//ISSLScoring.run(*currentBatch);
-		ISSLScoringMMF.run(*currentBatch);
+		bowtie2.run(*currentBatch);
+		ISSLScoring.run(*currentBatch);
+		//ISSLScoringMMF.run(*currentBatch);
 
 		// Print output
 		output.run(*currentBatch);
