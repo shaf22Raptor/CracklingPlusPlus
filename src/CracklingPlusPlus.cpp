@@ -7,7 +7,7 @@
 #include "../include/sgrnascorer2Module.hpp"
 #include "../include/bowtie2Module.hpp"
 #include "../include/ISSLScoringModule.hpp"
-#include "../include/ISSLScoringModuleMMF.hpp"
+//#include "../include/ISSLScoringModuleMMF.hpp"
 #include "../include/outputModule.hpp"
 #include <chrono>
 
@@ -36,7 +36,7 @@ int main(int argc, char** argv)
 	sgrnascorer2Module		sgrnascorer2(config);
 	bowtie2Module			bowtie2(config);
 	ISSLScoringModule		ISSLScoring(config);
-	ISSLScoringModuleMMF	ISSLScoringMMF(config);
+	//ISSLScoringModuleMMF	ISSLScoringMMF(config);
 	outputModule			output(config);
 
 	// Record start time
