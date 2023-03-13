@@ -53,7 +53,7 @@ void mm10dbModule::run(std::vector<guideResults>& candidateGuides)
 		}
 		testedCount++;
 	}
-	cout << fmt::format("\t{} of {} failed here.", failedCount, testedCount) << endl;
+	cout << fmt::format(comma_locale, "\t{:L} of {:L} failed here.", failedCount, testedCount) << endl;
 
 	cout << "mm10db - remove based on AT percent." << endl;
 	failedCount = 0;
@@ -63,7 +63,7 @@ void mm10dbModule::run(std::vector<guideResults>& candidateGuides)
 		// Run time filtering
 		if (!processGuide(candidate)) { continue; }
 
-		double AT = AT_percent(candidate.seq.substr(0,20));
+		double AT = AT_percent(candidate.seq.substr(0, 20));
 		if (AT < 20.0 || AT > 65.0)
 		{
 			candidate.passedATPercent = CODE_REJECTED;
@@ -76,7 +76,7 @@ void mm10dbModule::run(std::vector<guideResults>& candidateGuides)
 		candidate.AT = AT;
 		testedCount++;
 	}
-	cout << fmt::format("\t{} of {} failed here.", failedCount, testedCount) << endl;
+	cout << fmt::format(comma_locale, "\t{:L} of {:L} failed here.", failedCount, testedCount) << endl;
 
 	cout << "mm10db - remove all targets that contain TTTT." << endl;
 	failedCount = 0;
@@ -97,7 +97,7 @@ void mm10dbModule::run(std::vector<guideResults>& candidateGuides)
 		}
 		testedCount++;
 	}
-	cout << fmt::format("\t{} of {} failed here.", failedCount, testedCount) << endl;
+	cout << fmt::format(comma_locale, "\t{:L} of {:L} failed here.", failedCount, testedCount) << endl;
 
 	cout << "mm10db - check secondary structure." << endl;
 
@@ -120,7 +120,7 @@ void mm10dbModule::run(std::vector<guideResults>& candidateGuides)
 			// Record page start
 			pageStart = paginatorIterator;
 			// Print page information
-			cout << fmt::format("\tProcessing page {} ({} per page).", pgIdx, config.pageLen) << endl;
+			cout << fmt::format(comma_locale, "\tProcessing page {:L} ({:L} per page).", pgIdx, config.pageLen) << endl;
 		}
 		else {
 			// Process all guides at once
@@ -151,7 +151,7 @@ void mm10dbModule::run(std::vector<guideResults>& candidateGuides)
 		}
 		inFile.close();
 
-		cout << fmt::format("\t\t{} guides in this page.", guidesInPage) << endl;
+		cout << fmt::format(comma_locale, "\t\t{:L} guides in this page.", guidesInPage) << endl;
 
 		// Call RNAFold
 		runner(fmt::format("{} --noPS -j{} -i {} > {}", config.binary.string(), config.threads, config.inFile.string(), config.outFile.string()).c_str());
@@ -239,10 +239,10 @@ void mm10dbModule::run(std::vector<guideResults>& candidateGuides)
 		pgIdx++;
 	}
 
-	cout << fmt::format("\t{} of {} failed here.", failedCount, testedCount) << endl;
+	cout << fmt::format(comma_locale, "\t{:L} of {:L} failed here.", failedCount, testedCount) << endl;
 	if (errorCount > 0)
 	{
-		cout << fmt::format("\t{} of {} errored here.", errorCount, testedCount) << endl;
+		cout << fmt::format(comma_locale, "\t{:L} of {:L} errored here.", errorCount, testedCount) << endl;
 	}
 
 	cout << "Calculating mm10db final result." << endl;
@@ -264,7 +264,7 @@ void mm10dbModule::run(std::vector<guideResults>& candidateGuides)
 			failedCount++;
 		}
 	}
-	cout << fmt::format("\t{} accepted.\n\t{} rejected", acceptedCount, failedCount) << endl;
+	cout << fmt::format(comma_locale, "\t{:L} accepted.\n\t{:L} rejected", acceptedCount, failedCount) << endl;
 }
 
 

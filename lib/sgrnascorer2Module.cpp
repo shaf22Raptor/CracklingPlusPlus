@@ -81,7 +81,7 @@ void sgrnascorer2Module::run(std::vector<guideResults>& candidateGuides)
 		}
 		testedCount++;
 	}
-	cout << fmt::format("\t{} of {} failed here.", failedCount, testedCount) << endl;;
+	cout << fmt::format(comma_locale, "\t{:L} of {:L} failed here.", failedCount, testedCount) << endl;;
 
 	svm_free_and_destroy_model(&sgRNAScorer2Model);
 	return;
