@@ -7,7 +7,7 @@
 #include <vector>
 #include <omp.h>
 #include "../include/phmap/phmap.h"
-#include "../include/libpopcnt.h"
+#include "../include//libpopcnt/libpopcnt.h"
 #include "../include/otScorePenalties.hpp"
 #include "../include/specificityModule.hpp"
 #include "../include/util.hpp"

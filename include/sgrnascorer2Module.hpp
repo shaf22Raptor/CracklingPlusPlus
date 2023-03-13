@@ -4,7 +4,7 @@
 #include <string>
 #include <array>
 #include <unordered_map>
-#include "../include/svm.h"
+#include "../include/libsvm/svm.h"
 #include "../include/util.hpp"
 #include "../include/consensusModule.hpp"
 

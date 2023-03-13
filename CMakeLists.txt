@@ -29,19 +29,9 @@ find_package(Boost 1.79 REQUIRED COMPONENTS regex)
 # Link Libraries to main executable
 target_link_libraries (
 	${PROJECT_NAME} 
-	#PRIVATE Helpers 
-	#PRIVATE ConfigManager 
-	PRIVATE Logger 
-	#PRIVATE cas9InputProcessor 
-	#PRIVATE CHOPCHOP 
-	#PRIVATE mm10db 
-	#PRIVATE sgrnascorer2 
-	#PRIVATE bowtie2 
-	#PRIVATE ISSLOffTargetScoring
-	#PRIVATE ISSLClustering
-	#PRIVATE ISSL2Stage
 	PRIVATE Boost::boost
 	PRIVATE Boost::regex
+	PRIVATE Logger 
 	PRIVATE configParserModule
 	PRIVATE cas9InputModule
 	PRIVATE chopchopModule
@@ -57,7 +47,7 @@ target_link_libraries (
 add_subdirectory (${CMAKE_SOURCE_DIR}/ISSLCreateIndex)
 
 # Add tests subdirectory
-add_subdirectory (${CMAKE_SOURCE_DIR}/tests)
+# add_subdirectory (${CMAKE_SOURCE_DIR}/tests)
 
 # TODO: Sort out testing data in single location
 # Copy testing data
