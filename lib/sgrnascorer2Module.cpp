@@ -78,6 +78,7 @@ void sgrnascorer2Module::run(std::vector<guideResults>& candidateGuides)
 		else
 		{
 			candidate.acceptedBySgRnaScorer2 = CODE_ACCEPTED;
+			candidate.consensusCount++;
 		}
 		testedCount++;
 	}

@@ -246,7 +246,7 @@ void mm10dbModule::run(std::vector<guideResults>& candidateGuides)
 	}
 
 	cout << "Calculating mm10db final result." << endl;
-	uint64_t acceptedCount = 0;
+	testedCount = 0;
 	failedCount = 0;
 	for (guideResults& candidate : candidateGuides)
 	{
@@ -256,15 +256,16 @@ void mm10dbModule::run(std::vector<guideResults>& candidateGuides)
 			(candidate.passedSecondaryStructure == CODE_ACCEPTED))
 		{
 			candidate.acceptedByMm10db = CODE_ACCEPTED;
-			acceptedCount++;
+			candidate.consensusCount++;
 		}
 		else
 		{
 			candidate.acceptedByMm10db = CODE_REJECTED;
 			failedCount++;
 		}
+		testedCount++;
 	}
-	cout << fmt::format(comma_locale, "\t{:L} accepted.\n\t{:L} rejected", acceptedCount, failedCount) << endl;
+	cout << fmt::format(comma_locale, "\t{:L} of {:L} failed here.", failedCount, testedCount) << endl;
 }
 
 

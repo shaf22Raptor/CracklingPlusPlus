@@ -29,6 +29,7 @@ void chopchopModule::run(std::vector<guideResults>& candidateGuides)
         if (G20(candidate.seq))
         {
             candidate.passedG20 = CODE_ACCEPTED;
+            candidate.consensusCount++;
         }
         else
         {
