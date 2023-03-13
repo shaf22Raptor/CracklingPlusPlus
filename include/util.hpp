@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <unordered_map>
 #include <iostream>
+#include <cfloat>
 #define FMT_HEADER_ONLY
 #include "../include/fmt/format.h"
 
