@@ -54,12 +54,18 @@ int main(int argc, char** argv)
 	ISSLScoringModuleMMF ISSLScoringMMF(config);
 	outputModule		output(config);
 
+	// Record start time
+	auto startTime = std::chrono::steady_clock::now();
+
 	cas9IM.run();
 
 	uint64_t i = 0;
 	// Process guides in batches
 	for (std::vector<guideResults>* currentBatch; currentBatch = cas9IM.next();)
 	{
+		// Record batch start time
+		auto batchStartTime = std::chrono::steady_clock::now();
+
 		std::cout << "Processing batch " << ++i << std::endl;
 
 		// Consensus scoring
@@ -86,10 +92,29 @@ int main(int argc, char** argv)
 
 		// Print output
 		output.run(*currentBatch);
+
+		std::chrono::nanoseconds nanoSec = std::chrono::steady_clock::now() - batchStartTime;
+		std::chrono::duration<uint64_t, std::ratio<86400>> days = std::chrono::duration_cast<std::chrono::duration<uint64_t, std::ratio<86400>>>(nanoSec);
+		std::chrono::hours hours = std::chrono::duration_cast<std::chrono::hours>(nanoSec - days);
+		std::chrono::minutes minutes = std::chrono::duration_cast<std::chrono::minutes>(nanoSec - days - hours);
+		std::chrono::seconds sec = std::chrono::duration_cast<std::chrono::seconds>(nanoSec - days - hours - minutes);
+		std::chrono::milliseconds milliSec = std::chrono::duration_cast<std::chrono::milliseconds>(nanoSec - days - hours - minutes - sec);
+		std::chrono::microseconds microSec = std::chrono::duration_cast<std::chrono::microseconds>(nanoSec - days - hours - minutes - sec - milliSec);
+		std::cout << fmt::format("This batch ran in {:02} {:02}:{:02}:{:02} (dd hh:mm:ss) or {} seconds", days.count(), hours.count(), minutes.count(), sec.count(), std::chrono::duration_cast<std::chrono::seconds>(nanoSec).count()) <<  std::endl;
+
 	}
+	std::chrono::nanoseconds nanoSec = std::chrono::steady_clock::now() - startTime;
+	std::chrono::duration<uint64_t, std::ratio<86400>> days = std::chrono::duration_cast<std::chrono::duration<uint64_t, std::ratio<86400>>>(nanoSec);
+	std::chrono::hours hours = std::chrono::duration_cast<std::chrono::hours>(nanoSec - days);
+	std::chrono::minutes minutes = std::chrono::duration_cast<std::chrono::minutes>(nanoSec - days - hours);
+	std::chrono::seconds sec = std::chrono::duration_cast<std::chrono::seconds>(nanoSec - days - hours - minutes);
+	std::chrono::milliseconds milliSec = std::chrono::duration_cast<std::chrono::milliseconds>(nanoSec - days - hours - minutes - sec);
+	std::chrono::microseconds microSec = std::chrono::duration_cast<std::chrono::microseconds>(nanoSec - days - hours - minutes - sec - milliSec);
+	std::cout << fmt::format("Total run time {:02} {:02}:{:02}:{:02} (dd hh:mm:ss) or {} seconds", days.count(), hours.count(), minutes.count(), sec.count(), std::chrono::duration_cast<std::chrono::seconds>(nanoSec).count()) << std::endl;
 
-	std::cout << "Config in " << std::endl;
-
+	coutLogger.close();
+	cerrLogger.close();
+	// cas9IM.cleanup();
 
 	//try
 	//{
