@@ -21,11 +21,6 @@
 #include "../include/ISSLScoringModuleMMF.hpp"
 #include "../include/outputModule.hpp"
 
-#if defined(_WIN64)
-	#pragma push_macro("close")
-	#undef close
-#endif
-
 int main(int argc, char** argv)
 {
 	// Check input arguments
