@@ -38,7 +38,7 @@ void chopchopModule::run(std::vector<guideResults>& candidateGuides)
         testedCount++;
     }
 
-    cout << fmt::format("\t{} of {} failed here.", failedCount, testedCount) << endl;
+    cout << fmt::format(comma_locale, "\t{:L} of {:L} failed here.", failedCount, testedCount) << endl;
     return;
 }
 
@@ -63,7 +63,7 @@ bool chopchopModule::processGuide(const guideResults& guide)
     if (optimsationLevel = optimisationLevel::high)
     {
         int countAlreadyAccepted =
-            (int)guide.passedG20 == CODE_ACCEPTED +
+            (int)(guide.passedG20 == CODE_ACCEPTED) +
             (int)guide.acceptedByMm10db == CODE_ACCEPTED +
             (int)guide.acceptedBySgRnaScorer2 == CODE_ACCEPTED;
 

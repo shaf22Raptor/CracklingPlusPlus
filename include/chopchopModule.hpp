@@ -1,6 +1,6 @@
 #ifndef chopchopModuleInclude
 #define chopchopModuleInclude
-
+#include <vector>
 #include <string>
 #include "../include/util.hpp"
 #include "../include/consensusModule.hpp"
