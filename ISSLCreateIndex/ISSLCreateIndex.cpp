@@ -443,7 +443,7 @@ int main(int argc, char** argv)
             // seqSigIdVal represnets the sequence signature ID and number of occurrences of the associated sequence.
             // (((uint64_t)occurrences) << 32), the most significant 32 bits is the count of the occurrences.
             // (uint64_t)signatureId, the index of the sequence in `seqSignatures`
-            uint64_t seqSigIdVal = static_cast<uint64_t>(occurrences << 32) | static_cast<uint64_t>(signatureId);
+            uint64_t seqSigIdVal = (static_cast<uint64_t>(occurrences) << 32) | static_cast<uint64_t>(signatureId);
             sliceList[sliceVal].push_back(seqSigIdVal);
             signatureId++;
         }
