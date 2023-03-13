@@ -74,9 +74,10 @@ int main(int argc, char** argv)
 		ISSLScoring.run(*currentBatch);
 		//ISSLScoringMMF.run(*currentBatch);
 
-		// Print output
+		// Print results to file
 		output.run(*currentBatch);
 
+		// Report time taken (batch)
 		std::chrono::nanoseconds nanoSec = std::chrono::steady_clock::now() - batchStartTime;
 		std::chrono::duration<uint64_t, std::ratio<86400>> days = std::chrono::duration_cast<std::chrono::duration<uint64_t, std::ratio<86400>>>(nanoSec);
 		std::chrono::hours hours = std::chrono::duration_cast<std::chrono::hours>(nanoSec - days);
@@ -87,6 +88,7 @@ int main(int argc, char** argv)
 		std::cout << fmt::format("This batch ran in {:02} {:02}:{:02}:{:02} (dd hh:mm:ss) or {} seconds", days.count(), hours.count(), minutes.count(), sec.count(), std::chrono::duration_cast<std::chrono::seconds>(nanoSec).count()) <<  std::endl;
 
 	}
+	// Report time taken (total)
 	std::chrono::nanoseconds nanoSec = std::chrono::steady_clock::now() - startTime;
 	std::chrono::duration<uint64_t, std::ratio<86400>> days = std::chrono::duration_cast<std::chrono::duration<uint64_t, std::ratio<86400>>>(nanoSec);
 	std::chrono::hours hours = std::chrono::duration_cast<std::chrono::hours>(nanoSec - days);
