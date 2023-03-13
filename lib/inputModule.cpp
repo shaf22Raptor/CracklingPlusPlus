@@ -130,7 +130,7 @@ void inputModule::run()
 	// Report results
 	double duplicatePercent = (static_cast<double>(numDuplicateGuides) / static_cast<double>(numIdentifiedGuides)) * 100.0;
 	cout << 
-		fmt::format(
+		fmt::format(comma_locale,
 			"\tIdentified {:L} possible target sites.\n"
 			"\tOf these, {:L} are not unique. These sites occur a total of {:L} times.\n"
 			"\t{:L} of {:L} ({:.2f}%) of guides will be ignored for optimisation levels over ultralow.\n"
