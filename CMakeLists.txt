@@ -6,9 +6,14 @@ set(CMAKE_CXX_STANDARD 17 CACHE STRING "The C++ standard to use")
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# TODO: Add flags for debug and release
-# Set Compiler Flags for project
-# add_compile_options(/-O2)
+# Update to use target compile flags. temp solution
+#if(NOT CMAKE_BUILD_TYPE)
+	#set(CMAKE_BUILD_TYPE Release)
+#endif()
+
+#set(CMAKE_CXX_FLAGS "")
+#set(CMAKE_CXX_FLAGS_DEBUG "-G")
+#set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 # Project name, version and description
 project ("CracklingPlusPlus" LANGUAGES CXX C VERSION 1.0.0 DESCRIPTION "C++ version of Crackling" )
@@ -19,22 +24,30 @@ add_executable (${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/src/CracklingPlusPlus.cpp)
 # Add library subdirectory
 add_subdirectory (${CMAKE_SOURCE_DIR}/lib)
 
+find_package(Boost 1.79 REQUIRED COMPONENTS regex)
+
 # Link Libraries to main executable
 target_link_libraries (
 	${PROJECT_NAME} 
-	PRIVATE Helpers 
-	PRIVATE ConfigManager 
+	PRIVATE Boost::boost
+	PRIVATE Boost::regex
 	PRIVATE Logger 
-	PRIVATE cas9InputProcessor 
-	PRIVATE CHOPCHOP 
-	PRIVATE mm10db 
-	PRIVATE sgrnascorer2 
-	PRIVATE bowtie2 
-	PRIVATE ISSLOffTargetScoring
+	PRIVATE configParserModule
+	PRIVATE cas9InputModule
+	PRIVATE chopchopModule
+	PRIVATE mm10dbModule
+	PRIVATE sgrnascorer2Module
+	PRIVATE bowtie2Module
+	PRIVATE ISSLScoringModule
+	PRIVATE ISSLScoringModuleMMF
+	PRIVATE outputModule
 )
 
+# Added ISSLCreateIndex subdirectory
+add_subdirectory (${CMAKE_SOURCE_DIR}/ISSLCreateIndex)
+
 # Add tests subdirectory
-add_subdirectory (${CMAKE_SOURCE_DIR}/tests)
+# add_subdirectory (${CMAKE_SOURCE_DIR}/tests)
 
 # TODO: Sort out testing data in single location
 # Copy testing data
