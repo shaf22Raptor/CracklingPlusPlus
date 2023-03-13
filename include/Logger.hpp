@@ -1,6 +1,6 @@
 // Logger.hpp
-#pragma once
-#define _POSIX_C_SOURCE 1
+#ifndef LoggerInclude
+#define LoggerInclude
 #include <iostream>
 #include <streambuf>
 #include <fstream>
@@ -49,4 +49,4 @@ private:
     logBuffer customBuffer;
 };
 
-
+#endif // !LoggerInclude
