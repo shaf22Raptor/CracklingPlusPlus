@@ -6,7 +6,7 @@ using std::endl;
 
 chopchopModule::chopchopModule(const cracklingConfig& config) : consensusModule(config)
 {
-	this->toolIsSelected = config.consensus.chopchop;
+    this->toolIsSelected = config.consensus.chopchop;
 }
 
 void chopchopModule::run(std::vector<guideResults>& candidateGuides)
@@ -44,7 +44,7 @@ void chopchopModule::run(std::vector<guideResults>& candidateGuides)
 
 bool chopchopModule::G20(string_view guide)
 {
-	return guide[19] == 'G';
+    return guide[19] == 'G';
 }
 
 bool chopchopModule::processGuide(const guideResults& guide)

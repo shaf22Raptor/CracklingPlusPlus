@@ -43,7 +43,7 @@ void bowtie2Module::run(std::vector<guideResults>& candidateGuides)
 			// Record page start
 			pageStart = paginatorIterator;
 			// Print page information
-			cout << fmt::format("\tProcessing page {} ({} per page).", pgIdx, config.pageLen) << endl;
+			cout << fmt::format(comma_locale, "\tProcessing page {:L} ({:L} per page).", pgIdx, config.pageLen) << endl;
 		}
 		else {
 			// Process all guides at once
@@ -86,7 +86,7 @@ void bowtie2Module::run(std::vector<guideResults>& candidateGuides)
 		}
 		inFile.close();
 
-		cout << fmt::format("\t\t{} guides in this page.", guidesInPage) << endl;
+		cout << fmt::format(comma_locale, "\t\t{:L} guides in this page.", guidesInPage) << endl;
 
 		// Call bowtie2
 		runner(fmt::format("{} -x {} -p {} --reorder --no-hd -t -r -U {} -S {}", config.binary.string(), indexFile.string(), config.threads, config.inFile.string(), config.outFile.string()).c_str());
@@ -166,7 +166,7 @@ void bowtie2Module::run(std::vector<guideResults>& candidateGuides)
 		paginatorIterator = pageEnd;
 		pgIdx++;
 	}
-	cout << fmt::format("\t{} of {} failed here.", failedCount, testedCount) << endl;
+	cout << fmt::format(comma_locale, "\t{:L} of {:L} failed here.", failedCount, testedCount) << endl;
 }
 
 bool bowtie2Module::processGuide(const guideResults& guide)
