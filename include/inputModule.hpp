@@ -13,7 +13,7 @@
 class inputModule : private pipelineModule
 {
 public:
-	inputModule(cracklingConfig config);
+	inputModule(const cracklingConfig& config);
 	void run();
 	std::vector<guideResults>* next();
 protected:

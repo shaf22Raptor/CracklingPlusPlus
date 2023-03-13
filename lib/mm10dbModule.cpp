@@ -20,7 +20,7 @@ const string guide = "GUUUUAGAGCUAGAAAUAGCAAGUUAAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAA
 const regex pattern_RNAstructure(".{28}\\({4}\\.{4}\\){4}\\.{3}\\){4}.{21}\\({4}\\.{4}\\){4}\\({7}\\.{3}\\){7}\\.{3}\\s\\((.+)\\)");
 const regex pattern_RNAenergy("\\s\\((.+)\\)");
 
-mm10dbModule::mm10dbModule(cracklingConfig config) : consensusModule(config)
+mm10dbModule::mm10dbModule(const cracklingConfig& config) : consensusModule(config)
 {
 	this->toolIsSelected = config.consensus.mm10db;
 	this->config = config.rnafold;

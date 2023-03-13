@@ -17,7 +17,7 @@
 class ISSLScoringModuleMMF : private specificityModule
 {
 public:
-	ISSLScoringModuleMMF(cracklingConfig config);
+	ISSLScoringModuleMMF(const cracklingConfig& config);
 	void run(std::vector<guideResults>& candidateGuides) final;
 private:
 	offTargetConfig config;

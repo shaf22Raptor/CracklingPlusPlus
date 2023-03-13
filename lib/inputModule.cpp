@@ -22,7 +22,7 @@ using boost::smatch;
 
 
 
-inputModule::inputModule(cracklingConfig config)
+inputModule::inputModule(const cracklingConfig& config)
 {
 	this->filesToProcess = config.input.filesToProcess;
 	this->batchSize = config.input.batchLen;

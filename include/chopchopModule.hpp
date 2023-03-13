@@ -8,7 +8,7 @@
 class chopchopModule : private consensusModule
 {
 public:
-	chopchopModule(cracklingConfig config);
+	chopchopModule(const cracklingConfig& config);
 	void run(std::vector<guideResults>& candidateGuides) final;
 private:
 	bool G20(std::string_view guide);

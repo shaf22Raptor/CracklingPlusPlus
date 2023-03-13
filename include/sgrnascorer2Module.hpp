@@ -11,7 +11,7 @@
 class sgrnascorer2Module : private consensusModule
 {
 public:
-	sgrnascorer2Module(cracklingConfig config);
+	sgrnascorer2Module(const cracklingConfig& config);
 	void run(std::vector<guideResults>& candidateGuides) final;
 private:
 	sgrnascorer2Config sgrnascorer2Config;

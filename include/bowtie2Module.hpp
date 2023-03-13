@@ -12,7 +12,7 @@
 class bowtie2Module : private specificityModule
 {
 public:
-	bowtie2Module(cracklingConfig config);
+	bowtie2Module(const cracklingConfig& config);
 	void run(std::vector<guideResults>& candidateGuides) final;
 private:
 	bowtie2Config config;

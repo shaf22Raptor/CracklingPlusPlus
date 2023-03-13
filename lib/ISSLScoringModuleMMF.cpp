@@ -11,7 +11,7 @@ using namespace boost::interprocess;
 const vector<uint8_t> nucleotideIndex{ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,3 };
 const vector<char> signatureIndex{ 'A', 'C', 'G', 'T' };
 
-ISSLScoringModuleMMF::ISSLScoringModuleMMF(cracklingConfig config) : specificityModule(config)
+ISSLScoringModuleMMF::ISSLScoringModuleMMF(const cracklingConfig& config) : specificityModule(config)
 {
     this->config = config.offTarget;
     this->ISSLIndex = config.input.offtargetSites;

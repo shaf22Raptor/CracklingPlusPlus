@@ -4,7 +4,7 @@ using std::string_view;
 using std::cout;
 using std::endl;
 
-chopchopModule::chopchopModule(cracklingConfig config) : consensusModule(config)
+chopchopModule::chopchopModule(const cracklingConfig& config) : consensusModule(config)
 {
 	this->toolIsSelected = config.consensus.chopchop;
 }

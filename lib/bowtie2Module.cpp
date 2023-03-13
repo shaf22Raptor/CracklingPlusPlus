@@ -9,7 +9,7 @@ using std::unordered_map;
 using std::filesystem::remove;
 using boost::algorithm::split;
 
-bowtie2Module::bowtie2Module(cracklingConfig config) : specificityModule(config)
+bowtie2Module::bowtie2Module(const cracklingConfig& config) : specificityModule(config)
 {
 	this->config = config.bowtie2;
 	this->indexFile = config.input.bowtie2Index;

@@ -10,12 +10,6 @@ find_package(Boost 1.79 REQUIRED COMPONENTS regex)
 # Add Library
 add_library(libsvm STATIC ${CMAKE_SOURCE_DIR}/lib/svm.cpp ${CMAKE_SOURCE_DIR}/include/libsvm/svm.h)
 
-##########
-# LOGGER #
-##########
-# Add Library
-add_library(Logger STATIC ${CMAKE_SOURCE_DIR}/lib/Logger.cpp ${CMAKE_SOURCE_DIR}/include/Logger.hpp)
-
 #############
 # Utilities #
 #############
@@ -25,6 +19,12 @@ add_library(utils STATIC ${CMAKE_SOURCE_DIR}/lib/util.cpp ${CMAKE_SOURCE_DIR}/in
 # Off-target Penalties #
 ########################
 add_library(otScorePenalties STATIC ${CMAKE_SOURCE_DIR}/lib/otScorePenalties.cpp ${CMAKE_SOURCE_DIR}/include/otScorePenalties.hpp)
+
+##########
+# LOGGER #
+##########
+# Add Library
+add_library(Logger STATIC ${CMAKE_SOURCE_DIR}/lib/Logger.cpp ${CMAKE_SOURCE_DIR}/include/Logger.hpp)
 
 ########################
 # Config Parser Module #

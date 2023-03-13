@@ -12,7 +12,7 @@
 class mm10dbModule : private consensusModule
 {
 public:
-	mm10dbModule(cracklingConfig config);
+	mm10dbModule(const cracklingConfig& config);
 	void run(std::vector<guideResults>& candidateGuides) final;
 private:
 	rnafoldConfig config;

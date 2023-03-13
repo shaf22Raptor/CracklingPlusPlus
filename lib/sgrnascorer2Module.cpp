@@ -24,8 +24,7 @@ const unordered_map <char, string> encoding = {
 	{'N' , "1111"},
 };
 
-
-sgrnascorer2Module::sgrnascorer2Module(cracklingConfig config) : consensusModule(config)
+sgrnascorer2Module::sgrnascorer2Module(const cracklingConfig& config) : consensusModule(config)
 {
 	this->toolIsSelected = config.consensus.sgrnascorer2;
 	this->sgrnascorer2Config = config.sgrnascorer2;
@@ -51,7 +50,6 @@ void sgrnascorer2Module::run(std::vector<guideResults>& candidateGuides)
 		// Run time filtering
 		if (!processGuide(candidate)) { continue; }
 
-		// TODO: Helper function to encode. All data should eventually be bit encoded.
 		array<double, 80> encodedSeq;
 		for (int i = 0; i < 20; i++)
 		{

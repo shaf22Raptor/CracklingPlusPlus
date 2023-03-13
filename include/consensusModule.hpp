@@ -11,7 +11,7 @@ protected:
 	optimisationLevel optimsationLevel;
 	uint8_t toolCount;
 	uint8_t consensusN;
-	consensusModule(cracklingConfig config);
+	consensusModule(const cracklingConfig& config);
 	virtual void run(std::vector<guideResults>& candidateGuides) = 0;
 	virtual bool processGuide(const guideResults& guide) = 0;
 private:

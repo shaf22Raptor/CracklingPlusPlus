@@ -2,7 +2,7 @@
 
 using boost::regex;
 
-cas9InputModule::cas9InputModule(cracklingConfig config) : inputModule(config)
+cas9InputModule::cas9InputModule(const cracklingConfig& config) : inputModule(config)
 {
 	this->fwdExp = regex("(?=([ATCG]{21}GG))");
 	this->bwdExp = regex("(?=(CC[ACGT]{21}))");

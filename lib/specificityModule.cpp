@@ -1,6 +1,6 @@
 #include "../include/specificityModule.hpp"
 
-specificityModule::specificityModule(cracklingConfig config)
+specificityModule::specificityModule(const cracklingConfig& config)
 {
 	this->toolIsSelected = config.offTarget.enabled;
 	this->optimsationLevel = config.general.optimisation;

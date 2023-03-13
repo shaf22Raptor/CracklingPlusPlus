@@ -9,7 +9,7 @@
 class outputModule : private pipelineModule
 {
 public:
-	outputModule(cracklingConfig config);
+	outputModule(const cracklingConfig& config);
 	void run(std::vector<guideResults>& candidateGuides);
 private:
 	bool firstWrite;

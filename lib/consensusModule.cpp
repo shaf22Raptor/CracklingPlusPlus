@@ -1,6 +1,6 @@
 #include "../include/consensusModule.hpp"
 
-consensusModule::consensusModule(cracklingConfig config)
+consensusModule::consensusModule(const cracklingConfig& config)
 {
 	this->toolIsSelected = false;
 	this->optimsationLevel = config.general.optimisation;

@@ -2,7 +2,7 @@
 
 using std::ofstream;
 
-outputModule::outputModule(cracklingConfig config)
+outputModule::outputModule(const cracklingConfig& config)
 {
 	this->outputFile = config.output.filename;
 	this->firstWrite = true;
