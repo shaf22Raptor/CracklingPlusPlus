@@ -1,6 +1,6 @@
 #include "../include/otScorePenalties.hpp"
 
-const std::unordered_map<uint64_t, double> precalculatedMITScores = {
+const phmap::parallel_flat_hash_map<uint64_t, double> precalculatedMITScores = {
     {1, 100},
     {4, 100},
     {5, 5.219780219780221},
