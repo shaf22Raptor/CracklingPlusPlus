@@ -299,7 +299,7 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
                                             *       shift           00 00 00 00 01 00
                                             */
                                         uint64_t searchSigIdentityPos = searchSignature;
-                                        searchSigIdentityPos &= (3UL << (pos * 2));
+                                        searchSigIdentityPos &= (3ULL << (pos * 2));
                                         searchSigIdentityPos = searchSigIdentityPos >> (pos * 2);
                                         searchSigIdentityPos = searchSigIdentityPos << 2;
 
@@ -314,7 +314,7 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
                                             *      rev comp 3UL    00 00 00 00 00 10 (done below)
                                             */
                                         uint64_t offtargetIdentityPos = offtargetsPtr[signatureId];
-                                        offtargetIdentityPos &= (3UL << (pos * 2));
+                                        offtargetIdentityPos &= (3ULL << (pos * 2));
                                         offtargetIdentityPos = offtargetIdentityPos >> (pos * 2);
 
                                         /** Complete the mask
@@ -430,7 +430,7 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
         }
     }
 
-    cout << fmt::format("\t{} of {} failed here.", failedCount, testedCount) << endl;
+    cout << fmt::format(comma_locale, "\t{:L} of {:L} failed here.", failedCount, testedCount) << endl;
 }
 
 
