@@ -19,21 +19,8 @@ extern const std::locale comma_locale;
 enum otScoreMethod { mit = 0, cfd = 1, mitAndCfd = 2, mitOrCfd = 3, avgMitCfd = 4 };
 enum optimisationLevel { ultralow = 0, low = 1, medium = 2, high = 3};
 
-const static std::unordered_map<std::string, optimisationLevel> optimisationMap = {
-	{"ultralow",optimisationLevel::ultralow}, 
-	{"low",optimisationLevel::low}, 
-	{"medium",optimisationLevel::medium},
-	{"high",optimisationLevel::high}
-};
-
-const static std::unordered_map<std::string, otScoreMethod> otScoreMethodMap = {
-	{"mit",otScoreMethod::mit},
-	{"cfd",otScoreMethod::cfd},
-	{"mitAndCfd",otScoreMethod::mitAndCfd},
-	{"mitOrCfd",otScoreMethod::mitOrCfd},
-	{"avgMitCfd",otScoreMethod::avgMitCfd}
-};
-
+extern const std::unordered_map<std::string, optimisationLevel> optimisationMap;
+extern const std::unordered_map<std::string, otScoreMethod> otScoreMethodMap;
 extern const char CODE_ACCEPTED;
 extern const char CODE_REJECTED;
 extern const char CODE_UNTESTED;

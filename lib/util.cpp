@@ -2,6 +2,22 @@
 
 const std::locale comma_locale(std::locale(), new commaFormat());
 
+
+const std::unordered_map<std::string, optimisationLevel> optimisationMap = {
+	{"ultralow",optimisationLevel::ultralow},
+	{"low",optimisationLevel::low},
+	{"medium",optimisationLevel::medium},
+	{"high",optimisationLevel::high}
+};
+
+const std::unordered_map<std::string, otScoreMethod> otScoreMethodMap = {
+	{"mit",otScoreMethod::mit},
+	{"cfd",otScoreMethod::cfd},
+	{"mitAndCfd",otScoreMethod::mitAndCfd},
+	{"mitOrCfd",otScoreMethod::mitOrCfd},
+	{"avgMitCfd",otScoreMethod::avgMitCfd}
+};
+
 const char CODE_ACCEPTED = '1';
 const char CODE_REJECTED = '0';
 const char CODE_UNTESTED = '?';
