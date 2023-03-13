@@ -29,14 +29,14 @@ int main(int argc, char** argv)
 	std::cerr.imbue(comma_locale);
 
 	// Create pipeline modules
-	cas9InputModule		cas9IM(config);
-	chopchopModule		chopchop(config);
-	mm10dbModule		mm10db(config);
-	sgrnascorer2Module	sgrnascorer2(config);
-	bowtie2Module		bowtie2(config);
-	ISSLScoringModule	ISSLScoring(config);
-	ISSLScoringModuleMMF ISSLScoringMMF(config);
-	outputModule		output(config);
+	cas9InputModule			cas9IM(config);
+	chopchopModule			chopchop(config);
+	mm10dbModule			mm10db(config);
+	sgrnascorer2Module		sgrnascorer2(config);
+	bowtie2Module			bowtie2(config);
+	ISSLScoringModule		ISSLScoring(config);
+	ISSLScoringModuleMMF	ISSLScoringMMF(config);
+	outputModule			output(config);
 
 	// Record start time
 	auto startTime = std::chrono::steady_clock::now();
