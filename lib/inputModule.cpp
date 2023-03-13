@@ -60,7 +60,7 @@ void inputModule::run()
 	// Begin processing files
 	for (const path& file : filesToProcess)
 	{
-		cout << fmt::format("Identifying possible target sites in : {}", file.string());
+		cout << fmt::format("Identifying possible target sites in : {}", file.string()) << endl;;
 		ifstream inFile;
 		string inputLine;
 
