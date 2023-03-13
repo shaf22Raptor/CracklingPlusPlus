@@ -44,14 +44,14 @@ int main(int argc, char** argv)
 
 	cas9IM.run();
 
-	uint64_t i = 0;
+	uint64_t batchNum = 0;
 	// Process guides in batches
 	for (std::vector<guideResults>* currentBatch; currentBatch = cas9IM.next();)
 	{
 		// Record batch start time
 		auto batchStartTime = std::chrono::steady_clock::now();
 
-		std::cout << "Processing batch " << ++i << std::endl;
+		std::cout << "Processing batch " << ++batchNum << std::endl;
 
 		// Consensus scoring
 		chopchop.run(*currentBatch);
