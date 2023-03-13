@@ -61,11 +61,14 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
     cout << "Loading ISSL Index." << endl;
 
     /** Begin reading the binary encoded ISSL, structured as:
-     *      - a header (5 items)
-     *      - precalcuated local MIT scores
-     *      - length of all the slices
-     *      - the positions within a slice
-     *      - all binary-encoded off-target sites
+     *  - The header (3 items)
+     *  - All binary-encoded off-target sites
+     *  - Slice masks
+     *  - Size of slice 1 lists
+     *  - Contents of slice 1 lists
+     *  ...
+     *  - Size of slice N lists (N being the number of slices)
+     *  - Contents of slice N lists
      */
     file_mapping isslFp(ISSLIndex.string().c_str(), read_only);
     mapped_region region(isslFp, read_only);
@@ -73,41 +76,20 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
 
     /** The index contains a fixed-sized header
      *      - the number of unique off-targets in the index
-     *      - the total number of off-targets
      *      - the length of an off-target
-     *      - the number of precalculated MIT scores
      *      - the number of slices
      */
     size_t* headerPtr = static_cast<size_t*>(inFileFp);
     size_t offtargetsCount = *headerPtr++;
-    size_t seqCount = *headerPtr++;
     size_t seqLength = *headerPtr++;
-    size_t scoresCount = *headerPtr++;
     size_t sliceCount = *headerPtr++;
 
     /** Load in all of the off-target sites */
     uint64_t* offtargetsPtr = reinterpret_cast<uint64_t*>(headerPtr);
 
-    /** Read in the precalculated MIT scores
-     *      - `mask` is a 2-bit encoding of mismatch positions
-     *          For example,
-     *              00 01 01 00 01  indicates mismatches in positions 1, 3 and 4
-     *
-     *      - `score` is the local MIT score for this mismatch combination
-     */
-    uint64_t* preCalcdScorePtr = static_cast<uint64_t*>(offtargetsPtr + offtargetsCount);
-    phmap::flat_hash_map<uint64_t, double> precalculatedScores;
-    for (int i = 0; i < scoresCount; i++) {
-        uint64_t mask = *preCalcdScorePtr++;
-        double score = *preCalcdScorePtr++;
-        precalculatedScores.insert(pair<uint64_t, double>(mask, score));
-    }
 
-
-    /**
-    * Read the slices
-    */
-    uint64_t* sliceMasksPtr = static_cast<uint64_t*>(preCalcdScorePtr);
+    /** Read the slice masks and generate 2 bit masks */
+    uint64_t* sliceMasksPtr = static_cast<uint64_t*>(offtargetsPtr + offtargetsCount);
     vector<vector<uint64_t>> sliceMasks;
     for (size_t i = 0; i < sliceCount; i++)
     {
@@ -123,10 +105,10 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
         sliceMasksPtr++;
     }
 
-    /** The contents of the slices
-    *
-    *      Size of each list within the slice stored contiguously
-    *      followed by all the signatures in that slice
+    /** The contents of the slices. Stored by slice
+    * Contains:
+    *   - Size of each list within the slice stored contiguously
+    *   - The contents of all the lists stored contiguously
     */
     vector<size_t*> allSlicelistSizes(sliceCount);
     vector<uint64_t*> allSliceSignatures(sliceCount);
@@ -137,7 +119,7 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
         allSlicelistSizes[i] = listSizePtr;
         signaturePtr = static_cast<uint64_t*>(listSizePtr + (1ULL << (sliceMasks[i].size() * 2)));
         allSliceSignatures[i] = signaturePtr;
-        listSizePtr = static_cast<uint64_t*>(signaturePtr + offtargetsCount);
+        listSizePtr = static_cast<size_t*>(signaturePtr + offtargetsCount);
     }
 
     cout << "ISSL Index Loaded." << endl;
@@ -152,7 +134,6 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
      */
     uint64_t numOfftargetToggles = (offtargetsCount / ((size_t)sizeof(uint64_t) * (size_t)CHAR_BIT)) + 1;
 
-    // IDEA: Split each slice into it's own file. Use memory mapped files to allow parallel access without reading into memory. Should work due to the simple binary data stored in these files.
     /** Start constructing index in memory
      *
      *      To begin, reverse the contiguous storage of the slices,
@@ -172,7 +153,7 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
 
     vector<vector<uint64_t*>> sliceLists(sliceCount);
     // Assign sliceLists size based on each slice length
-    for (int i = 0; i < sliceCount; i++)
+    for (size_t i = 0; i < sliceCount; i++)
     {
         sliceLists[i] = vector<uint64_t*>(1ULL << (sliceMasks[i].size() * 2));
     }
@@ -186,9 +167,7 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
         }
     }
 
-
     cout << "Beginning Off-target scoring." << endl;
-
     std::atomic_ullong testedCount = 0;
     std::atomic_ullong failedCount = 0;
 
@@ -201,7 +180,7 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
         /** For each candidate guide */
         // TODO: update to openMP > v2 (Use clang compiler)
         #pragma omp for
-        for (int64_t guideIdx = 0; guideIdx < candidateGuides.size(); guideIdx++) {
+        for (int guideIdx = 0; guideIdx < candidateGuides.size(); guideIdx++) {
 
             // Run time filtering
             if (!processGuide(candidateGuides[guideIdx])) { continue; }
@@ -213,7 +192,6 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
             double totScoreMit = 0.0;
             double totScoreCfd = 0.0;
 
-            uint64_t numOffTargetSitesScored = 0;
             double maximum_sum = (10000.0 - config.scoreThreshold * 100) / config.scoreThreshold;
 
             bool checkNextSlice = true;
@@ -246,7 +224,6 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
 
                     if (!seenOfftargetAlready) {
                         *ptrOfftargetFlag |= (1ULL << (signatureId % 64));
-                        numOffTargetSitesScored += occurrences;
 
                         /** Find the positions of mismatches
                             *
@@ -352,6 +329,38 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
                                 }
                                 totScoreCfd += cfdScore * (double)occurrences;
                             }
+
+                            /** Stop calculating global score early if possible */
+                            //if (this->config.method == otScoreMethod::mitAndCfd) {
+                            //    if (totScoreMit > maximum_sum && totScoreCfd > maximum_sum) {
+                            //        checkNextSlice = false;
+                            //        break;
+                            //    }
+                            //}
+                            //if (this->config.method == otScoreMethod::mitOrCfd) {
+                            //    if (totScoreMit > maximum_sum || totScoreCfd > maximum_sum) {
+                            //        checkNextSlice = false;
+                            //        break;
+                            //    }
+                            //}
+                            //if (this->config.method == otScoreMethod::avgMitCfd) {
+                            //    if (((totScoreMit + totScoreCfd) / 2.0) > maximum_sum) {
+                            //        checkNextSlice = false;
+                            //        break;
+                            //    }
+                            //}
+                            //if (this->config.method == otScoreMethod::mit) {
+                            //    if (totScoreMit > maximum_sum) {
+                            //        checkNextSlice = false;
+                            //        break;
+                            //    }
+                            //}
+                            //if (this->config.method == otScoreMethod::cfd) {
+                            //    if (totScoreCfd > maximum_sum) {
+                            //        checkNextSlice = false;
+                            //        break;
+                            //    }
+                            //}
                         }
                     }
                 }

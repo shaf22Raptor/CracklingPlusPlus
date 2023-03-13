@@ -404,42 +404,17 @@ int main(int argc, char** argv)
         progressCount += occurrences;
     }
     std::cout << "Finished!" << std::endl;
-   
-    // Precalculate all the scores
-    std::cout << "Precalculating scores..." << std::endl;
-    map<uint64_t, double> precalculatedScores;
-    uint64_t maxDist = 4;
-    size_t scoresCount = 0;
-    for (uint64_t i = 1; i <= maxDist; i++) {
-        vector<uint64_t> tempMasks;
-        tempMasks = computeMasksTwoBit(20, i);
-        for (auto mask : tempMasks) {
-            double score = predictMITLocalScore(mask);
-            precalculatedScores.insert(pair<uint64_t, double>(mask, score));
-            scoresCount++;
-        }
-    }
-    std::cout << "Finished!" << std::endl;
 
     std::cout << "Writing index header to file..." << std::endl;
     std::ofstream isslIndex;
     isslIndex.open(argv[4], std::ios::out | std::ios::binary);
     isslIndex.write(reinterpret_cast<char*>(&offtargetsCount), sizeof(uint64_t));
-    isslIndex.write(reinterpret_cast<char*>(&seqCount), sizeof(uint64_t));
     isslIndex.write(reinterpret_cast<char*>(&seqLength), sizeof(uint64_t));
-    isslIndex.write(reinterpret_cast<char*>(&scoresCount), sizeof(uint64_t));
     isslIndex.write(reinterpret_cast<char*>(&sliceCount), sizeof(size_t));
     std::cout << "Finished!" << std::endl;
 
     std::cout << "Writing offtargets to file..." << std::endl;
     isslIndex.write(reinterpret_cast<char*>(seqSignatures.data()), sizeof(uint64_t) * seqSignatures.size());
-    std::cout << "Finished!" << std::endl;
-
-    std::cout << "Writing precalculated scores to file..." << std::endl;
-    for (pair<uint64_t, double> score : precalculatedScores) {
-        isslIndex.write(reinterpret_cast<char*>(&score.first), sizeof(uint64_t));
-        isslIndex.write(reinterpret_cast<char*>(&score.second), sizeof(double));
-    }
     std::cout << "Finished!" << std::endl;
 
     std::cout << "Writing slice masks to file..." << std::endl;

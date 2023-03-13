@@ -60,11 +60,14 @@ void ISSLScoringModule::run(std::vector<guideResults>& candidateGuides)
 	cout << "Loading ISSL Index." << endl;
 
     /** Begin reading the binary encoded ISSL, structured as:
-     *      - a header (5 items)
-     *      - precalcuated local MIT scores
-     *      - length of all the slices
-     *      - the positions within a slice
-     *      - all binary-encoded off-target sites
+     *  - The header (3 items)
+     *  - All binary-encoded off-target sites
+     *  - Slice masks
+     *  - Size of slice 1 lists
+     *  - Contents of slice 1 lists
+     *  ...
+     *  - Size of slice N lists (N being the number of slices)
+     *  - Contents of slice N lists
      */
     FILE* isslFp = fopen(ISSLIndex.string().c_str(), "rb");
 
@@ -74,22 +77,18 @@ void ISSLScoringModule::run(std::vector<guideResults>& candidateGuides)
 
     /** The index contains a fixed-sized header
      *      - the number of unique off-targets in the index
-     *      - the total number of off-targets
      *      - the length of an off-target
-     *      - the number of precalculated MIT scores
      *      - the number of slices
      */
-    vector<size_t> slicelistHeader(5);
+    vector<size_t> slicelistHeader(3);
 
     if (fread(slicelistHeader.data(), sizeof(size_t), slicelistHeader.size(), isslFp) == 0) {
         throw std::runtime_error("Error reading index: header invalid\n");
     }
 
     size_t offtargetsCount = slicelistHeader[0];
-    size_t seqCount = slicelistHeader[1];
-    size_t seqLength = slicelistHeader[2];
-    size_t scoresCount = slicelistHeader[3];
-    size_t sliceCount = slicelistHeader[4];
+    size_t seqLength = slicelistHeader[1];
+    size_t sliceCount = slicelistHeader[2];
     
     /** Load in all of the off-target sites */
     vector<uint64_t> offtargets(offtargetsCount);
@@ -97,26 +96,7 @@ void ISSLScoringModule::run(std::vector<guideResults>& candidateGuides)
         throw std::runtime_error("Error reading index: loading off-target sequences failed\n");
     }
 
-    /** Read in the precalculated MIT scores
-     *      - `mask` is a 2-bit encoding of mismatch positions
-     *          For example,
-     *              00 01 01 00 01  indicates mismatches in positions 1, 3 and 4
-     *
-     *      - `score` is the local MIT score for this mismatch combination
-     */
-    phmap::flat_hash_map<uint64_t, double> precalculatedScores;
-    for (int i = 0; i < scoresCount; i++) {
-        uint64_t mask = 0;
-        double score = 0.0;
-        fread(&mask, sizeof(uint64_t), 1, isslFp);
-        fread(&score, sizeof(double), 1, isslFp);
-        precalculatedScores.insert(pair<uint64_t, double>(mask, score));
-    }
-
-
-    /**
-    * Read the slices
-    */
+    /** Read the slice masks and generate 2 bit masks */
     vector<vector<uint64_t>> sliceMasks;
     for (size_t i = 0; i < sliceCount; i++)
     {
@@ -134,28 +114,23 @@ void ISSLScoringModule::run(std::vector<guideResults>& candidateGuides)
         sliceMasks.push_back(mask);
     }
 
+    /** Calculate the total number of lists based on slice count and width */
     size_t sliceListCount = 0;
     for (size_t i = 0; i < sliceCount; i++)
     {
         sliceListCount += 1ULL << (sliceMasks[i].size() * 2);
     }
 
-    /** The number of signatures embedded per slice
-     *
-     *      These counts are stored contiguously
-     *
-     */
+    /** The number of signatures embedded per slice. Store continguously */
     vector<size_t> allSlicelistSizes(sliceListCount);
 
-    /** The contents of the slices
-     *
-     *      Stored contiguously
-     *
-     *      Each signature (64-bit) is structured as:
-     *          <occurrences 32-bit><off-target-id 32-bit>
+    /** The contents of the slices. Stored contiguously
+     *  Each signature (64-bit) is structured as:
+     *      <occurrences 32-bit><off-target-id 32-bit>
      */
     vector<uint64_t> allSignatures(offtargetsCount * sliceCount);
 
+    /** The number of signatures embedded per slice. Store continguously */
     sliceListCount = 0;
     for (size_t i = 0; i < sliceCount; i++)
     {
@@ -186,7 +161,6 @@ void ISSLScoringModule::run(std::vector<guideResults>& candidateGuides)
      */
     uint64_t numOfftargetToggles = (offtargetsCount / ((size_t)sizeof(uint64_t) * (size_t)CHAR_BIT)) + 1;
 
-    // IDEA: Split each slice into it's own file. Use memory mapped files to allow parallel access without reading into memory. Should work due to the simple binary data stored in these files.
     /** Start constructing index in memory
      *
      *      To begin, reverse the contiguous storage of the slices,
@@ -223,10 +197,7 @@ void ISSLScoringModule::run(std::vector<guideResults>& candidateGuides)
         sliceLimitOffset += sliceLimit;
     }
 
-
     cout << "Beginning Off-target scoring." << endl;
-
-
     std::atomic_ullong testedCount = 0;
     std::atomic_ullong failedCount = 0;
 
@@ -251,7 +222,6 @@ void ISSLScoringModule::run(std::vector<guideResults>& candidateGuides)
             double totScoreMit = 0.0;
             double totScoreCfd = 0.0;
 
-            int numOffTargetSitesScored = 0;
             double maximum_sum = (10000.0 - config.scoreThreshold * 100) / config.scoreThreshold;
 
             bool checkNextSlice = true;
@@ -286,7 +256,6 @@ void ISSLScoringModule::run(std::vector<guideResults>& candidateGuides)
 
                     if (!seenOfftargetAlready) {
                         *ptrOfftargetFlag |= (1ULL << (signatureId % 64));
-                        numOffTargetSitesScored += occurrences;
 
                         /** Find the positions of mismatches
                             *
@@ -318,7 +287,7 @@ void ISSLScoringModule::run(std::vector<guideResults>& candidateGuides)
                         uint64_t evenBits = xoredSignatures & 0xAAAAAAAAAAAAAAAAULL;
                         uint64_t oddBits = xoredSignatures & 0x5555555555555555ULL;
                         uint64_t mismatches = (evenBits >> 1) | oddBits;
-                        int dist = popcount64(mismatches);
+                        uint64_t dist = popcount64(mismatches);
 
                         if (dist >= 0 && dist <= config.maxDist) {
                             // Begin calculating MIT score
