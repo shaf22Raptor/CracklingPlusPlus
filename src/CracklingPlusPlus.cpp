@@ -98,5 +98,5 @@ int main(int argc, char** argv)
 
 	coutLogger.close();
 	cerrLogger.close();
-	// cas9IM.cleanup();
+	cas9IM.cleanup();
 }

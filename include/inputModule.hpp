@@ -12,11 +12,11 @@
 
 class inputModule : private pipelineModule
 {
-public:
+protected:
 	inputModule(const cracklingConfig& config);
 	void run();
+	void cleanup();
 	std::vector<guideResults>* next();
-protected:
 	std::vector<guideResults> guideBatch;
 	std::filesystem::path tempWorkingDir;
 	boost::regex fwdExp;

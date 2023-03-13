@@ -13,6 +13,11 @@ void cas9InputModule::run()
 	inputModule::run();
 }
 
+void cas9InputModule::cleanup()
+{
+	inputModule::cleanup();
+}
+
 std::vector<guideResults>* cas9InputModule::next()
 {
 	return inputModule::next();

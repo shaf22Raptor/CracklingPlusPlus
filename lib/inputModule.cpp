@@ -149,6 +149,10 @@ void inputModule::run()
 	recordedSequences.clear();
 }
 
+void inputModule::cleanup() {
+	remove_all(tempWorkingDir);
+}
+
 void inputModule::processSeqeunce(const std::string& seqeunce, const std::string& header)
 {
 	for (sregex_iterator regexItr(seqeunce.begin(), seqeunce.end(), fwdExp); regexItr != sregex_iterator(); regexItr++)
