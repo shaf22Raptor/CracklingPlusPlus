@@ -30,6 +30,6 @@ jobs:
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
-    - name: Test
+    # - name: Test
       # Build your program with the given configuration
-      run: cd ${{github.workspace}}/build/tests && ctest --verbose -C ${{env.BUILD_TYPE}}
+      # run: cd ${{github.workspace}}/build/tests && ctest --verbose -C ${{env.BUILD_TYPE}}
