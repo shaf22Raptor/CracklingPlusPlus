@@ -2,7 +2,7 @@
 #########
 # Boost #
 #########
-find_package(Boost 1.79 REQUIRED COMPONENTS regex)
+find_package(Boost REQUIRED COMPONENTS regex)
 
 ##########
 # LIBSVM #
