@@ -24,13 +24,15 @@ add_executable (${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/src/CracklingPlusPlus.cpp)
 # Add library subdirectory
 add_subdirectory (${CMAKE_SOURCE_DIR}/lib)
 
-find_package(Boost REQUIRED COMPONENTS regex)
+find_package(Boost REQUIRED COMPONENTS regex iostreams)
 
 # Link Libraries to main executable
 target_link_libraries (
-	${PROJECT_NAME} 
+	${PROJECT_NAME}
+	PRIVATE Boost::dynamic_linking
 	PRIVATE Boost::boost
 	PRIVATE Boost::regex
+	PRIVATE Boost::iostreams
 	PRIVATE Logger 
 	PRIVATE configParserModule
 	PRIVATE cas9InputModule

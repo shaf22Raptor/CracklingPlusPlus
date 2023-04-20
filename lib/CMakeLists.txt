@@ -2,7 +2,12 @@
 #########
 # Boost #
 #########
-find_package(Boost REQUIRED COMPONENTS regex)
+find_package(Boost REQUIRED COMPONENTS regex iostreams)
+
+##########
+# OpenMP #
+##########
+find_package(OpenMP REQUIRED)
 
 ##########
 # LIBSVM #
@@ -153,17 +158,12 @@ add_library(ISSLScoringModule
     STATIC ${CMAKE_SOURCE_DIR}/lib/ISSLScoringModule.cpp 
     ${CMAKE_SOURCE_DIR}/include/ISSLScoringModule.hpp
 )
-# Find OpenMP
-find_package(OpenMP REQUIRED)
-# Link OpenMP if available
-if(OpenMP_CXX_FOUND)
-    target_link_libraries(ISSLScoringModule 
-        PRIVATE specificityModule 
-        PRIVATE otScorePenalties 
-        PRIVATE OpenMP::OpenMP_CXX 
-        PRIVATE Boost::boost
-    )
-endif()
+target_link_libraries(ISSLScoringModule 
+    PRIVATE specificityModule 
+    PRIVATE otScorePenalties 
+    PRIVATE OpenMP::OpenMP_CXX 
+)
+
 
 #####################################################
 # ISSL Off-target Scoring Module Memory Mapped File #
@@ -173,15 +173,15 @@ add_library(ISSLScoringModuleMMF
     STATIC ${CMAKE_SOURCE_DIR}/lib/ISSLScoringModuleMMF.cpp 
     ${CMAKE_SOURCE_DIR}/include/ISSLScoringModuleMMF.hpp
 )
-# Link OpenMP if available
-if(OpenMP_CXX_FOUND)
-    target_link_libraries(ISSLScoringModuleMMF 
-        PRIVATE specificityModule 
-        PRIVATE otScorePenalties 
-        PRIVATE OpenMP::OpenMP_CXX 
-        PRIVATE Boost::boost
-    )
-endif()
+target_link_libraries(ISSLScoringModuleMMF 
+    PRIVATE specificityModule 
+    PRIVATE otScorePenalties 
+    PRIVATE OpenMP::OpenMP_CXX
+    PRIVATE Boost::dynamic_linking
+    PRIVATE Boost::boost
+    PRIVATE Boost::iostreams
+)
+
 
 #################
 # Output Module #
