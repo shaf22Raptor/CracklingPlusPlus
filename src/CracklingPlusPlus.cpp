@@ -70,10 +70,18 @@ int main(int argc, char** argv)
 		std::cout << fmt::format("\t{:L} of {:L} failed here.", failedCount, testedCount) << std::endl;
 
 		// Specificity scoring
-		bowtie2.run(*currentBatch);
-		//ISSLScoring.run(*currentBatch);
-		ISSLScoringMMF.run(*currentBatch);
+		std::cout << config.offTarget.memoryMapped << std::endl;
 
+		bowtie2.run(*currentBatch);
+		if (config.offTarget.memoryMapped)
+		{
+			ISSLScoringMMF.run(*currentBatch);
+		}
+		else
+		{
+			ISSLScoring.run(*currentBatch);
+		}
+		
 		// Print results to file
 		output.run(*currentBatch);
 

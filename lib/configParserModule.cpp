@@ -65,9 +65,12 @@ cracklingConfig configParserModule::run(const string& configFile)
 			config.general.name = configMap.at("general").at("name");
 			config.general.optimisation = optimisationMap.at(configMap.at("general").at("optimisation"));
 			config.consensus.n = stoul(configMap.at("consensus").at("n"));
-			config.consensus.mm10db = configMap.at("consensus").at("mm10db") == "True";
-			config.consensus.sgrnascorer2 = configMap.at("consensus").at("sgrnascorer2") == "True";
-			config.consensus.chopchop = configMap.at("consensus").at("chopchop") == "True";
+			to_lower(configMap["consensus"]["mm10db"]);
+			config.consensus.mm10db = configMap.at("consensus").at("mm10db") == "true";
+			to_lower(configMap["consensus"]["sgrnascorer2"]);
+			config.consensus.sgrnascorer2 = configMap.at("consensus").at("sgrnascorer2") == "true";
+			to_lower(configMap["consensus"]["chopchop"]);
+			config.consensus.chopchop = configMap.at("consensus").at("chopchop") == "true";
 			config.input.exonSequences = configMap.at("input").at("exon-sequences");
 			config.input.offtargetSites = configMap.at("input").at("offtarget-sites");
 			config.input.gffAnnotation = configMap.at("input").at("gff-annotation");
@@ -76,7 +79,10 @@ cracklingConfig configParserModule::run(const string& configFile)
 			config.output.dir = configMap.at("output").at("dir");
 			config.output.filename = configMap.at("output").at("filename");
 			config.output.delimiter = configMap.at("output").at("delimiter")[0];
-			config.offTarget.enabled = configMap.at("offtargetscore").at("enabled") == "True";
+			to_lower(configMap["offtargetscore"]["enabled"]);
+			config.offTarget.enabled = configMap.at("offtargetscore").at("enabled") == "true";
+			to_lower(configMap["offtargetscore"]["memory-mapped"]);
+			config.offTarget.memoryMapped = configMap.at("offtargetscore").at("memory-mapped") == "true";
 			config.offTarget.method = otScoreMethodMap.at(configMap.at("offtargetscore").at("method"));
 			config.offTarget.threads = stoul(configMap.at("offtargetscore").at("threads"));
 			config.offTarget.pageLen = stoull(configMap.at("offtargetscore").at("page-length"));

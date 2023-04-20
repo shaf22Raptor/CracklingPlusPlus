@@ -58,7 +58,7 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
         return;
     }
 
-    cout << "Loading ISSL Index." << endl;
+    cout << "Mapping ISSL Index." << endl;
 
     /** Begin reading the binary encoded ISSL, structured as:
      *  - The header (3 items)

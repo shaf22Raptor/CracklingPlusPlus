@@ -65,6 +65,7 @@ struct outputConfig
 struct offTargetConfig
 {
 	bool enabled;
+	bool memoryMapped;
 	otScoreMethod method;
 	uint8_t threads;
 	uint64_t pageLen;
