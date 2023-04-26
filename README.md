@@ -51,6 +51,7 @@ CMake ..
 ```bash
 make
 ```
+All of the programs (CracklingPlusPlus, ISSLCreateIndex and ExtractOfftargets) have now been built.
 
 ## Building Bowtie2 Index
 The Bowtie2 manual can be found [here](https://bowtie-bio.sourceforge.net/bowtie2/manual.shtml).
@@ -66,6 +67,41 @@ bowtie2-build --threads 128 ~/genomes/mouse.fa ~/genomes/mouse.fa.bowtie2
 ```
 
 Note: Bowtie2 produces multiple files for its index. When setting the Bowtie2 index variable in the `config.ini` file please use the value you used for `output-file`. So for the example above, you would set `bowtie2-index = ~/genomes/mouse.fa.bowtie2`
+## Extract off-targets for ISSL Index
+Note: You will need to ensure you have completed the installation step before completing this step as the installation will also install the program needed to extract off-targets. 
+
+The ExtractOfftargets binary can be found in build folder. Based on the install instructions that will be:
+```
+~/CracklingPlusPlus/build/ExtractOfftargets/ExtractOfftargets
+```
+
+Usage:
+```bash
+ExtractOfftargets <output-file>  {<input-file-1> <input-file-2> ... <input-file-n> | <input-dir>}
+```
+
+Arguements:
+```
+output-file: A filepath to save the off-target sites
+
+input-file-x: A single, or a space serpated list, of multi-FASTA formatted files
+
+input-dir: A directory, containing multiple multi-FASTA formatted files. (Note: This will process EVERY file in the directory)
+```
+
+For example:
+```bash
+ExtractOfftargets ~/genomes/mouse_offtargets.txt ~/genomes/mouse.fa
+```
+or
+```bash
+ExtractOfftargets ~/genomes/mouse_offtargets.txt ~/genomes/mouse_chromosone_1.fa ~/genomes/mouse_chromosone_2.fa ~/genomes/mouse_chromosone_3.fa
+```
+or
+```bash
+ExtractOfftargets ~/genomes/mouse_offtargets.txt ~/genomes/mouse_fasta_files/
+```
+
 ## Building ISSL Index
 
 Note: You will need to ensure you have completed the installation step before completing this step as the installation will also install the program needed to build the ISSL Index. 
@@ -94,6 +130,14 @@ For example:
 ```bash
 ISSLCreateIndex ~/genomes/mouse_offtargets.txt ~/CracklingPlusPlus/slice_config_4-5.txt 20 ~/genomes/mouse_indexed.issl
 ```
+## Running CracklingPlusPlus
+Please ensure all of the above steps have been completed before running the program. 
+To run the program simply fill out the provided `sample-config.ini` and call the program as follows:
+
+```bash
+CracklingPlusPlus <config-file>
+```
+
 
 
 ## References
