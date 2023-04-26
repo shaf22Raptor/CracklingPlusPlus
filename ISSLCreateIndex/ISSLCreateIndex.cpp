@@ -283,9 +283,9 @@ double predictMITLocalScore(uint64_t xoredSignatures)
 int main(int argc, char** argv)
 {
     // Check number of args
-    if (argc < 5)
+    if (argc == 5)
     {
-        std::cerr << fmt::format("Usage: {} [offtargetSites.txt] [sliceconfig.txt] [sequence length] [sissltable]\n", argv[0]) << std::endl;
+        std::cerr << fmt::format("Usage: {} <offtarget-sites> <slice-config> <sequence-length> <output-file>\n", argv[0]) << std::endl;
         exit(1);
     }
 
