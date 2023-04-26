@@ -11,13 +11,6 @@ using std::filesystem::path;
 using std::filesystem::exists;
 using std::filesystem::file_size;
 
-const regex extractNumbers("[1234567890]+");
-const vector<uint8_t> nucleotideIndex{ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,3 };
-const vector<char> signatureIndex{ 'A', 'C', 'G', 'T' };
-// 3bit
-// const vector<uint8_t> nucleotideIndex{ 1,0,2,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,7 };
-// const vector<char> signatureIndex{ '0','A','C','3','G','5','6','T' };
-uint64_t seqLength;
 
 /**
  * getLineEnding
@@ -49,7 +42,6 @@ string getLineEnding(const path& file)
     inFile.close();
     return lineEnding;
 }
-
 
 /**
  * encode3Bit
@@ -283,7 +275,7 @@ double predictMITLocalScore(uint64_t xoredSignatures)
 int main(int argc, char** argv)
 {
     // Check number of args
-    if (argc == 5)
+    if (argc != 5)
     {
         std::cerr << fmt::format("Usage: {} <offtarget-sites> <slice-config> <sequence-length> <output-file>\n", argv[0]) << std::endl;
         exit(1);
