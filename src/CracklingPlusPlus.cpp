@@ -70,8 +70,6 @@ int main(int argc, char** argv)
 		std::cout << fmt::format("\t{:L} of {:L} failed here.", failedCount, testedCount) << std::endl;
 
 		// Specificity scoring
-		std::cout << config.offTarget.memoryMapped << std::endl;
-
 		bowtie2.run(*currentBatch);
 		if (config.offTarget.memoryMapped)
 		{
