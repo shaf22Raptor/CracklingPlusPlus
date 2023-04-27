@@ -14,6 +14,10 @@ using boost::smatch;
 using boost::iostreams::mapped_file_source;
 namespace fs = std::filesystem;
 
+const regex fwdExp = regex("(?=([ACG][ACGT]{19}[ACGT][AG]G))");
+const regex bwdExp = regex("(?=(C[CT][ACGT][ACGT]{19}[TGC]))");
+const string END = "ZZZZZZZZZZZZZZZZZZZZ";
+
 int main(int argc, char** argv)
 {
     // Check number of args
