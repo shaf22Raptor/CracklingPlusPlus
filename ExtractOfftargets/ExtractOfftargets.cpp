@@ -23,7 +23,7 @@ int main(int argc, char** argv)
     // Check number of args
     if (argc < 3)
     {
-        std::cerr << fmt::format("Usage: {} <output-file> <input-file1> [<input-file2> <input-file3> ... <input-fileN>]\n", argv[0]) << std::endl;
+        std::cerr << fmt::format("Usage: {} <output-file>  {<input-file-1> <input-file-2> ... <input-file-n> | <input-dir>}\n", argv[0]) << std::endl;
         exit(1);
     }
 
