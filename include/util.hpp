@@ -47,7 +47,6 @@ struct inputConfig
 {
 	std::filesystem::path exonSequences;
 	std::filesystem::path offtargetSites;
-	std::filesystem::path gffAnnotation;
 	std::filesystem::path bowtie2Index;
 	std::vector<std::filesystem::path> filesToProcess;
 	uint64_t batchLen;
@@ -70,7 +69,6 @@ struct offTargetConfig
 	uint8_t threads;
 	uint64_t pageLen;
 	double scoreThreshold;
-	uint8_t maxDist;
 };
 
 struct sgrnascorer2Config

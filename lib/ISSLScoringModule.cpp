@@ -289,7 +289,7 @@ void ISSLScoringModule::run(std::vector<guideResults>& candidateGuides)
                         uint64_t mismatches = (evenBits >> 1) | oddBits;
                         uint64_t dist = popcount64(mismatches);
 
-                        if (dist >= 0 && dist <= config.maxDist) {
+                        if (dist >= 0 && dist <= 4) {
                             // Begin calculating MIT score
                             if (calcMIT) {
                                 if (dist > 0) {
@@ -309,7 +309,7 @@ void ISSLScoringModule::run(std::vector<guideResults>& candidateGuides)
                                 if (dist == 0) {
                                     cfdScore = 1;
                                 }
-                                else if (dist > 0 && dist <= config.maxDist) {
+                                else {
                                     cfdScore = cfdPamPenalties[0b1010]; // PAM: NGG, TODO: do not hard-code the PAM
 
                                     for (size_t pos = 0; pos < 20; pos++) {

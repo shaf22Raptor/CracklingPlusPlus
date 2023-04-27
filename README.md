@@ -119,7 +119,7 @@ Arguements:
 ```
 offtarget-sites: A text file containing off-target sites
 
-slice-config: A text file containing a set of slice configurations (See examples in repository)
+slice-config: A text file containing a set of slice configurations (See samples folder in repository)
 
 sequence-length: The length of an off-target site
 
@@ -128,11 +128,11 @@ output-file: A filepath to save the ISSL index
 
 For example:
 ```bash
-ISSLCreateIndex ~/genomes/mouse_offtargets.txt ~/CracklingPlusPlus/slice_config_4-5.txt 20 ~/genomes/mouse_indexed.issl
+ISSLCreateIndex ~/genomes/mouse_offtargets.txt ~/CracklingPlusPlus/sample/slice4-5.txt 20 ~/genomes/mouse_indexed.issl
 ```
 ## Running CracklingPlusPlus
 Please ensure all of the above steps have been completed before running the program. 
-To run the program simply fill out the provided `sample-config.ini` and call the program as follows:
+To run the program simply fill out the provided `config.ini` in the samples folder and call the program as follows:
 
 ```bash
 CracklingPlusPlus <config-file>

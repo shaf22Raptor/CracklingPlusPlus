@@ -73,7 +73,6 @@ cracklingConfig configParserModule::run(const string& configFile)
 			config.consensus.chopchop = configMap.at("consensus").at("chopchop") == "true";
 			config.input.exonSequences = configMap.at("input").at("exon-sequences");
 			config.input.offtargetSites = configMap.at("input").at("offtarget-sites");
-			config.input.gffAnnotation = configMap.at("input").at("gff-annotation");
 			config.input.bowtie2Index = configMap.at("input").at("bowtie2-index");
 			config.input.batchLen = stoull(configMap.at("input").at("batch-size"));
 			config.output.dir = configMap.at("output").at("dir");
@@ -87,7 +86,6 @@ cracklingConfig configParserModule::run(const string& configFile)
 			config.offTarget.threads = stoul(configMap.at("offtargetscore").at("threads"));
 			config.offTarget.pageLen = stoull(configMap.at("offtargetscore").at("page-length"));
 			config.offTarget.scoreThreshold = stod(configMap.at("offtargetscore").at("score-threshold"));
-			config.offTarget.maxDist = stoul(configMap.at("offtargetscore").at("max-distance"));
 			config.sgrnascorer2.model = configMap.at("sgrnascorer2").at("model");
 			config.sgrnascorer2.scoreThreshold = stoi(configMap.at("sgrnascorer2").at("score-threshold"));
 			config.bowtie2.binary = configMap.at("bowtie2").at("binary");
@@ -137,7 +135,6 @@ cracklingConfig configParserModule::run(const string& configFile)
 		}
 		config.output.log = (outputDir / fmt::format("{}-{}.log", config.general.name, configPath.stem().string())).string();
 		config.output.errLog = (outputDir / fmt::format("{}-{}.errlog", config.general.name, configPath.stem().string())).string();
-		auto test = path(config.input.bowtie2Index.string() + ".1.bt2");
 		// Check that all input files exist
 		if (!exists(config.input.exonSequences)) { throw InvalidConfiguration(fmt::format("Could not find input file: {}", config.input.exonSequences.string())); }
 		if (!exists(config.input.offtargetSites)) { throw InvalidConfiguration(fmt::format("Could not find input file: {}", config.input.offtargetSites.string())); }
