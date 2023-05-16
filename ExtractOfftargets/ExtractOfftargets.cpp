@@ -11,12 +11,10 @@ using boost::algorithm::split;
 using boost::regex;
 using boost::sregex_iterator;
 using boost::smatch;
-using boost::iostreams::mapped_file_source;
 namespace fs = std::filesystem;
 
 const regex fwdExp = regex("(?=([ACG][ACGT]{19}[ACGT][AG]G))");
 const regex bwdExp = regex("(?=(C[CT][ACGT][ACGT]{19}[TGC]))");
-const string END = "ZZZZZZZZZZZZZZZZZZZZ";
 
 int main(int argc, char** argv)
 {
@@ -127,12 +125,12 @@ int main(int argc, char** argv)
             // Add forward matches
             for (sregex_iterator regexItr(inputLine.begin(), inputLine.end(), fwdExp); regexItr != sregex_iterator(); regexItr++)
             {
-                offTargets.push_back((*regexItr)[1].str());
+                offTargets.push_back((*regexItr)[1].str().substr(0,20));
             }
             // Add reverse matches
             for (sregex_iterator regexItr(inputLine.begin(), inputLine.end(), bwdExp); regexItr != sregex_iterator(); regexItr++)
             {
-                offTargets.push_back(rc((*regexItr)[1].str()));
+                offTargets.push_back(rc((*regexItr)[1].str().substr(0,20)));
             }
         }
         inFile.close();
@@ -148,37 +146,27 @@ int main(int argc, char** argv)
     std::cout << "Done" << std::endl;
 
     std::cout << "Joining intermediate files" << std::endl;
-    // Mergesort memory mapped files
-    vector<mapped_file_source> sortedFiles(fileCounter);
-    vector<const char*> progessPointer(fileCounter);
-    vector<const char*> endPointer(fileCounter);
-    vector<string> offTargets(fileCounter, END);
+    // Merge sorted files
+    vector<ifstream> sortedFiles(fileCounter);
+    vector<string> offTargets(fileCounter);
     for (int i = 0; i < fileCounter; i++)
     {
         sortedFiles[i].open((tempWorkingDir / fmt::format("{}_sorted.txt", i)).string());
-        progessPointer[i] = static_cast<const char*>(sortedFiles[i].data());
-        endPointer[i] = progessPointer[i] + sortedFiles[i].size();
-        if (progessPointer[i] != endPointer[i])
-        {
-            offTargets[i] = string(progessPointer[i], progessPointer[i] + 20);
-            progessPointer[i] += 20;
+        string offTarget;
+        std::getline(sortedFiles[i], offTarget);
+        if (!sortedFiles[i].eof()) {
+            offTargets[i] = offTarget;
         }
     }
 
-    bool finished = false;
     ofstream finalOutput;
     finalOutput.open(argv[1], std::ios::binary | std::ios::out);
-    while(!finished)
+    while(sortedFiles.size() > 1)
     {
         // Find index of lowest off-target
         int lowest = 0;
-        for (int i = 0; i < fileCounter; i++)
+        for (int i = 0; i < sortedFiles.size(); i++)
         {
-            if (offTargets[i] == END || i == lowest)
-            {
-                continue;
-            }
-
             if (offTargets[i] < offTargets[lowest])
             {
                 lowest = i;
@@ -189,28 +177,23 @@ int main(int argc, char** argv)
         finalOutput << offTargets[lowest] << "\n";
 
         // Update offtargets
-        if (progessPointer[lowest] != endPointer[lowest])
-        {
-            offTargets[lowest] = string(progessPointer[lowest], progessPointer[lowest] + 20);
-            progessPointer[lowest] += 20;
-        }
-        else
-        {
-            offTargets[lowest] = END;
-            sortedFiles[lowest].close();
-        }
+        std::getline(sortedFiles[lowest], offTargets[lowest]);
 
-        // Check if we are finished
-        finished = true;
-        for (int i = 0; i < fileCounter; i++)
+        // If at EOF remove from list
+        if (sortedFiles[lowest].eof())
         {
-            if (offTargets[i] != END)
-            {
-                finished = false;
-                break;
-            }
+            sortedFiles.erase(sortedFiles.begin() + lowest);
+            offTargets.erase(offTargets.begin() + lowest);
         }
     }
+
+    while (std::getline(sortedFiles[0], offTargets[0])) 
+    {
+        finalOutput << offTargets[0] << "\n";
+    }
+    sortedFiles[0].close();
+    finalOutput.close();
+
     std::cout << "Done" << std::endl;
 
     std::cout << "Cleaning intermediate files" << std::endl;

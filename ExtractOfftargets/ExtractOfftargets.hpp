@@ -6,7 +6,6 @@
 #include <chrono>
 #include <omp.h>
 #include <boost/algorithm/string.hpp>
-#include <boost/iostreams/device/mapped_file.hpp>
 #include <boost/regex.hpp>
 #define FMT_HEADER_ONLY
 #include "../include/fmt/format.h"
