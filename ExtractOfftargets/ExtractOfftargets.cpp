@@ -138,7 +138,7 @@ int main(int argc, char** argv)
         tempOutFile.open(tempWorkingDir / fmt::format("{}_sorted.txt", i), std::ios::binary | std::ios::out);
         for (const string& s : offTargets)
         {
-            tempOutFile << s.substr(0,20);
+            tempOutFile << s << "\n";
         }
         tempOutFile.close();
 
