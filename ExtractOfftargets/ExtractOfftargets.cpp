@@ -130,7 +130,7 @@ int main(int argc, char** argv)
             // Add reverse matches
             for (sregex_iterator regexItr(inputLine.begin(), inputLine.end(), bwdExp); regexItr != sregex_iterator(); regexItr++)
             {
-                offTargets.push_back(rc((*regexItr)[1].str().substr(0,20)));
+                offTargets.push_back(rc((*regexItr)[1].str()).substr(0, 20));
             }
         }
         inFile.close();
