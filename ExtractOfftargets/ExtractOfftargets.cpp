@@ -32,7 +32,7 @@ int main(int argc, char** argv)
 
     std::cout << "Spliting input(s)" << std::endl;
     // Split each sequence to it's own file
-    #pragma omp parallel for schedule(static,1)
+#pragma omp parallel for schedule(static,1)
     for (int i = 2; i < argc; i++)
     {
         // Command line input
@@ -74,7 +74,7 @@ int main(int argc, char** argv)
             if (inputLine[0] == '>')
             {
                 // Remove all line breaks between sequences segments
-                tempOutFile.open(tempWorkingDir / fmt::format("{}.txt", fileCounter++), std::ios::binary | std::ios::out);
+                tempOutFile.open((tempWorkingDir / fmt::format("{}.txt", fileCounter++)).string(), std::ios::binary | std::ios::out);
                 for (inputLine; std::getline(inFile, inputLine);)
                 {
                     trim(inputLine);
@@ -82,7 +82,7 @@ int main(int argc, char** argv)
                     if (inputLine[0] == '>')
                     {
                         tempOutFile.close();
-                        tempOutFile.open(tempWorkingDir / fmt::format("{}.txt", fileCounter++), std::ios::binary | std::ios::out);
+                        tempOutFile.open((tempWorkingDir / fmt::format("{}.txt", fileCounter++)).string(), std::ios::binary | std::ios::out);
                     }
                     else
                     {
@@ -95,7 +95,7 @@ int main(int argc, char** argv)
             {
                 do
                 {
-                    tempOutFile.open(tempWorkingDir / fmt::format("{}.txt", fileCounter++), std::ios::binary | std::ios::out);
+                    tempOutFile.open((tempWorkingDir / fmt::format("{}.txt", fileCounter++)).string(), std::ios::binary | std::ios::out);
                     trim(inputLine);
                     to_upper(inputLine);
                     tempOutFile << inputLine;
@@ -110,14 +110,14 @@ int main(int argc, char** argv)
 
     std::cout << "Sorting intermediate files" << std::endl;
     // Mulithread process each extact and sort
-    #pragma omp parallel for schedule(static,1)
+#pragma omp parallel for schedule(static,1)
     for (int i = 0; i < fileCounter; i++)
     {
         ofstream tempOutFile;
         ifstream inFile;
         string inputLine;
         vector<string> offTargets;
-        inFile.open(tempWorkingDir / fmt::format("{}.txt", i), std::ios::binary | std::ios::in);
+        inFile.open((tempWorkingDir / fmt::format("{}.txt", i)).string(), std::ios::binary | std::ios::in);
         for (inputLine; std::getline(inFile, inputLine);)
         {
             std::getline(inFile, inputLine);
@@ -125,7 +125,7 @@ int main(int argc, char** argv)
             // Add forward matches
             for (sregex_iterator regexItr(inputLine.begin(), inputLine.end(), fwdExp); regexItr != sregex_iterator(); regexItr++)
             {
-                offTargets.push_back((*regexItr)[1].str().substr(0,20));
+                offTargets.push_back((*regexItr)[1].str().substr(0, 20));
             }
             // Add reverse matches
             for (sregex_iterator regexItr(inputLine.begin(), inputLine.end(), bwdExp); regexItr != sregex_iterator(); regexItr++)
@@ -134,8 +134,9 @@ int main(int argc, char** argv)
             }
         }
         inFile.close();
+        fs::remove((tempWorkingDir / fmt::format("{}.txt", i)).string());
         std::sort(offTargets.begin(), offTargets.end());
-        tempOutFile.open(tempWorkingDir / fmt::format("{}_sorted.txt", i), std::ios::binary | std::ios::out);
+        tempOutFile.open((tempWorkingDir / fmt::format("{}_sorted.txt", i)).string(), std::ios::binary | std::ios::out);
         for (const string& s : offTargets)
         {
             tempOutFile << s << "\n";
@@ -145,59 +146,174 @@ int main(int argc, char** argv)
     }
     std::cout << "Done" << std::endl;
 
-    std::cout << "Joining intermediate files" << std::endl;
+    std::cout << "Merging pass 1" << std::endl;
     // Merge sorted files
-    vector<ifstream> sortedFiles(fileCounter);
-    vector<string> offTargets(fileCounter);
-    for (int i = 0; i < fileCounter; i++)
+    int threads = 16;
+    vector<string> filesToMerge;
+    if (fileCounter < threads * 2)
     {
-        sortedFiles[i].open((tempWorkingDir / fmt::format("{}_sorted.txt", i)).string());
-        string offTarget;
-        std::getline(sortedFiles[i], offTarget);
-        if (!sortedFiles[i].eof()) {
-            offTargets[i] = offTarget;
+        for (int i = 0; i < fileCounter; ++i)
+        {
+            filesToMerge.push_back((tempWorkingDir / fmt::format("{}_sorted.txt", i)).string());
+        }
+    }
+    else
+    {
+        for (int i = 0; i < threads; ++i)
+        {
+            filesToMerge.push_back((tempWorkingDir / fmt::format("{}_merged.txt", i)).string());
+        }
+        int batchSize = ceil(fileCounter / (threads * 1.0));
+
+        #pragma omp parallel for schedule(static,1)
+        for (int i = 0; i < threads; ++i)
+        {
+            std::cout << "Merging thread " << i << std::endl;
+
+            vector<string> fileNames;
+            for (int j = i; j < fileCounter; j += threads)
+            {
+                fileNames.push_back((tempWorkingDir / fmt::format("{}_sorted.txt", j)).string());
+            }
+
+            vector<ifstream> sortedFiles(fileNames.size());
+            vector<string> offTargets(fileNames.size());
+            for (int j = 0; j < fileNames.size(); ++j)
+            {
+                std::cout << fileNames[j] << std::endl;
+                sortedFiles[j].open(fileNames[j], std::ios::binary | std::ios::in);
+                std::getline(sortedFiles[j], offTargets[j]);
+            }
+
+            // Remove any empty files
+            auto sortedFilesIter = sortedFiles.begin();
+            auto offTargetsIter = offTargets.begin();
+            auto fileNamesIter = fileNames.begin();
+            while (sortedFilesIter != sortedFiles.end())
+            {
+                if (sortedFilesIter->eof())
+                {
+                    sortedFilesIter = sortedFiles.erase(sortedFilesIter);
+                    offTargetsIter = offTargets.erase(offTargetsIter);
+                    fs::remove(*fileNamesIter);
+                    fileNamesIter = fileNames.erase(fileNamesIter);
+                }
+                else
+                {
+                    ++sortedFilesIter;
+                    ++offTargetsIter;
+                    ++fileNamesIter;
+                }
+            }
+
+            std::cout << "Merging thread " << i << std::endl;
+
+            ofstream mergedFile;
+            mergedFile.open((tempWorkingDir / fmt::format("{}_merged.txt", i)).string(), std::ios::binary | std::ios::out);
+            while (sortedFiles.size() > 1)
+            {
+                
+                // Find index of lowest off-target
+                int lowest = 0;
+                for (int j = 0; j < sortedFiles.size(); ++j)
+                {
+                    if (offTargets[j] < offTargets[lowest])
+                    {
+                        lowest = j;
+                    }
+                }
+                // Write to file
+                mergedFile << offTargets[lowest] << "\n";
+                // Update offtargets
+                std::getline(sortedFiles[lowest], offTargets[lowest]);
+                // If at EOF remove from list
+                if (sortedFiles[lowest].eof())
+                {
+                    sortedFiles[lowest].close();
+                    fs::remove(fileNames[lowest]);
+                    sortedFiles.erase(sortedFiles.begin() + lowest);
+                    offTargets.erase(offTargets.begin() + lowest);
+                    fileNames.erase(fileNames.begin() + lowest);
+                }
+            }
+
+            while (std::getline(sortedFiles[0], offTargets[0]))
+            {
+                mergedFile << offTargets[0] << "\n";
+            }
+            sortedFiles[0].close();
+            fs::remove(fileNames[0]);
+            mergedFile.close();
+        }
+    }
+    
+    std::cout << "Done" << std::endl;
+
+    std::cout << "Merging pass 2" << std::endl;
+
+    vector<ifstream> mergedFiles(filesToMerge.size());
+    vector<string> offTargets(filesToMerge.size());
+    for (int i = 0; i < filesToMerge.size(); i++)
+    {
+        mergedFiles[i].open(filesToMerge[i], std::ios::binary | std::ios::in);
+        std::getline(mergedFiles[i], offTargets[i]);
+    }
+
+    // Remove any empty files
+    auto mergedFilesIter = mergedFiles.begin();
+    auto offTargetsIter = offTargets.begin();
+    while (mergedFilesIter != mergedFiles.end())
+    {
+        if (mergedFilesIter->eof())
+        {
+            mergedFilesIter = mergedFiles.erase(mergedFilesIter);
+            offTargetsIter = offTargets.erase(offTargetsIter);
+        }
+        else
+        {
+            ++mergedFilesIter;
+            ++offTargetsIter;
         }
     }
 
     ofstream finalOutput;
     finalOutput.open(argv[1], std::ios::binary | std::ios::out);
-    while(sortedFiles.size() > 1)
+    while (mergedFiles.size() > 1)
     {
         // Find index of lowest off-target
         int lowest = 0;
-        for (int i = 0; i < sortedFiles.size(); i++)
+        for (int j = 0; j < mergedFiles.size(); j++)
         {
-            if (offTargets[i] < offTargets[lowest])
+            if (offTargets[j] < offTargets[lowest])
             {
-                lowest = i;
+                lowest = j;
             }
         }
-
         // Write to file
         finalOutput << offTargets[lowest] << "\n";
-
         // Update offtargets
-        std::getline(sortedFiles[lowest], offTargets[lowest]);
-
+        std::getline(mergedFiles[lowest], offTargets[lowest]);
         // If at EOF remove from list
-        if (sortedFiles[lowest].eof())
+        if (mergedFiles[lowest].eof())
         {
-            sortedFiles.erase(sortedFiles.begin() + lowest);
+            mergedFiles[lowest].close();
+            fs::remove(filesToMerge[lowest]);
+            mergedFiles.erase(mergedFiles.begin() + lowest);
             offTargets.erase(offTargets.begin() + lowest);
+            filesToMerge.erase(filesToMerge.begin() + lowest);
         }
     }
 
-    while (std::getline(sortedFiles[0], offTargets[0])) 
+    while (std::getline(mergedFiles[0], offTargets[0]))
     {
         finalOutput << offTargets[0] << "\n";
     }
-    sortedFiles[0].close();
+    mergedFiles[0].close();
     finalOutput.close();
 
     std::cout << "Done" << std::endl;
 
     std::cout << "Cleaning intermediate files" << std::endl;
-    //fs::remove(tempWorkingDir);
     fs::remove_all(tempWorkingDir);
     std::cout << "Done" << std::endl;
 
