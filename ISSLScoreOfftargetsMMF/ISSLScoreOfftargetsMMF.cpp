@@ -1,4 +1,4 @@
-#include "ISSLScoreOfftargets.hpp"
+#include "ISSLScoreOfftargetsMMF.hpp"
 
 using std::cout;
 using std::endl;
@@ -6,6 +6,7 @@ using std::string;
 using std::vector;
 using std::pair;
 using std::unordered_map;
+using namespace boost::iostreams;
 
 // Char to binary encoding
 const vector<uint8_t> nucleotideIndex{ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,3 };
@@ -93,85 +94,61 @@ int main(int argc, char** argv)
      *  - Size of slice N lists (N being the number of slices)
      *  - Contents of slice N lists
      */
-    FILE* isslFp = fopen(argv[1], "rb");
+    mapped_file_source isslFp;
+    isslFp.open(argv[1]);
 
-    if (isslFp == NULL) {
+    if (!isslFp.is_open())
+    {
         throw std::runtime_error("Error reading index: could not open file\n");
     }
+    const void* inFileFp = static_cast<const void*>(isslFp.data());
 
     /** The index contains a fixed-sized header
      *      - the number of unique off-targets in the index
      *      - the length of an off-target
      *      - the number of slices
      */
-    vector<size_t> slicelistHeader(3);
-
-    if (fread(slicelistHeader.data(), sizeof(size_t), slicelistHeader.size(), isslFp) == 0) {
-        throw std::runtime_error("Error reading index: header invalid\n");
-    }
-
-    size_t offtargetsCount = slicelistHeader[0];
-    size_t seqLength = slicelistHeader[1];
-    size_t sliceCount = slicelistHeader[2];
+    const size_t* headerPtr = static_cast<const size_t*>(inFileFp);
+    size_t offtargetsCount = *headerPtr++;
+    size_t seqLength = *headerPtr++;
+    size_t sliceCount = *headerPtr++;
 
     /** Load in all of the off-target sites */
-    vector<uint64_t> offtargets(offtargetsCount);
-    if (fread(offtargets.data(), sizeof(uint64_t), offtargetsCount, isslFp) == 0) {
-        throw std::runtime_error("Error reading index: loading off-target sequences failed\n");
-    }
+    const uint64_t* offtargetsPtr = static_cast<const uint64_t*>(headerPtr);
 
     /** Read the slice masks and generate 2 bit masks */
+    const uint64_t* sliceMasksPtr = static_cast<const uint64_t*>(offtargetsPtr + offtargetsCount);
     vector<vector<uint64_t>> sliceMasks;
     for (size_t i = 0; i < sliceCount; i++)
     {
-        uint64_t maskBinary;
-        fread(&maskBinary, sizeof(uint64_t), 1, isslFp);
-
         vector<uint64_t> mask;
         for (uint64_t j = 0; j < seqLength; j++)
         {
-            if (maskBinary & (1ULL << j))
+            if (*sliceMasksPtr & (1ULL << j))
             {
                 mask.push_back(j);
             }
         }
         sliceMasks.push_back(mask);
+        sliceMasksPtr++;
     }
 
-    /** Calculate the total number of lists based on slice count and width */
-    size_t sliceListCount = 0;
+    /** The contents of the slices. Stored by slice
+    * Contains:
+    *   - Size of each list within the slice stored contiguously
+    *   - The contents of all the lists stored contiguously
+    */
+    vector<const size_t*> allSlicelistSizes(sliceCount);
+    vector<const uint64_t*> allSliceSignatures(sliceCount);
+    const size_t* listSizePtr = static_cast<const size_t*>(sliceMasksPtr);
+    const uint64_t* signaturePtr = static_cast<const uint64_t*>(sliceMasksPtr);
     for (size_t i = 0; i < sliceCount; i++)
     {
-        sliceListCount += 1ULL << (sliceMasks[i].size() * 2);
+        allSlicelistSizes[i] = listSizePtr;
+        signaturePtr = static_cast<const uint64_t*>(listSizePtr + (1ULL << (sliceMasks[i].size() * 2)));
+        allSliceSignatures[i] = signaturePtr;
+        listSizePtr = static_cast<const size_t*>(signaturePtr + offtargetsCount);
     }
-
-    /** The number of signatures embedded per slice. Store continguously */
-    vector<size_t> allSlicelistSizes(sliceListCount);
-
-    /** The contents of the slices. Stored contiguously
-     *  Each signature (64-bit) is structured as:
-     *      <occurrences 32-bit><off-target-id 32-bit>
-     */
-    vector<uint64_t> allSignatures(offtargetsCount * sliceCount);
-
-    /** The number of signatures embedded per slice. Store continguously */
-    sliceListCount = 0;
-    for (size_t i = 0; i < sliceCount; i++)
-    {
-        size_t sliceListSize = 1ULL << (sliceMasks[i].size() * 2);
-        if (fread(allSlicelistSizes.data() + sliceListCount, sizeof(size_t), sliceListSize, isslFp) == 0) {
-            throw std::runtime_error("Error reading index: reading slice list sizes failed\n");
-        }
-
-        if (fread(allSignatures.data() + (offtargetsCount * i), sizeof(uint64_t), offtargetsCount, isslFp) == 0) {
-            throw std::runtime_error("Error reading index: reading slice contents failed\n");
-        }
-
-        sliceListCount += 1ULL << (sliceMasks[i].size() * 2);
-    }
-
-    /** End reading the index */
-    fclose(isslFp);
 
     cout << "ISSL Index Loaded." << endl;
 
@@ -204,23 +181,20 @@ int main(int argc, char** argv)
      *         | ...
      */
 
-    vector<vector<uint64_t*>> sliceLists(sliceCount);
+    vector<vector<const uint64_t*>> sliceLists(sliceCount);
     // Assign sliceLists size based on each slice length
     for (size_t i = 0; i < sliceCount; i++)
     {
-        sliceLists[i] = vector<uint64_t*>(1ULL << (sliceMasks[i].size() * 2));
+        sliceLists[i] = vector<const uint64_t*>(1ULL << (sliceMasks[i].size() * 2));
     }
 
-    uint64_t* offset = allSignatures.data();
-    size_t sliceLimitOffset = 0;
     for (size_t i = 0; i < sliceCount; i++) {
+        const uint64_t* sliceList = allSliceSignatures[i];
         size_t sliceLimit = 1ULL << (sliceMasks[i].size() * 2);
         for (size_t j = 0; j < sliceLimit; j++) {
-            size_t idx = sliceLimitOffset + j;
-            sliceLists[i][j] = offset;
-            offset += allSlicelistSizes[idx];
+            sliceLists[i][j] = sliceList;
+            sliceList += allSlicelistSizes[i][j];
         }
-        sliceLimitOffset += sliceLimit;
     }
 
     //TODO: rewrite
@@ -250,9 +224,9 @@ int main(int argc, char** argv)
     fclose(fp);
 
     /** Binary encode query sequences */
-    #pragma omp parallel
+#pragma omp parallel
     {
-    #pragma omp for
+#pragma omp for
         for (int i = 0; i < queryCount; i++) {
             char* ptr = &queryDataSet[i * seqLineLength];
             uint64_t signature = sequenceToSignature(ptr, 20);
@@ -262,13 +236,13 @@ int main(int argc, char** argv)
 
     /** Begin scoring */
     omp_set_num_threads(32);
-    //#pragma omp parallel
+    #pragma omp parallel
     {
         vector<uint64_t> offtargetToggles(numOfftargetToggles);
         uint64_t* offtargetTogglesTail = offtargetToggles.data() + numOfftargetToggles - 1;
         /** For each candidate guide */
         // TODO: update to openMP > v2 (Use clang compiler)
-        //#pragma omp for
+        #pragma omp for
         for (int searchIdx = 0; searchIdx < querySignatures.size(); searchIdx++) {
 
             auto searchSignature = querySignatures[searchIdx];
@@ -294,8 +268,8 @@ int main(int argc, char** argv)
 
                 size_t idx = sliceLimitOffset + searchSlice;
 
-                size_t signaturesInSlice = allSlicelistSizes[idx];
-                uint64_t* sliceOffset = sliceList[searchSlice];
+                size_t signaturesInSlice = allSlicelistSizes[i][searchSlice];
+                const uint64_t* sliceOffset = sliceList[searchSlice];
 
                 /** For each off-target signature in slice */
                 for (size_t j = 0; j < signaturesInSlice; j++) {
@@ -337,7 +311,7 @@ int main(int argc, char** argv)
                             *
                             *   popcount(mismatches):   4
                             */
-                        uint64_t xoredSignatures = searchSignature ^ offtargets[signatureId];
+                        uint64_t xoredSignatures = searchSignature ^ offtargetsPtr[signatureId];
                         uint64_t evenBits = xoredSignatures & 0xAAAAAAAAAAAAAAAAULL;
                         uint64_t oddBits = xoredSignatures & 0x5555555555555555ULL;
                         uint64_t mismatches = (evenBits >> 1) | oddBits;
@@ -399,7 +373,7 @@ int main(int argc, char** argv)
                                             *      shift           00 00 00 00 00 01
                                             *      rev comp 3UL    00 00 00 00 00 10 (done below)
                                             */
-                                        uint64_t offtargetIdentityPos = offtargets[signatureId];
+                                        uint64_t offtargetIdentityPos = offtargetsPtr[signatureId];
                                         offtargetIdentityPos &= (3ULL << (pos * 2));
                                         offtargetIdentityPos = offtargetIdentityPos >> (pos * 2);
 

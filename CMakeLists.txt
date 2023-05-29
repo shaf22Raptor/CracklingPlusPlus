@@ -44,8 +44,11 @@ target_link_libraries (
 # Added ISSLCreateIndex subdirectory
 add_subdirectory (${CMAKE_SOURCE_DIR}/ISSLCreateIndex)
 
-# Added ISSLCreateIndex subdirectory
+# Added ISSLScoreOfftargets subdirectory
 add_subdirectory (${CMAKE_SOURCE_DIR}/ISSLScoreOfftargets)
+
+# Added ISSLScoreOfftargetsMMF subdirectory
+add_subdirectory (${CMAKE_SOURCE_DIR}/ISSLScoreOfftargetsMMF)
 
 # Added ExtractOffTargets subdirectory
 add_subdirectory (${CMAKE_SOURCE_DIR}/ExtractOfftargets)
