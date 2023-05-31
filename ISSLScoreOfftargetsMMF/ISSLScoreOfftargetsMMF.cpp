@@ -80,7 +80,7 @@ int main(int argc, char** argv)
     }
     else
     {
-        fprintf(stderr, "Invalid scoring method. Acceptable options are: 'and', 'or', 'avg', 'mit', 'cfd'", argv[0]);
+        fprintf(stderr, "Invalid scoring method. Acceptable options are: 'and', 'or', 'avg', 'mit', 'cfd'");
         exit(1);
     }
 
@@ -150,7 +150,6 @@ int main(int argc, char** argv)
         listSizePtr = static_cast<const size_t*>(signaturePtr + offtargetsCount);
     }
 
-    cout << "ISSL Index Loaded." << endl;
 
 
 

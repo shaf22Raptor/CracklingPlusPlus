@@ -79,7 +79,7 @@ int main(int argc, char** argv)
     }
     else
     {
-        fprintf(stderr, "Invalid scoring method. Acceptable options are: 'and', 'or', 'avg', 'mit', 'cfd'", argv[0]);
+        fprintf(stderr, "Invalid scoring method. Acceptable options are: 'and', 'or', 'avg', 'mit', 'cfd'");
         exit(1);
     }
 
@@ -173,8 +173,6 @@ int main(int argc, char** argv)
     /** End reading the index */
     fclose(isslFp);
 
-    cout << "ISSL Index Loaded." << endl;
-
 
 
     /** Prevent assessing an off-target site for multiple slices
@@ -262,13 +260,13 @@ int main(int argc, char** argv)
 
     /** Begin scoring */
     omp_set_num_threads(32);
-    //#pragma omp parallel
+    #pragma omp parallel
     {
         vector<uint64_t> offtargetToggles(numOfftargetToggles);
         uint64_t* offtargetTogglesTail = offtargetToggles.data() + numOfftargetToggles - 1;
         /** For each candidate guide */
         // TODO: update to openMP > v2 (Use clang compiler)
-        //#pragma omp for
+        #pragma omp for
         for (int searchIdx = 0; searchIdx < querySignatures.size(); searchIdx++) {
 
             auto searchSignature = querySignatures[searchIdx];
