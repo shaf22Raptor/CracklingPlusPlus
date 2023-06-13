@@ -33,6 +33,8 @@ string signatureToSequence(uint64_t sig, uint64_t seqLen)
 
 int main(int argc, char** argv)
 {
+    auto startLoading = std::chrono::high_resolution_clock::now();
+
     if (argc < 4) {
         fprintf(stderr, "Usage: %s [issltable] [query file] [max distance] [score-threshold] [score-method]\n", argv[0]);
         exit(1);
@@ -196,6 +198,9 @@ int main(int argc, char** argv)
         }
     }
 
+    auto endLoading = std::chrono::high_resolution_clock::now();
+    auto startProcessing = std::chrono::high_resolution_clock::now();
+
     //TODO: rewrite
     /** Load query file (candidate guides)
      *      and prepare memory for calculated global scores
@@ -223,9 +228,9 @@ int main(int argc, char** argv)
     fclose(fp);
 
     /** Binary encode query sequences */
-#pragma omp parallel
+    #pragma omp parallel
     {
-#pragma omp for
+    #pragma omp for
         for (int i = 0; i < queryCount; i++) {
             char* ptr = &queryDataSet[i * seqLineLength];
             uint64_t signature = sequenceToSignature(ptr, 20);
@@ -234,7 +239,6 @@ int main(int argc, char** argv)
     }
 
     /** Begin scoring */
-    omp_set_num_threads(32);
     #pragma omp parallel
     {
         vector<uint64_t> offtargetToggles(numOfftargetToggles);
@@ -433,6 +437,20 @@ int main(int argc, char** argv)
             memset(offtargetToggles.data(), 0, sizeof(uint64_t) * offtargetToggles.size());
         }
     }
+
+    auto endProcessing = std::chrono::high_resolution_clock::now();
+    vector<std::chrono::nanoseconds> durations;
+    durations.push_back(endProcessing - startLoading);
+    durations.push_back(endProcessing - startProcessing);
+    durations.push_back(endLoading - startLoading);
+
+    for (const auto& duration : durations)
+    {
+        std::chrono::minutes minutes = std::chrono::duration_cast<std::chrono::minutes>(duration);
+        std::chrono::seconds seconds = std::chrono::duration_cast<std::chrono::seconds>(duration - minutes);
+        printf("%02ld:%02ld\t", minutes.count(), seconds.count());
+    }
+    printf("\n");
 
     /** Print global scores to stdout */
     for (size_t searchIdx = 0; searchIdx < querySignatures.size(); searchIdx++) {
