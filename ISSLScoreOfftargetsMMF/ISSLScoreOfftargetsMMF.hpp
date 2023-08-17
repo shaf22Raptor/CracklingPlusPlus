@@ -1,6 +1,7 @@
 #ifndef ISSLScoreOfftargetsMMFInclude
 #define ISSLScoreOfftargetsMMFInclude
 #include <atomic>
+#include <mutex>
 #include <filesystem>
 #include <string>
 #include <unordered_map>

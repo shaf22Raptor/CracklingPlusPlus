@@ -6,6 +6,7 @@
 #include <regex>
 #include <filesystem>
 #include <fstream>
+#include <boost/iostreams/device/mapped_file.hpp>
 #define FMT_HEADER_ONLY
 #include "../include/fmt/format.h"
 #include "../include/libpopcnt/libpopcnt.h"

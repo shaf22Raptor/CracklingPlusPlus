@@ -26,13 +26,13 @@ int main(int argc, char** argv)
     }
 
     auto startTime = std::chrono::steady_clock::now();
-    fs::path tempWorkingDir = fs::path(fs::temp_directory_path() / "Crackling-extractOfftargets");
+    fs::path tempWorkingDir = fs::path("/mnt/ssd1/Crackling-extractOfftargets");
     fs::create_directory(tempWorkingDir);
     std::atomic_ullong fileCounter = 0;
 
     std::cout << "Spliting input(s)" << std::endl;
     // Split each sequence to it's own file
-#pragma omp parallel for schedule(static,1)
+    #pragma omp parallel for schedule(static,1)
     for (int i = 2; i < argc; i++)
     {
         // Command line input
@@ -108,16 +108,19 @@ int main(int argc, char** argv)
     }
     std::cout << "Done" << std::endl;
 
-    std::cout << "Sorting intermediate files" << std::endl;
-    // Mulithread process each extact and sort
-#pragma omp parallel for schedule(static,1)
+    std::cout << "Identifying off-targets" << std::endl;
+    // Mulithread process each extacts off targets
+    std::atomic_ullong batchFileCounter = 0;
+    uint64_t offTargetBatchSize = 30000000;
+    #pragma omp parallel for schedule(static,1)
     for (int i = 0; i < fileCounter; i++)
     {
-        ofstream tempOutFile;
+        ofstream outFile;
         ifstream inFile;
         string inputLine;
-        vector<string> offTargets;
+        uint64_t offtargetsFound = 0;
         inFile.open((tempWorkingDir / fmt::format("{}.txt", i)).string(), std::ios::binary | std::ios::in);
+        outFile.open((tempWorkingDir / fmt::format("{}_batch.txt", batchFileCounter++)).string(), std::ios::binary | std::ios::out);
         for (inputLine; std::getline(inFile, inputLine);)
         {
             std::getline(inFile, inputLine);
@@ -125,24 +128,67 @@ int main(int argc, char** argv)
             // Add forward matches
             for (sregex_iterator regexItr(inputLine.begin(), inputLine.end(), fwdExp); regexItr != sregex_iterator(); regexItr++)
             {
-                offTargets.push_back((*regexItr)[1].str().substr(0, 20));
+                if (offtargetsFound < offTargetBatchSize)
+                {
+                    outFile << (*regexItr)[1].str().substr(0, 20) << "\n";
+                    ++offtargetsFound;
+                }
+                else 
+                {
+                    outFile.close();
+                    outFile.open((tempWorkingDir / fmt::format("{}_batch.txt", batchFileCounter++)).string(), std::ios::binary | std::ios::out);
+                    outFile << (*regexItr)[1].str().substr(0, 20) << "\n";
+                    offtargetsFound = 1;
+                }
             }
             // Add reverse matches
             for (sregex_iterator regexItr(inputLine.begin(), inputLine.end(), bwdExp); regexItr != sregex_iterator(); regexItr++)
             {
-                offTargets.push_back(rc((*regexItr)[1].str()).substr(0, 20));
+                if (offtargetsFound < offTargetBatchSize)
+                {
+                    outFile << rc((*regexItr)[1].str()).substr(0, 20) << "\n";
+                    ++offtargetsFound;
+                }
+                else 
+                {
+                    outFile.close();
+                    outFile.open((tempWorkingDir / fmt::format("{}_batch.txt", batchFileCounter++)).string(), std::ios::binary | std::ios::out);
+                    outFile << rc((*regexItr)[1].str()).substr(0, 20) << "\n";
+                    offtargetsFound = 1;
+                }
             }
         }
         inFile.close();
+        outFile.close();
         fs::remove((tempWorkingDir / fmt::format("{}.txt", i)).string());
+    }
+    std::cout << "Done" << std::endl;
+
+    std::cout << "Sorting batch files" << std::endl;
+    #pragma omp parallel for schedule(static,1)
+    for (int i = 0; i < batchFileCounter; i++)
+    {
+
+        std::vector<string> offTargets;
+        ifstream inFile;
+        ofstream outFile;
+        string inputLine;
+        inFile.open((tempWorkingDir / fmt::format("{}_batch.txt", i)).string(), std::ios::binary | std::ios::in);
+        offTargets.reserve(offTargetBatchSize);
+        while(std::getline(inFile, inputLine))
+        {
+            trim(inputLine);
+            offTargets.push_back(inputLine);
+        }
+        inFile.close();
         std::sort(offTargets.begin(), offTargets.end());
-        tempOutFile.open((tempWorkingDir / fmt::format("{}_sorted.txt", i)).string(), std::ios::binary | std::ios::out);
+        outFile.open((tempWorkingDir / fmt::format("{}_sorted.txt", i)).string(), std::ios::binary | std::ios::out);
         for (const string& s : offTargets)
         {
-            tempOutFile << s << "\n";
+            outFile << s << "\n";
         }
-        tempOutFile.close();
-
+        outFile.close();
+        fs::remove((tempWorkingDir / fmt::format("{}_batch.txt", i)).string());
     }
     std::cout << "Done" << std::endl;
 
@@ -168,7 +214,7 @@ int main(int argc, char** argv)
         #pragma omp parallel for schedule(static,1)
         for (int i = 0; i < threads; ++i)
         {
-            std::cout << "Merging thread " << i << std::endl;
+            // std::cout << "Merging thread " << i << std::endl;
 
             vector<string> fileNames;
             for (int j = i; j < fileCounter; j += threads)
@@ -180,7 +226,7 @@ int main(int argc, char** argv)
             vector<string> offTargets(fileNames.size());
             for (int j = 0; j < fileNames.size(); ++j)
             {
-                std::cout << fileNames[j] << std::endl;
+                // std::cout << fileNames[j] << std::endl;
                 sortedFiles[j].open(fileNames[j], std::ios::binary | std::ios::in);
                 std::getline(sortedFiles[j], offTargets[j]);
             }
@@ -206,7 +252,7 @@ int main(int argc, char** argv)
                 }
             }
 
-            std::cout << "Merging thread " << i << std::endl;
+            // std::cout << "Merging thread " << i << std::endl;
 
             ofstream mergedFile;
             mergedFile.open((tempWorkingDir / fmt::format("{}_merged.txt", i)).string(), std::ios::binary | std::ios::out);

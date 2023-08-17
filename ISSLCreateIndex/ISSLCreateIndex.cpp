@@ -4,12 +4,14 @@ using std::vector;
 using std::map;
 using std::pair;
 using std::string;
+using std::ofstream;
 using std::ifstream;
 using std::regex;
 using std::regex_iterator;
 using std::filesystem::path;
 using std::filesystem::exists;
 using std::filesystem::file_size;
+using std::filesystem::remove;
 
 const std::regex extractNumbers("[1234567890]+");
 const std::vector<uint8_t> nucleotideIndex{ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,3 };
@@ -369,22 +371,30 @@ int main(int argc, char** argv)
 
     uint64_t globalCount = 0;
     uint64_t offtargetsCount = 0;
-    vector<uint64_t> seqSignatures;
-    vector<uint32_t> seqSignaturesOccurrences;
+    // vector<uint64_t> seqSignatures;
+    // vector<uint32_t> seqSignaturesOccurrences;
 
     // Read off targets into memory
-    ifstream otInFile;
-    otInFile.open(argv[1], std::ios::in | std::ios::binary);
-    vector<char> entireDataSet(otFileSize);
-    otInFile.read(entireDataSet.data(), otFileSize);
-    otInFile.close();
+    // Does not work for extremely large files
+    // ifstream otInFile;
+    // otInFile.open(argv[1], std::ios::in | std::ios::binary);
+    // vector<char> entireDataSet(otFileSize);
+    // otInFile.read(entireDataSet.data(), otFileSize);
+    // otInFile.close();
+
+    boost::iostreams::mapped_file_source entireDataSet;
+    entireDataSet.open(argv[1]);
+
+    ofstream tempSeqSignatures;
+    ofstream tempSeqSignaturesOccurrences;
+    tempSeqSignatures.open(fmt::format("{}.tmp.1", argv[4]), std::ios::out | std::ios::binary);
+    tempSeqSignaturesOccurrences.open(fmt::format("{}.tmp.2", argv[4]), std::ios::out | std::ios::binary);
 
     uint64_t progressCount = 0;
     uint64_t offtargetId = 0;
-
     std::cout << "Counting occurrences..." << std::endl;
     while (progressCount < seqCount) {
-        char* ptr = &entireDataSet[progressCount * seqLineLength];
+        const char* ptr =  entireDataSet.data() + (progressCount * seqLineLength);
         uint64_t signature = sequenceToSignature(ptr);
         // check how many times the off-target appears
         // (assumed the list is sorted)
@@ -395,14 +405,25 @@ int main(int argc, char** argv)
                 std::cout << fmt::format("{}/{} : {}", (progressCount + occurrences), seqCount, offtargetsCount) << std::endl;
         }
 
-        seqSignatures.push_back(signature);
-        seqSignaturesOccurrences.push_back(occurrences);
+        tempSeqSignatures.write(reinterpret_cast<const char *>(&signature), sizeof(signature));
+        tempSeqSignaturesOccurrences.write(reinterpret_cast<const char *>(&occurrences), sizeof(occurrences));
+        // seqSignatures.push_back(signature);
+        // seqSignaturesOccurrences.push_back(occurrences);
         offtargetsCount++;
         if (progressCount % 10000 == 0)
             std::cout << fmt::format("{}/{} : {}", progressCount, seqCount, offtargetsCount) << std::endl;
         progressCount += occurrences;
     }
+    entireDataSet.close();
+    tempSeqSignatures.close();
+    tempSeqSignaturesOccurrences.close();
     std::cout << "Finished!" << std::endl;
+
+    boost::iostreams::mapped_file_source seqSignatures;
+    boost::iostreams::mapped_file_source seqSignaturesOccurrences;
+    seqSignatures.open(fmt::format("{}.tmp.1", argv[4]));
+    seqSignaturesOccurrences.open(fmt::format("{}.tmp.2", argv[4]));
+    uint64_t seqSignaturesCount = std::distance(reinterpret_cast<const uint64_t*>(seqSignatures.begin()), reinterpret_cast<const uint64_t*>(seqSignatures.end()));
 
     std::cout << "Writing index header to file..." << std::endl;
     std::ofstream isslIndex;
@@ -413,7 +434,7 @@ int main(int argc, char** argv)
     std::cout << "Finished!" << std::endl;
 
     std::cout << "Writing offtargets to file..." << std::endl;
-    isslIndex.write(reinterpret_cast<char*>(seqSignatures.data()), sizeof(uint64_t) * seqSignatures.size());
+    isslIndex.write(seqSignatures.data(), seqSignatures.size());
     std::cout << "Finished!" << std::endl;
 
     std::cout << "Writing slice masks to file..." << std::endl;
@@ -431,20 +452,19 @@ int main(int argc, char** argv)
         std::cout << fmt::format("\tBuilding slice list {}", i+1) << std::endl;
         size_t sliceListSize = 1ULL << (sliceMasks[i].size() * 2);
         vector<vector<uint64_t>> sliceList(sliceListSize);
-        uint32_t signatureId = 0;
-        for (uint64_t signature : seqSignatures) {
-            uint32_t occurrences = seqSignaturesOccurrences[signatureId];
+        for (uint32_t signatureId = 0; signatureId < seqSignaturesCount; signatureId++) {
+            const uint64_t* signature = reinterpret_cast<const uint64_t*>(seqSignatures.data()) + signatureId;
+            const uint32_t* occurrences = reinterpret_cast<const uint32_t*>(seqSignaturesOccurrences.data()) + signatureId;
             uint32_t sliceVal = 0ULL;
             for (size_t j = 0; j < sliceMasks[i].size(); j++)
             {
-                sliceVal |= ((signature >> (sliceMasks[i][j] * 2)) & 3ULL) << (j * 2);
+                sliceVal |= ((*signature >> (sliceMasks[i][j] * 2)) & 3ULL) << (j * 2);
             }
             // seqSigIdVal represnets the sequence signature ID and number of occurrences of the associated sequence.
             // (((uint64_t)occurrences) << 32), the most significant 32 bits is the count of the occurrences.
             // (uint64_t)signatureId, the index of the sequence in `seqSignatures`
-            uint64_t seqSigIdVal = (static_cast<uint64_t>(occurrences) << 32) | static_cast<uint64_t>(signatureId);
+            uint64_t seqSigIdVal = (static_cast<uint64_t>(*occurrences) << 32) | static_cast<uint64_t>(signatureId);
             sliceList[sliceVal].push_back(seqSigIdVal);
-            signatureId++;
         }
         std::cout << "\tFinished!" << std::endl;
 
@@ -462,6 +482,11 @@ int main(int argc, char** argv)
         isslIndex.close();
         std::cout << "\tFinished!" << std::endl;
     }
+    seqSignatures.close();
+    seqSignaturesOccurrences.close();
+    remove(fmt::format("{}.tmp.1", argv[4]));
+    remove(fmt::format("{}.tmp.2", argv[4]));
+
     std::cout << "Finished!" << std::endl;
     std::cout << "Done" << std::endl;
     return 0;
