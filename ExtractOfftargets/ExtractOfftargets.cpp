@@ -21,12 +21,12 @@ int main(int argc, char** argv)
     // Check number of args
     if (argc < 3)
     {
-        std::cerr << fmt::format("Usage: {} <output-file>  {<input-file-1> <input-file-2> ... <input-file-n> | <input-dir>}\n", argv[0]) << std::endl;
+        std::cerr << fmt::format("Usage: {} <output-file>  {{<input-file-1> <input-file-2> ... <input-file-n> | <input-dir>}}\n", argv[0]) << std::endl;
         exit(1);
     }
 
     auto startTime = std::chrono::steady_clock::now();
-    fs::path tempWorkingDir = fs::path("/mnt/ssd1/Crackling-extractOfftargets");
+    fs::path tempWorkingDir = fs::temp_directory_path() / "Crackling-extractOfftargets";
     fs::create_directory(tempWorkingDir);
     std::atomic_ullong fileCounter = 0;
 
@@ -41,13 +41,11 @@ int main(int argc, char** argv)
         // File 
         if (fs::is_regular_file(input))
         {
-            std::cout << "file" << std::endl;
             filesToProcess.push_back(input.string());
         }
         // Directory
         else if (fs::is_directory(input))
         {
-            std::cout << "dir" << std::endl;
             for (const fs::path& file : fs::directory_iterator(input))
             {
                 filesToProcess.push_back(file.string());
@@ -60,8 +58,6 @@ int main(int argc, char** argv)
             std::cout << errorMsg << std::endl;
             continue;
         }
-
-        std::cout << filesToProcess.size() << std::endl;
 
         for (const string& file : filesToProcess)
         {
@@ -192,7 +188,7 @@ int main(int argc, char** argv)
     }
     std::cout << "Done" << std::endl;
 
-    std::cout << "Merging pass 1" << std::endl;
+    std::cout << "Merging (Parrallel)" << std::endl;
     // Merge sorted files
     int threads = 16;
     vector<string> filesToMerge;
@@ -214,7 +210,6 @@ int main(int argc, char** argv)
         #pragma omp parallel for schedule(static,1)
         for (int i = 0; i < threads; ++i)
         {
-            // std::cout << "Merging thread " << i << std::endl;
 
             vector<string> fileNames;
             for (int j = i; j < fileCounter; j += threads)
@@ -226,7 +221,6 @@ int main(int argc, char** argv)
             vector<string> offTargets(fileNames.size());
             for (int j = 0; j < fileNames.size(); ++j)
             {
-                // std::cout << fileNames[j] << std::endl;
                 sortedFiles[j].open(fileNames[j], std::ios::binary | std::ios::in);
                 std::getline(sortedFiles[j], offTargets[j]);
             }
@@ -252,13 +246,10 @@ int main(int argc, char** argv)
                 }
             }
 
-            // std::cout << "Merging thread " << i << std::endl;
-
             ofstream mergedFile;
             mergedFile.open((tempWorkingDir / fmt::format("{}_merged.txt", i)).string(), std::ios::binary | std::ios::out);
             while (sortedFiles.size() > 1)
             {
-                
                 // Find index of lowest off-target
                 int lowest = 0;
                 for (int j = 0; j < sortedFiles.size(); ++j)
@@ -295,7 +286,7 @@ int main(int argc, char** argv)
     
     std::cout << "Done" << std::endl;
 
-    std::cout << "Merging pass 2" << std::endl;
+    std::cout << "Merging (Serial)" << std::endl;
 
     vector<ifstream> mergedFiles(filesToMerge.size());
     vector<string> offTargets(filesToMerge.size());
