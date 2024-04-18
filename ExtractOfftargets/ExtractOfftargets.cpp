@@ -28,16 +28,14 @@ int main(int argc, char** argv)
     auto startTime = std::chrono::steady_clock::now();
     fs::path tempWorkingDir = fs::temp_directory_path() / "Crackling-extractOfftargets";
     fs::create_directory(tempWorkingDir);
-    std::atomic_ullong fileCounter = 0;
+    std::atomic_ullong inputFileCounter = 0;
+    vector<string> filesToProcess;
 
-    std::cout << "Spliting input(s)" << std::endl;
-    // Split each sequence to it's own file
-    #pragma omp parallel for schedule(static,1)
     for (int i = 2; i < argc; i++)
     {
         // Command line input
         fs::path input(argv[i]);
-        vector<string> filesToProcess;
+
         // File 
         if (fs::is_regular_file(input))
         {
@@ -54,54 +52,58 @@ int main(int argc, char** argv)
         // Skip otherwise
         else
         {
-            string errorMsg = fmt::format("Error processing: {}\nSkipping entry, Please check the path and try again.");
+            string errorMsg = fmt::format("Error processing: {}\nSkipping entry, Please check the path and try again.", argv[i]);
             std::cout << errorMsg << std::endl;
             continue;
         }
+    }
 
-        for (const string& file : filesToProcess)
+    std::cout << "Spliting input(s)" << std::endl;
+    // Split each sequence to it's own file
+    #pragma omp parallel for schedule(static,1)
+    for (const string& file : filesToProcess)
+    {
+        ofstream tempOutFile;
+        ifstream inFile;
+        string inputLine;
+        inFile.open(file, std::ios::binary | std::ios::in);
+        std::getline(inFile, inputLine);
+        // file is Fasta formatted
+        if (inputLine[0] == '>')
         {
-            ofstream tempOutFile;
-            ifstream inFile;
-            string inputLine;
-            inFile.open(file, std::ios::binary | std::ios::in);
-            std::getline(inFile, inputLine);
-            // file is Fasta formatted
-            if (inputLine[0] == '>')
+            // Remove all line breaks between sequences segments
+            tempOutFile.open((tempWorkingDir / fmt::format("{}.txt", inputFileCounter++)).string(), std::ios::binary | std::ios::out);
+            while (std::getline(inFile, inputLine))
             {
-                // Remove all line breaks between sequences segments
-                tempOutFile.open((tempWorkingDir / fmt::format("{}.txt", fileCounter++)).string(), std::ios::binary | std::ios::out);
-                for (inputLine; std::getline(inFile, inputLine);)
+                trim(inputLine);
+                to_upper(inputLine);
+                if (inputLine[0] == '>')
                 {
-                    trim(inputLine);
-                    to_upper(inputLine);
-                    if (inputLine[0] == '>')
-                    {
-                        tempOutFile.close();
-                        tempOutFile.open((tempWorkingDir / fmt::format("{}.txt", fileCounter++)).string(), std::ios::binary | std::ios::out);
-                    }
-                    else
-                    {
-                        tempOutFile << inputLine;
-                    }
+                    tempOutFile.close();
+                    tempOutFile.open((tempWorkingDir / fmt::format("{}.txt", inputFileCounter++)).string(), std::ios::binary | std::ios::out);
+                }
+                else
+                {
+                    tempOutFile << inputLine;
                 }
             }
-            // file is plain text, assume one sequence per line
-            else
-            {
-                do
-                {
-                    tempOutFile.open((tempWorkingDir / fmt::format("{}.txt", fileCounter++)).string(), std::ios::binary | std::ios::out);
-                    trim(inputLine);
-                    to_upper(inputLine);
-                    tempOutFile << inputLine;
-                    tempOutFile.close();
-                } while (std::getline(inFile, inputLine));
-            }
-            tempOutFile.close();
-            inFile.close();
         }
+        // file is plain text, assume one sequence per line
+        else
+        {
+            do
+            {
+                tempOutFile.open((tempWorkingDir / fmt::format("{}.txt", inputFileCounter++)).string(), std::ios::binary | std::ios::out);
+                trim(inputLine);
+                to_upper(inputLine);
+                tempOutFile << inputLine;
+                tempOutFile.close();
+            } while (std::getline(inFile, inputLine));
+        }
+        tempOutFile.close();
+        inFile.close();
     }
+
     std::cout << "Done" << std::endl;
 
     std::cout << "Identifying off-targets" << std::endl;
@@ -109,7 +111,7 @@ int main(int argc, char** argv)
     std::atomic_ullong batchFileCounter = 0;
     uint64_t offTargetBatchSize = 30000000;
     #pragma omp parallel for schedule(static,1)
-    for (int i = 0; i < fileCounter; i++)
+    for (int i = 0; i < inputFileCounter; i++)
     {
         ofstream outFile;
         ifstream inFile;
@@ -119,37 +121,39 @@ int main(int argc, char** argv)
         outFile.open((tempWorkingDir / fmt::format("{}_batch.txt", batchFileCounter++)).string(), std::ios::binary | std::ios::out);
         for (inputLine; std::getline(inFile, inputLine);)
         {
-            std::getline(inFile, inputLine);
+            // std::getline(inFile, inputLine);
             trim(inputLine);
             // Add forward matches
             for (sregex_iterator regexItr(inputLine.begin(), inputLine.end(), fwdExp); regexItr != sregex_iterator(); regexItr++)
             {
+                smatch m = *regexItr;
                 if (offtargetsFound < offTargetBatchSize)
                 {
-                    outFile << (*regexItr)[1].str().substr(0, 20) << "\n";
+                    outFile << m[1].str().substr(0, 20) << "\n";
                     ++offtargetsFound;
                 }
                 else 
                 {
                     outFile.close();
                     outFile.open((tempWorkingDir / fmt::format("{}_batch.txt", batchFileCounter++)).string(), std::ios::binary | std::ios::out);
-                    outFile << (*regexItr)[1].str().substr(0, 20) << "\n";
+                    outFile << m[1].str().substr(0, 20) << "\n";
                     offtargetsFound = 1;
                 }
             }
             // Add reverse matches
             for (sregex_iterator regexItr(inputLine.begin(), inputLine.end(), bwdExp); regexItr != sregex_iterator(); regexItr++)
             {
+                smatch m = *regexItr;
                 if (offtargetsFound < offTargetBatchSize)
                 {
-                    outFile << rc((*regexItr)[1].str()).substr(0, 20) << "\n";
+                    outFile << rc(m[1].str()).substr(0, 20) << "\n";
                     ++offtargetsFound;
                 }
                 else 
                 {
                     outFile.close();
                     outFile.open((tempWorkingDir / fmt::format("{}_batch.txt", batchFileCounter++)).string(), std::ios::binary | std::ios::out);
-                    outFile << rc((*regexItr)[1].str()).substr(0, 20) << "\n";
+                    outFile << rc(m[1].str()).substr(0, 20) << "\n";
                     offtargetsFound = 1;
                 }
             }
@@ -192,9 +196,9 @@ int main(int argc, char** argv)
     // Merge sorted files
     int threads = 16;
     vector<string> filesToMerge;
-    if (fileCounter < threads * 2)
+    if (batchFileCounter < threads * 2)
     {
-        for (int i = 0; i < fileCounter; ++i)
+        for (int i = 0; i < batchFileCounter; ++i)
         {
             filesToMerge.push_back((tempWorkingDir / fmt::format("{}_sorted.txt", i)).string());
         }
@@ -205,14 +209,14 @@ int main(int argc, char** argv)
         {
             filesToMerge.push_back((tempWorkingDir / fmt::format("{}_merged.txt", i)).string());
         }
-        int batchSize = ceil(fileCounter / (threads * 1.0));
+        int batchSize = ceil(batchFileCounter / (threads * 1.0));
 
         #pragma omp parallel for schedule(static,1)
         for (int i = 0; i < threads; ++i)
         {
 
             vector<string> fileNames;
-            for (int j = i; j < fileCounter; j += threads)
+            for (int j = i; j < batchFileCounter; j += threads)
             {
                 fileNames.push_back((tempWorkingDir / fmt::format("{}_sorted.txt", j)).string());
             }
@@ -274,6 +278,7 @@ int main(int argc, char** argv)
                 }
             }
 
+            mergedFile << offTargets[0] << "\n";
             while (std::getline(sortedFiles[0], offTargets[0]))
             {
                 mergedFile << offTargets[0] << "\n";
@@ -283,7 +288,6 @@ int main(int argc, char** argv)
             mergedFile.close();
         }
     }
-    
     std::cout << "Done" << std::endl;
 
     std::cout << "Merging (Serial)" << std::endl;
@@ -341,6 +345,7 @@ int main(int argc, char** argv)
         }
     }
 
+    finalOutput << offTargets[0] << "\n";
     while (std::getline(mergedFiles[0], offTargets[0]))
     {
         finalOutput << offTargets[0] << "\n";
