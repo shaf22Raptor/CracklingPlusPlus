@@ -5,19 +5,18 @@ Rapid Whole-Genome Identification of High Quality CRISPR Guide RNAs with the Cra
 
 ## Preamble
 
-> The design of CRISPR-Cas9 guide RNAs is not trivial. In particular, evaluating the risk of off-target 
-modifications is computationally expensive: a brute-force approach would require comparing each candidate 
-guide with every possible CRISPR target site in the genome. In a mammalian genome, this means hundreds of 
-millions of comparisons for each guide. We have previously introduced Crackling, a gRNA design tool that 
-relies on Inverted Signature Slice Lists (ISSL) to accelerate off-target scoring by only considering sites
-with partial matches (a slice) with the candidate guide. This produced an order of magnitude speed up whilst 
-still maintaining scoring accuracy. Here, we present a complete reimplementation of Crackling in C++ and 
-discuss further improvements. Using longer slices means fewer comparisons, and we show it is possible to 
-construct a collection of slices that still preserve an exact off-target score. We have benchmarked two ISSL
-configurations with the new version of Crackling and report a 15-22 times speed up over the default ISSL 
-configuration. This increased performance comes at the cost of increased memory usage, but this can be offset
-by using memory mapped files, and we show that this has no significant impact on performance. 
-CracklingPlusPlus is available at https://github.com/bmds-lab/CracklingPlusPlus under the Berkeley Software 
+> The design of CRISPR-Cas9 guide RNAs is not trivial. In particular, it is crucial to evaluate 
+the risk of unintended, off-target modifications, but this is computationally expensive. To 
+avoid a brute-force approach where each guide RNA is compared against every possible CRISPR 
+target site in the genome, we previously introduced Crackling, a guide RNA design tool that 
+relies on exact matches over 4bp subsequences to approximate a neighbourhood and accelerate 
+off-target scoring by greatly reducing the search space. While this was faster than other 
+existing tools, it still generates large neighbourhoods. Here, we aim to further reduce the 
+search space by requiring more, now non-contiguous, exact matches. The new implementation, 
+called Crackling++, is benchmarked against our initial approach and other off-target evaluation 
+tools. We show that it provides the fastest way to assess candidate guide RNAs. By using memorymapped 
+files, it also scales to the largest genomes. 
+Crackling++ is available at https://github.com/bmds-lab/CracklingPlusPlus under the Berkeley Software 
 Distribution (BSD) 3-Clause license.
 
 ## Dependencies
