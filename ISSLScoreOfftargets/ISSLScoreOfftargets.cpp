@@ -263,19 +263,9 @@ int main(int argc, char** argv)
         }
     }
 
-    uint64_t GtotalFalseSites = 0;
-    uint64_t GtotalTrueSites = 0;
-    uint64_t GuniqueFalseSites = 0;
-    uint64_t GuniqueTrueSites = 0;
-    std::mutex countMutex;
-
     /** Begin scoring */
     #pragma omp parallel
     {
-        uint64_t totalFalseSites = 0;
-        uint64_t totalTrueSites = 0;
-        uint64_t uniqueFalseSites = 0;
-        uint64_t uniqueTrueSites = 0;
         vector<uint64_t> offtargetToggles(numOfftargetToggles);
         uint64_t* offtargetTogglesTail = offtargetToggles.data() + numOfftargetToggles - 1;
         /** For each candidate guide */
@@ -320,19 +310,6 @@ int main(int argc, char** argv)
                     uint64_t* ptrOfftargetFlag = (offtargetTogglesTail - (signatureId / 64));
                     seenOfftargetAlready = (*ptrOfftargetFlag >> (signatureId % 64)) & 1ULL;
 
-                    uint64_t xoredSignatures = searchSignature ^ offtargets[signatureId];
-                    uint64_t evenBits = xoredSignatures & 0xAAAAAAAAAAAAAAAAULL;
-                    uint64_t oddBits = xoredSignatures & 0x5555555555555555ULL;
-                    uint64_t mismatches = (evenBits >> 1) | oddBits;
-                    uint64_t dist = popcount64(mismatches);
-
-                    if (dist >= 0 && dist <= 4) {
-                        totalTrueSites++;
-                    }
-                    else {
-                        totalFalseSites++;
-                    }
-
                     if (!seenOfftargetAlready) {
                         *ptrOfftargetFlag |= (1ULL << (signatureId % 64));
 
@@ -362,19 +339,11 @@ int main(int argc, char** argv)
                             *
                             *   popcount(mismatches):   4
                             */
-                        // uint64_t xoredSignatures = searchSignature ^ offtargets[signatureId];
-                        // uint64_t evenBits = xoredSignatures & 0xAAAAAAAAAAAAAAAAULL;
-                        // uint64_t oddBits = xoredSignatures & 0x5555555555555555ULL;
-                        // uint64_t mismatches = (evenBits >> 1) | oddBits;
-                        // uint64_t dist = popcount64(mismatches);
-                        if (dist >= 0 && dist <= 4) {
-                            uniqueTrueSites++;
-                        }
-                        else 
-                        {
-                            uniqueFalseSites++;
-                        }
-
+                        uint64_t xoredSignatures = searchSignature ^ offtargets[signatureId];
+                        uint64_t evenBits = xoredSignatures & 0xAAAAAAAAAAAAAAAAULL;
+                        uint64_t oddBits = xoredSignatures & 0x5555555555555555ULL;
+                        uint64_t mismatches = (evenBits >> 1) | oddBits;
+                        uint64_t dist = popcount64(mismatches);
 
                         if (dist >= 0 && dist <= 4) {
                             // Begin calculating MIT score
@@ -492,29 +461,7 @@ int main(int argc, char** argv)
 
             memset(offtargetToggles.data(), 0, sizeof(uint64_t) * offtargetToggles.size());
         }
-        countMutex.lock();
-        GtotalFalseSites += totalFalseSites;
-        GtotalTrueSites += totalTrueSites;
-        GuniqueFalseSites += uniqueFalseSites;
-        GuniqueTrueSites += uniqueTrueSites;
-        countMutex.unlock();
     }
-
-    auto endProcessing = std::chrono::high_resolution_clock::now();
-    vector<std::chrono::nanoseconds> durations;
-    durations.push_back(endProcessing - startLoading);
-    durations.push_back(endProcessing - startProcessing);
-    durations.push_back(endLoading - startLoading);
-
-    for (const auto& duration : durations)
-    {
-        std::chrono::minutes minutes = std::chrono::duration_cast<std::chrono::minutes>(duration);
-        std::chrono::seconds seconds = std::chrono::duration_cast<std::chrono::seconds>(duration - minutes);
-        printf("%02ld:%02ld\t", minutes.count(), seconds.count());
-    }
-    printf("\n");
-    std::cout << GuniqueTrueSites << "\t" << GuniqueFalseSites << "\t" << GtotalTrueSites << "\t" << GtotalFalseSites << std::endl;
-
 
     /** Print global scores to stdout */
     for (size_t searchIdx = 0; searchIdx < querySignatures.size(); searchIdx++) {
