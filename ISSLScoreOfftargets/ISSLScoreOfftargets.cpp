@@ -1,4 +1,12 @@
 #include "ISSLScoreOfftargets.hpp"
+#include "manprof.hpp"
+#ifdef MANPROF_ENABLE
+std::FILE* g_profileLogFile = nullptr;
+std::chrono::steady_clock::time_point g_progStart{};
+#endif
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 using std::cout;
 using std::endl;
@@ -32,10 +40,32 @@ string signatureToSequence(uint64_t sig, uint64_t seqLen)
 
 int main(int argc, char** argv)
 {
+    g_progStart = std::chrono::steady_clock::now();
+
+    // Default log file name
+    const char* traceFileName = "profile_trace.txt";
+    if (argc >= 7) {
+        traceFileName = argv[6];
+    }
+
+    g_profileLogFile = std::fopen(traceFileName, "w");
+    if (!g_profileLogFile) {
+        fprintf(stderr, "Error: could not open trace log file '%s' for writing\n", traceFileName);
+        exit(1);
+    }
+
+    static char s_traceBuf[1 << 20]; // 1 MB
+    setvbuf(g_profileLogFile, s_traceBuf, _IOFBF, sizeof(s_traceBuf));
+
+    TRACE_EVT("PROGRAM", "START");
+    std::cout << "Trace output will be written to: " << traceFileName << std::endl;
+
     auto startLoading = std::chrono::high_resolution_clock::now();
 
-    if (argc < 4) {
-        fprintf(stderr, "Usage: %s [issltable] [query file] [max distance] [score-threshold] [score-method]\n", argv[0]);
+    if (argc < 6) {
+        fprintf(stderr,
+            "Usage: %s [issltable] [query file] [max distance] [score-threshold] [score-method] [optional-tracefile]\n",
+            argv[0]);
         exit(1);
     }
 
@@ -175,8 +205,6 @@ int main(int argc, char** argv)
     /** End reading the index */
     fclose(isslFp);
 
-
-
     /** Prevent assessing an off-target site for multiple slices
      *
      *      Create enough 1-bit "seen" flags for the off-targets
@@ -253,26 +281,28 @@ int main(int argc, char** argv)
     fclose(fp);
 
     /** Binary encode query sequences */
-    #pragma omp parallel
+    TRACE_EVT("Sequence:ToSig", "ENTER");
+#pragma omp parallel
     {
-    #pragma omp for
+#pragma omp for
         for (int i = 0; i < queryCount; i++) {
             char* ptr = &queryDataSet[i * seqLineLength];
             uint64_t signature = sequenceToSignature(ptr, 20);
             querySignatures[i] = signature;
         }
     }
+    TRACE_EVT("Sequence:ToSig", "EXIT");
 
     /** Begin scoring */
-    #pragma omp parallel
+#pragma omp parallel
     {
         vector<uint64_t> offtargetToggles(numOfftargetToggles);
         uint64_t* offtargetTogglesTail = offtargetToggles.data() + numOfftargetToggles - 1;
-        /** For each candidate guide */
-        // TODO: update to openMP > v2 (Use clang compiler)
+
         #pragma omp for
         for (int searchIdx = 0; searchIdx < querySignatures.size(); searchIdx++) {
 
+            TRACE_EVT("Score:guide-iteration", "ENTER", searchIdx);
             auto searchSignature = querySignatures[searchIdx];
 
             /** Global scores */
@@ -300,6 +330,7 @@ int main(int argc, char** argv)
                 uint64_t* sliceOffset = sliceList[searchSlice];
 
                 /** For each off-target signature in slice */
+                TRACE_EVT("Score:slice", "ENTER", searchIdx, (int)i);
                 for (size_t j = 0; j < signaturesInSlice; j++) {
                     auto signatureWithOccurrencesAndId = sliceOffset[j];
                     auto signatureId = signatureWithOccurrencesAndId & 0xFFFFFFFFULL;
@@ -451,7 +482,9 @@ int main(int argc, char** argv)
                             }
                         }
                     }
+                    
                 }
+                TRACE_EVT("Score:slice", "EXIT", searchIdx, (int)i);
                 if (!checkNextSlice)
                     break;
                 sliceLimitOffset += 1ULL << (sliceMasks[i].size() * 2);
@@ -460,8 +493,29 @@ int main(int argc, char** argv)
             querySignatureCfdScores[searchIdx] = 10000.0 / (100.0 + totScoreCfd);
 
             memset(offtargetToggles.data(), 0, sizeof(uint64_t) * offtargetToggles.size());
+            TRACE_EVT("Score:guide-iteration", "EXIT", searchIdx);
         }
     }
+
+    TRACE_EVT("PROGRAM", "END");
+
+    // Measure total elapsed time
+    auto progEnd = std::chrono::steady_clock::now();
+    auto elapsedUs = std::chrono::duration_cast<std::chrono::microseconds>(progEnd - g_progStart).count();
+    double elapsedSec = static_cast<double>(elapsedUs) / 1e6;
+
+    // Write summary to trace file
+    if (g_profileLogFile) {
+        std::fprintf(g_profileLogFile,
+            "TOTAL EXECUTION TIME: %.3f seconds (%" PRIu64 " microseconds)\n",
+            elapsedSec, static_cast<uint64_t>(elapsedUs));
+        std::fflush(g_profileLogFile);
+        std::fclose(g_profileLogFile);
+        g_profileLogFile = nullptr;
+    }
+
+    // Also print to console
+    std::cout << "Total execution time: " << elapsedSec << " seconds" << std::endl;
 
     /** Print global scores to stdout */
     for (size_t searchIdx = 0; searchIdx < querySignatures.size(); searchIdx++) {
@@ -478,5 +532,5 @@ int main(int argc, char** argv)
             printf("-1\n");
 
     }
-
+    return 0;
 }

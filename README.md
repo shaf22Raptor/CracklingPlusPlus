@@ -129,12 +129,20 @@ For example:
 ```bash
 ISSLCreateIndex ~/genomes/mouse_offtargets.txt ~/CracklingPlusPlus/sample/slice4-5.txt 20 ~/genomes/mouse_indexed.issl
 ```
+
+Running scoring algorithm in Windows
+```bash
+.\ISSLScoreOfftargets.exe ..\..\..\TestData\non\nonISSL.issl ..\..\..\TestData\non\non_offtargets.txt 4 0.1 mit
+```
+
 ## Running CracklingPlusPlus
 Please ensure all of the above steps have been completed before running the program. 
 To run the program simply fill out the provided `config.ini` in the samples folder and call the program as follows:
 
 ```bash
 CracklingPlusPlus <config-file>
+
+## Running 
 ```
 
 

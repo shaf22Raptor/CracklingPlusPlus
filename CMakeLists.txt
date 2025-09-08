@@ -9,9 +9,23 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Optimisation flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
+# Optimisation and debug info for profiling (cross-platform)
+if (MSVC)
+  # Compiler
+  set(CMAKE_CXX_FLAGS_RELEASE
+      "${CMAKE_CXX_FLAGS_RELEASE} /O2 /Zi /Zo /Oy- /Ob1 /FS /DNDEBUG")
+
+  # Linker (EXE)
+  set(CMAKE_EXE_LINKER_FLAGS_RELEASE
+      "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /DEBUG:FULL /INCREMENTAL:NO /OPT:NOICF /OPT:NOREF")
+
+  # Linker (DLL)
+  set(CMAKE_SHARED_LINKER_FLAGS_RELEASE
+      "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /DEBUG:FULL /INCREMENTAL:NO /OPT:NOICF /OPT:NOREF")
+
+  # Ensure no LTCG/IPO at CMake level
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE OFF)
+endif()
 
 # Add library subdirectory
 add_subdirectory (${CMAKE_SOURCE_DIR}/lib)
@@ -47,6 +61,10 @@ add_subdirectory (${CMAKE_SOURCE_DIR}/ISSLCreateIndex)
 # Added ISSLScoreOfftargets subdirectory
 add_subdirectory (${CMAKE_SOURCE_DIR}/ISSLScoreOfftargets)
 
+target_include_directories(ISSLScoreOfftargets PRIVATE
+    ${CMAKE_SOURCE_DIR}/third_party/cvmarkers
+)
+
 # Added ISSLScoreOfftargetsMMF subdirectory
 add_subdirectory (${CMAKE_SOURCE_DIR}/ISSLScoreOfftargetsMMF)
 
@@ -55,6 +73,8 @@ add_subdirectory (${CMAKE_SOURCE_DIR}/ExtractOfftargets)
 
 # Add tests subdirectory
 # add_subdirectory (${CMAKE_SOURCE_DIR}/tests)
+
+target_compile_definitions(ISSLScoreOfftargets PRIVATE MANPROF_ENABLE)
 
 # TODO: Sort out testing data in single location
 # Copy testing data
