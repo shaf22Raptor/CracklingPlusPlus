@@ -128,6 +128,39 @@ int main(int argc, char** argv)
         exit(1);
     }
 
+    if (g_profileLogFile) {
+        auto now   = std::chrono::system_clock::now();
+        std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+
+        // Thread-safe localtime: localtime_s on Windows, localtime_r elsewhere
+        std::tm tm_buf{};
+        #ifdef _WIN32
+            localtime_s(&tm_buf, &now_c);
+        #else
+            localtime_r(&now_c, &tm_buf);
+        #endif
+
+        // Format "YYYY-MM-DD HH:MM:SS"
+        char ts_base[32];
+        std::strftime(ts_base, sizeof(ts_base), "%F %T", &tm_buf);
+
+        // Milliseconds
+        auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    now.time_since_epoch()) % 1000;
+
+        // Final "YYYY-MM-DD HH:MM:SS.mmm"
+        char ts_full[40];
+        std::snprintf(ts_full, sizeof(ts_full), "%s.%03lld",
+                    ts_base, static_cast<long long>(ms.count()));
+
+        // Write to file and flush
+        std::fprintf(g_profileLogFile, "Beginning Program Execution, %s\n", ts_full);
+        std::fflush(g_profileLogFile);
+
+        // Echo to terminal
+        std::cout << "Beginning program execution " << ts_full << std::endl;
+    }
+
     /** The maximum number of mismatches */
     int maxDist = atoi(argv[3]);
 
