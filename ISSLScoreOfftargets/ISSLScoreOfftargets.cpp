@@ -30,6 +30,26 @@ std::chrono::steady_clock::time_point g_progStart{};
 #include "cl_seqsig.hpp"
 #endif
 
+// === Add: OpenCL scoring compile switch ======================================
+#ifndef USE_OPENCL_SCORING
+#define USE_OPENCL_SCORING 0   // set to 1 to enable GPU scoring path
+#endif
+#if USE_OPENCL_SCORING
+#include "cl_scoring.hpp"
+#endif
+// ============================================================================
+
+// Small cross-platform error helper (works without OpenCL too)
+static inline void die_if(bool cond, const char* msg) {
+    if (cond) {
+        std::fprintf(stderr, "Fatal: %s\n", msg);
+        std::fflush(stderr);
+        std::exit(1);
+    }
+}
+
+
+
 struct alignas(64) ProfStats {
     // Times in nanoseconds to keep addition cheap & precise
     uint64_t seq_to_sig_ns = 0;
@@ -111,7 +131,7 @@ int main(int argc, char** argv)
     "SAMPLED_OUTER_ITER_AVG_MS,0,\n"
     "SAMPLED_INNER_LOOP_AVG_MS,0,\n"
     "SAMPLED_SLICE_LOOP_AVG_MS,0,\n"
-);
+    );
 
     static char s_traceBuf[1 << 20]; // 1 MB
     setvbuf(g_profileLogFile, s_traceBuf, _IOFBF, sizeof(s_traceBuf));
@@ -432,275 +452,308 @@ int main(int argc, char** argv)
         std::cout << "ENTERING_SCORING_SECTION at " << ts_full << std::endl;
     }
 
-    /** Begin scoring */
+    #if USE_OPENCL_SCORING
+        ScoringIndexMeta clMeta{};
+        clMeta.offtargetsCount      = offtargetsCount;
+        clMeta.seqLength            = seqLength;
+        clMeta.sliceCount           = sliceCount;
+        clMeta.pOfftargets          = offtargets.data();
+        clMeta.pAllSignatures       = allSignatures.data();
+        clMeta.pAllSliceListSizes   = allSlicelistSizes.data();
+        // The rest (mask/key tables) will be set later.
+
+        (void)init_scoring_cl(clMeta);  // stub: returns true, no side-effects yet
+    #endif
+
     auto t_score_start = std::chrono::steady_clock::now();
-#pragma omp parallel
-    {
-        ProfStats local{};
-        std::minstd_rand rng((unsigned)omp_get_thread_num() + 1234567u);
+    bool usedGpu = false;
+    #if USE_OPENCL_SCORING
+        // Try GPU once (stub returns false so CPU path runs as before)
+        usedGpu = score_batch_cl(
+            /*querySigs*/               querySignatures.data(),
+            /*guideCount*/              querySignatures.size(),
+            /*outMit*/                  calcMit ? querySignatureMitScores.data() : nullptr,
+            /*outCfd*/                  calcCfd ? querySignatureCfdScores.data() : nullptr,
+            /*method*/                  scoreMethod,
+            /*threshold*/               threshold,
+            /*seqLength*/               seqLength
+        );
+    #endif
 
-        vector<uint64_t> offtargetToggles(numOfftargetToggles);
-        uint64_t* offtargetTogglesTail = offtargetToggles.data() + numOfftargetToggles - 1;
+    /** Begin scoring */
+    if (!usedGpu) {
+        #pragma omp parallel
+            {
+                ProfStats local{};
+                std::minstd_rand rng((unsigned)omp_get_thread_num() + 1234567u);
 
-        auto t_score_thread_start = std::chrono::steady_clock::now();
+                vector<uint64_t> offtargetToggles(numOfftargetToggles);
+                uint64_t* offtargetTogglesTail = offtargetToggles.data() + numOfftargetToggles - 1;
 
-        #pragma omp for
-        for (int searchIdx = 0; searchIdx < querySignatures.size(); searchIdx++) {
-            // -------- sampling decision for per-loop timings ----------
-            bool do_sample =
-            #if MANPROF_ENABLE_LOOP_SAMPLING
-                        (searchIdx % MANPROF_SAMPLE_PERIOD == 0);
-            #else
-                        false;
-            #endif
-        // ----------------------------------------------------------
-            auto t_outer_start = do_sample ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point{};
+                auto t_score_thread_start = std::chrono::steady_clock::now();
 
-            auto searchSignature = querySignatures[searchIdx];
+                #pragma omp for
+                for (int searchIdx = 0; searchIdx < querySignatures.size(); searchIdx++) {
+                    // -------- sampling decision for per-loop timings ----------
+                    bool do_sample =
+                    #if MANPROF_ENABLE_LOOP_SAMPLING
+                                (searchIdx % MANPROF_SAMPLE_PERIOD == 0);
+                    #else
+                                false;
+                    #endif
+                // ----------------------------------------------------------
+                    auto t_outer_start = do_sample ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point{};
 
-            /** Global scores */
-            double totScoreMit = 0.0;
-            double totScoreCfd = 0.0;
+                    auto searchSignature = querySignatures[searchIdx];
 
-            double maximum_sum = (10000.0 - threshold * 100) / threshold;
-            bool checkNextSlice = true;
+                    /** Global scores */
+                    double totScoreMit = 0.0;
+                    double totScoreCfd = 0.0;
 
-            size_t sliceLimitOffset = 0;
+                    double maximum_sum = (10000.0 - threshold * 100) / threshold;
+                    bool checkNextSlice = true;
 
-            // ---------- per-guide work counters ----------
-            uint64_t guide_signatures_seen = 0;
-            uint64_t guide_offtargets_scored = 0;
-            uint64_t guide_slices_traversed = 0;
-        // ---------------------------------------------
+                    size_t sliceLimitOffset = 0;
 
-            /** For each ISSL slice */
-            for (size_t i = 0; i < sliceCount; i++) {
-                auto t_slice_start = do_sample ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point{};
-                vector<uint64_t>& sliceMask = sliceMasks[i];
-                auto& sliceList = sliceLists[i];
+                    // ---------- per-guide work counters ----------
+                    uint64_t guide_signatures_seen = 0;
+                    uint64_t guide_offtargets_scored = 0;
+                    uint64_t guide_slices_traversed = 0;
+                // ---------------------------------------------
 
-                uint64_t searchSlice = 0ULL;
-                for (int j = 0; j < sliceMask.size(); j++)
-                {
-                    searchSlice |= ((searchSignature >> (sliceMask[j] * 2)) & 3ULL) << (j * 2);
-                }
+                    /** For each ISSL slice */
+                    for (size_t i = 0; i < sliceCount; i++) {
+                        auto t_slice_start = do_sample ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point{};
+                        vector<uint64_t>& sliceMask = sliceMasks[i];
+                        auto& sliceList = sliceLists[i];
 
-                size_t idx = sliceLimitOffset + searchSlice;
+                        uint64_t searchSlice = 0ULL;
+                        for (int j = 0; j < sliceMask.size(); j++)
+                        {
+                            searchSlice |= ((searchSignature >> (sliceMask[j] * 2)) & 3ULL) << (j * 2);
+                        }
 
-                size_t signaturesInSlice = allSlicelistSizes[idx];
-                uint64_t* sliceOffset = sliceList[searchSlice];
-                guide_slices_traversed++;
+                        size_t idx = sliceLimitOffset + searchSlice;
 
-                /** For each off-target signature in slice */
-                auto t_inner_start = do_sample ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point{};
+                        size_t signaturesInSlice = allSlicelistSizes[idx];
+                        uint64_t* sliceOffset = sliceList[searchSlice];
+                        guide_slices_traversed++;
 
-                for (size_t j = 0; j < signaturesInSlice; j++) {
-                    guide_signatures_seen++;
-                    auto signatureWithOccurrencesAndId = sliceOffset[j];
-                    auto signatureId = signatureWithOccurrencesAndId & 0xFFFFFFFFULL;
-                    uint32_t occurrences = (signatureWithOccurrencesAndId >> (32));
+                        /** For each off-target signature in slice */
+                        auto t_inner_start = do_sample ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point{};
 
-                    /** Prevent assessing the same off-target for multiple slices */
-                    uint64_t seenOfftargetAlready = 0;
-                    uint64_t* ptrOfftargetFlag = (offtargetTogglesTail - (signatureId / 64));
-                    seenOfftargetAlready = (*ptrOfftargetFlag >> (signatureId % 64)) & 1ULL;
+                        for (size_t j = 0; j < signaturesInSlice; j++) {
+                            guide_signatures_seen++;
+                            auto signatureWithOccurrencesAndId = sliceOffset[j];
+                            auto signatureId = signatureWithOccurrencesAndId & 0xFFFFFFFFULL;
+                            uint32_t occurrences = (signatureWithOccurrencesAndId >> (32));
 
-                    if (!seenOfftargetAlready) {
-                        *ptrOfftargetFlag |= (1ULL << (signatureId % 64));
+                            /** Prevent assessing the same off-target for multiple slices */
+                            uint64_t seenOfftargetAlready = 0;
+                            uint64_t* ptrOfftargetFlag = (offtargetTogglesTail - (signatureId / 64));
+                            seenOfftargetAlready = (*ptrOfftargetFlag >> (signatureId % 64)) & 1ULL;
 
-                        /** Find the positions of mismatches
-                            *
-                            *  Search signature (SS):    A  A  T  T    G  C  A  T
-                            *                           00 00 11 11   10 01 00 11
-                            *
-                            *        Off-target (OT):    A  T  A  T    C  G  A  T
-                            *                           00 11 00 11   01 10 00 11
-                            *
-                            *                SS ^ OT:   00 00 11 11   10 01 00 11
-                            *                         ^ 00 11 00 11   01 10 00 11
-                            *                  (XORd) = 00 11 11 00   11 11 00 00
-                            *
-                            *        XORd & evenBits:   00 11 11 00   11 11 00 00
-                            *                         & 10 10 10 10   10 10 10 10
-                            *                   (eX)  = 00 10 10 00   10 10 00 00
-                            *
-                            *         XORd & oddBits:   00 11 11 00   11 11 00 00
-                            *                         & 01 01 01 01   01 01 01 01
-                            *                   (oX)  = 00 01 01 00   01 01 00 00
-                            *
-                            *         (eX >> 1) | oX:   00 01 01 00   01 01 00 00 (>>1)
-                            *                         | 00 01 01 00   01 01 00 00
-                            *            mismatches   = 00 01 01 00   01 01 00 00
-                            *
-                            *   popcount(mismatches):   4
-                            */
-                        uint64_t xoredSignatures = searchSignature ^ offtargets[signatureId];
-                        uint64_t evenBits = xoredSignatures & 0xAAAAAAAAAAAAAAAAULL;
-                        uint64_t oddBits = xoredSignatures & 0x5555555555555555ULL;
-                        uint64_t mismatches = (evenBits >> 1) | oddBits;
-                        uint64_t dist = popcount64(mismatches);
+                            if (!seenOfftargetAlready) {
+                                *ptrOfftargetFlag |= (1ULL << (signatureId % 64));
 
-                        if (dist >= 0 && dist <= 4) {
-                            guide_offtargets_scored++; 
-                            // Begin calculating MIT score
-                            if (calcMit) {
-                                if (dist > 0) {
-                                    totScoreMit += precalculatedMITScores.at(mismatches) * (double)occurrences;
-                                }
-                            }
+                                /** Find the positions of mismatches
+                                    *
+                                    *  Search signature (SS):    A  A  T  T    G  C  A  T
+                                    *                           00 00 11 11   10 01 00 11
+                                    *
+                                    *        Off-target (OT):    A  T  A  T    C  G  A  T
+                                    *                           00 11 00 11   01 10 00 11
+                                    *
+                                    *                SS ^ OT:   00 00 11 11   10 01 00 11
+                                    *                         ^ 00 11 00 11   01 10 00 11
+                                    *                  (XORd) = 00 11 11 00   11 11 00 00
+                                    *
+                                    *        XORd & evenBits:   00 11 11 00   11 11 00 00
+                                    *                         & 10 10 10 10   10 10 10 10
+                                    *                   (eX)  = 00 10 10 00   10 10 00 00
+                                    *
+                                    *         XORd & oddBits:   00 11 11 00   11 11 00 00
+                                    *                         & 01 01 01 01   01 01 01 01
+                                    *                   (oX)  = 00 01 01 00   01 01 00 00
+                                    *
+                                    *         (eX >> 1) | oX:   00 01 01 00   01 01 00 00 (>>1)
+                                    *                         | 00 01 01 00   01 01 00 00
+                                    *            mismatches   = 00 01 01 00   01 01 00 00
+                                    *
+                                    *   popcount(mismatches):   4
+                                    */
+                                uint64_t xoredSignatures = searchSignature ^ offtargets[signatureId];
+                                uint64_t evenBits = xoredSignatures & 0xAAAAAAAAAAAAAAAAULL;
+                                uint64_t oddBits = xoredSignatures & 0x5555555555555555ULL;
+                                uint64_t mismatches = (evenBits >> 1) | oddBits;
+                                uint64_t dist = popcount64(mismatches);
 
-                            // Begin calculating CFD score
-                            if (calcCfd) {
-                                /** "In other words, for the CFD score, a value of 0
-                                    *      indicates no predicted off-target activity whereas
-                                    *      a value of 1 indicates a perfect match"
-                                    *      John Doench, 2016.
-                                    *      https://www.nature.com/articles/nbt.3437
-                                */
-                                double cfdScore = 0;
-                                if (dist == 0) {
-                                    cfdScore = 1;
-                                }
-                                else {
-                                    cfdScore = cfdPamPenalties[0b1010]; // PAM: NGG, TODO: do not hard-code the PAM
+                                if (dist >= 0 && dist <= 4) {
+                                    guide_offtargets_scored++; 
+                                    // Begin calculating MIT score
+                                    if (calcMit) {
+                                        if (dist > 0) {
+                                            totScoreMit += precalculatedMITScores.at(mismatches) * (double)occurrences;
+                                        }
+                                    }
 
-                                    for (size_t pos = 0; pos < 20; pos++) {
-                                        size_t mask = pos << 4;
+                                    // Begin calculating CFD score
+                                    if (calcCfd) {
+                                        /** "In other words, for the CFD score, a value of 0
+                                            *      indicates no predicted off-target activity whereas
+                                            *      a value of 1 indicates a perfect match"
+                                            *      John Doench, 2016.
+                                            *      https://www.nature.com/articles/nbt.3437
+                                        */
+                                        double cfdScore = 0;
+                                        if (dist == 0) {
+                                            cfdScore = 1;
+                                        }
+                                        else {
+                                            cfdScore = cfdPamPenalties[0b1010]; // PAM: NGG, TODO: do not hard-code the PAM
 
-                                        /** Create the mask to look up the position-identity score
-                                            *      In Python... c2b is char to bit
-                                            *       mask = pos << 4
-                                            *       mask |= c2b[sgRNA[pos]] << 2
-                                            *       mask |= c2b[revcom(offTaret[pos])]
-                                            *
-                                            *      Find identity at `pos` for search signature
-                                            *      example: find identity in pos=2
-                                            *       Recall ISSL is inverted, hence:
-                                            *                   3'-  T  G  C  C  G  A -5'
-                                            *       start           11 10 01 01 10 00
-                                            *       3UL << pos*2    00 00 00 11 00 00
-                                            *       and             00 00 00 01 00 00
-                                            *       shift           00 00 00 00 01 00
-                                            */
-                                        uint64_t searchSigIdentityPos = searchSignature;
-                                        searchSigIdentityPos &= (3ULL << (pos * 2));
-                                        searchSigIdentityPos = searchSigIdentityPos >> (pos * 2);
-                                        searchSigIdentityPos = searchSigIdentityPos << 2;
+                                            for (size_t pos = 0; pos < 20; pos++) {
+                                                size_t mask = pos << 4;
 
-                                        /** Find identity at `pos` for offtarget
-                                            *      Example: find identity in pos=2
-                                            *      Recall ISSL is inverted, hence:
-                                            *                  3'-  T  G  C  C  G  A -5'
-                                            *      start           11 10 01 01 10 00
-                                            *      3UL<<pos*2      00 00 00 11 00 00
-                                            *      and             00 00 00 01 00 00
-                                            *      shift           00 00 00 00 00 01
-                                            *      rev comp 3UL    00 00 00 00 00 10 (done below)
-                                            */
-                                        uint64_t offtargetIdentityPos = offtargets[signatureId];
-                                        offtargetIdentityPos &= (3ULL << (pos * 2));
-                                        offtargetIdentityPos = offtargetIdentityPos >> (pos * 2);
+                                                /** Create the mask to look up the position-identity score
+                                                    *      In Python... c2b is char to bit
+                                                    *       mask = pos << 4
+                                                    *       mask |= c2b[sgRNA[pos]] << 2
+                                                    *       mask |= c2b[revcom(offTaret[pos])]
+                                                    *
+                                                    *      Find identity at `pos` for search signature
+                                                    *      example: find identity in pos=2
+                                                    *       Recall ISSL is inverted, hence:
+                                                    *                   3'-  T  G  C  C  G  A -5'
+                                                    *       start           11 10 01 01 10 00
+                                                    *       3UL << pos*2    00 00 00 11 00 00
+                                                    *       and             00 00 00 01 00 00
+                                                    *       shift           00 00 00 00 01 00
+                                                    */
+                                                uint64_t searchSigIdentityPos = searchSignature;
+                                                searchSigIdentityPos &= (3ULL << (pos * 2));
+                                                searchSigIdentityPos = searchSigIdentityPos >> (pos * 2);
+                                                searchSigIdentityPos = searchSigIdentityPos << 2;
 
-                                        /** Complete the mask
-                                            *      reverse complement (^3UL) `offtargetIdentityPos` here
-                                            */
-                                        mask = (mask | searchSigIdentityPos | (offtargetIdentityPos ^ 3UL));
+                                                /** Find identity at `pos` for offtarget
+                                                    *      Example: find identity in pos=2
+                                                    *      Recall ISSL is inverted, hence:
+                                                    *                  3'-  T  G  C  C  G  A -5'
+                                                    *      start           11 10 01 01 10 00
+                                                    *      3UL<<pos*2      00 00 00 11 00 00
+                                                    *      and             00 00 00 01 00 00
+                                                    *      shift           00 00 00 00 00 01
+                                                    *      rev comp 3UL    00 00 00 00 00 10 (done below)
+                                                    */
+                                                uint64_t offtargetIdentityPos = offtargets[signatureId];
+                                                offtargetIdentityPos &= (3ULL << (pos * 2));
+                                                offtargetIdentityPos = offtargetIdentityPos >> (pos * 2);
 
-                                        if (searchSigIdentityPos >> 2 != offtargetIdentityPos) {
-                                            cfdScore *= cfdPosPenalties[mask];
+                                                /** Complete the mask
+                                                    *      reverse complement (^3UL) `offtargetIdentityPos` here
+                                                    */
+                                                mask = (mask | searchSigIdentityPos | (offtargetIdentityPos ^ 3UL));
+
+                                                if (searchSigIdentityPos >> 2 != offtargetIdentityPos) {
+                                                    cfdScore *= cfdPosPenalties[mask];
+                                                }
+                                            }
+                                        }
+                                        totScoreCfd += cfdScore * (double)occurrences;
+                                    }
+
+                                    /** Stop calculating global score early if possible */
+                                    if (scoreMethod == otScoreMethod::mitAndCfd) {
+                                        if (totScoreMit > maximum_sum && totScoreCfd > maximum_sum) {
+                                            checkNextSlice = false;
+                                            break;
+                                        }
+                                    }
+                                    if (scoreMethod == otScoreMethod::mitOrCfd) {
+                                        if (totScoreMit > maximum_sum || totScoreCfd > maximum_sum) {
+                                            checkNextSlice = false;
+                                            break;
+                                        }
+                                    }
+                                    if (scoreMethod == otScoreMethod::avgMitCfd) {
+                                        if (((totScoreMit + totScoreCfd) / 2.0) > maximum_sum) {
+                                            checkNextSlice = false;
+                                            break;
+                                        }
+                                    }
+                                    if (scoreMethod == otScoreMethod::mit) {
+                                        if (totScoreMit > maximum_sum) {
+                                            checkNextSlice = false;
+                                            break;
+                                        }
+                                    }
+                                    if (scoreMethod == otScoreMethod::cfd) {
+                                        if (totScoreCfd > maximum_sum) {
+                                            checkNextSlice = false;
+                                            break;
                                         }
                                     }
                                 }
-                                totScoreCfd += cfdScore * (double)occurrences;
                             }
-
-                            /** Stop calculating global score early if possible */
-                            if (scoreMethod == otScoreMethod::mitAndCfd) {
-                                if (totScoreMit > maximum_sum && totScoreCfd > maximum_sum) {
-                                    checkNextSlice = false;
-                                    break;
-                                }
-                            }
-                            if (scoreMethod == otScoreMethod::mitOrCfd) {
-                                if (totScoreMit > maximum_sum || totScoreCfd > maximum_sum) {
-                                    checkNextSlice = false;
-                                    break;
-                                }
-                            }
-                            if (scoreMethod == otScoreMethod::avgMitCfd) {
-                                if (((totScoreMit + totScoreCfd) / 2.0) > maximum_sum) {
-                                    checkNextSlice = false;
-                                    break;
-                                }
-                            }
-                            if (scoreMethod == otScoreMethod::mit) {
-                                if (totScoreMit > maximum_sum) {
-                                    checkNextSlice = false;
-                                    break;
-                                }
-                            }
-                            if (scoreMethod == otScoreMethod::cfd) {
-                                if (totScoreCfd > maximum_sum) {
-                                    checkNextSlice = false;
-                                    break;
-                                }
-                            }
+                            
                         }
+                        if (do_sample) {
+                            auto t_inner_end = std::chrono::steady_clock::now();
+                            local.sampled_inner_loop_ns += (uint64_t)std::chrono::duration_cast<std::chrono::nanoseconds>(t_inner_end - t_inner_start).count();
+                            local.samples_inner++;
+                        }
+
+                        if (do_sample) {
+                            auto t_slice_end = std::chrono::steady_clock::now();
+                            local.sampled_slice_loop_ns += (uint64_t)std::chrono::duration_cast<std::chrono::nanoseconds>(t_slice_end - t_slice_start).count();
+                            local.samples_slice++;
+                        }
+
+                        if (!checkNextSlice)
+                            break;
+                        sliceLimitOffset += 1ULL << (sliceMasks[i].size() * 2);
                     }
-                    
-                }
-                if (do_sample) {
-                    auto t_inner_end = std::chrono::steady_clock::now();
-                    local.sampled_inner_loop_ns += (uint64_t)std::chrono::duration_cast<std::chrono::nanoseconds>(t_inner_end - t_inner_start).count();
-                    local.samples_inner++;
+                    querySignatureMitScores[searchIdx] = 10000.0 / (100.0 + totScoreMit);
+                    querySignatureCfdScores[searchIdx] = 10000.0 / (100.0 + totScoreCfd);
+
+                    memset(offtargetToggles.data(), 0, sizeof(uint64_t) * offtargetToggles.size());
+
+                    if (do_sample) {
+                        auto t_outer_end = std::chrono::steady_clock::now();
+                        local.sampled_outer_iter_ns += (uint64_t)std::chrono::duration_cast<std::chrono::nanoseconds>(t_outer_end - t_outer_start).count();
+                        local.samples_outer++;
+                    }
+
+                    local.guides_scored++;
+                    local.signatures_seen += guide_signatures_seen;
+                    local.offtargets_scored += guide_offtargets_scored;
+                    local.slices_traversed += guide_slices_traversed;
                 }
 
-                if (do_sample) {
-                    auto t_slice_end = std::chrono::steady_clock::now();
-                    local.sampled_slice_loop_ns += (uint64_t)std::chrono::duration_cast<std::chrono::nanoseconds>(t_slice_end - t_slice_start).count();
-                    local.samples_slice++;
-                }
+                #pragma omp critical
+                {
+                    g_prof.seq_to_sig_ns      += 0; // already added earlier
+                    g_prof.scoring_total_ns   += 0;
+                    g_prof.guides_scored      += local.guides_scored;
+                    g_prof.signatures_seen    += local.signatures_seen;
+                    g_prof.offtargets_scored  += local.offtargets_scored;
+                    g_prof.slices_traversed   += local.slices_traversed;
 
-                if (!checkNextSlice)
-                    break;
-                sliceLimitOffset += 1ULL << (sliceMasks[i].size() * 2);
+                    g_prof.sampled_outer_iter_ns += local.sampled_outer_iter_ns;
+                    g_prof.sampled_inner_loop_ns += local.sampled_inner_loop_ns;
+                    g_prof.sampled_slice_loop_ns += local.sampled_slice_loop_ns;
+                    g_prof.samples_outer += local.samples_outer;
+                    g_prof.samples_inner += local.samples_inner;
+                    g_prof.samples_slice += local.samples_slice;
+                }
             }
-            querySignatureMitScores[searchIdx] = 10000.0 / (100.0 + totScoreMit);
-            querySignatureCfdScores[searchIdx] = 10000.0 / (100.0 + totScoreCfd);
-
-            memset(offtargetToggles.data(), 0, sizeof(uint64_t) * offtargetToggles.size());
-
-            if (do_sample) {
-                auto t_outer_end = std::chrono::steady_clock::now();
-                local.sampled_outer_iter_ns += (uint64_t)std::chrono::duration_cast<std::chrono::nanoseconds>(t_outer_end - t_outer_start).count();
-                local.samples_outer++;
-            }
-
-            local.guides_scored++;
-            local.signatures_seen += guide_signatures_seen;
-            local.offtargets_scored += guide_offtargets_scored;
-            local.slices_traversed += guide_slices_traversed;
-        }
-
-        #pragma omp critical
-        {
-            g_prof.seq_to_sig_ns      += 0; // already added earlier
-            g_prof.scoring_total_ns   += 0;
-            g_prof.guides_scored      += local.guides_scored;
-            g_prof.signatures_seen    += local.signatures_seen;
-            g_prof.offtargets_scored  += local.offtargets_scored;
-            g_prof.slices_traversed   += local.slices_traversed;
-
-            g_prof.sampled_outer_iter_ns += local.sampled_outer_iter_ns;
-            g_prof.sampled_inner_loop_ns += local.sampled_inner_loop_ns;
-            g_prof.sampled_slice_loop_ns += local.sampled_slice_loop_ns;
-            g_prof.samples_outer += local.samples_outer;
-            g_prof.samples_inner += local.samples_inner;
-            g_prof.samples_slice += local.samples_slice;
-        }
     }
     auto t_score_end = std::chrono::steady_clock::now();
     g_prof.scoring_total_ns = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(t_score_end - t_score_start).count());
+
+    #if USE_OPENCL_SCORING
+        shutdown_scoring_cl(); // stub
+    #endif
 
     auto progEnd = std::chrono::steady_clock::now();
     auto elapsedUs = std::chrono::duration_cast<std::chrono::microseconds>(progEnd - g_progStart).count();
