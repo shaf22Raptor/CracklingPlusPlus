@@ -27,7 +27,7 @@ if (MSVC)
   set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE OFF)
 endif()
 
-# Add library subdirectory
+# Add library subdirectory 
 add_subdirectory (${CMAKE_SOURCE_DIR}/lib)
 
 # Boost

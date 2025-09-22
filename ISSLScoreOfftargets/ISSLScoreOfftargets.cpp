@@ -23,6 +23,13 @@ std::chrono::steady_clock::time_point g_progStart{};
 #include <random>
 #include <iomanip>
 
+#ifndef USE_OPENCL_SEQ2SIG
+#define USE_OPENCL_SEQ2SIG 0
+#endif
+#if USE_OPENCL_SEQ2SIG
+#include "cl_seqsig.hpp"
+#endif
+
 struct alignas(64) ProfStats {
     // Times in nanoseconds to keep addition cheap & precise
     uint64_t seq_to_sig_ns = 0;
@@ -334,15 +341,26 @@ int main(int argc, char** argv)
 
     /** Binary encode query sequences */
     auto t_seq_start = std::chrono::steady_clock::now();
-#pragma omp parallel
+    #if USE_OPENCL_SEQ2SIG
     {
-#pragma omp for
-        for (int i = 0; i < queryCount; i++) {
-            char* ptr = &queryDataSet[i * seqLineLength];
-            uint64_t signature = sequenceToSignature(ptr, 20);
-            querySignatures[i] = signature;
-        }
+        SeqSigEncoderCL enc;                      // one-time init (context, queue, program)
+        enc.encode(queryDataSet.data(),           // base pointer to the raw bytes
+                seqLineLength,                 // stride (including newline)
+                (uint32_t)seqLength,           // guide length (20)
+                (uint32_t)queryCount,
+                querySignatures);              // output vector<uint64_t>
     }
+    #else
+    #pragma omp parallel
+        {
+    #pragma omp for
+            for (int i = 0; i < queryCount; i++) {
+                char* ptr = &queryDataSet[i * seqLineLength];
+                uint64_t signature = sequenceToSignature(ptr, 20);
+                querySignatures[i] = signature;
+            }
+        }
+    #endif
     auto t_seq_end = std::chrono::steady_clock::now();
 
     // Reduce into global at thread exit
