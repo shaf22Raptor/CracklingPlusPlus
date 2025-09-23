@@ -25,6 +25,12 @@ if (MSVC)
 
   # Ensure no LTCG/IPO at CMake level
   set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE OFF)
+
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE OFF)
+
+  # Define NOMINMAX for all targets in this tree (propagates to subdirs)
+  add_compile_definitions(NOMINMAX)
+
 endif()
 
 # Add library subdirectory 

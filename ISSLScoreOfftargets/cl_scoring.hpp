@@ -2,41 +2,49 @@
 #pragma once
 #include <cstddef>
 #include <cstdint>
+#include <vector>
+#include <string>
 
 // Bring in otScoreMethod so the signatures match your codebase
 #include "ISSLScoreOfftargets.hpp"
 
-// Host-side metadata we’ll pass to the scoring backend.
-// For now, only the fields you already have on hand.
+enum otScoreMethod : int;
+
+// GPU-scoring static view of the host-side data
 struct ScoringIndexMeta {
-    size_t offtargetsCount = 0;
-    size_t seqLength       = 0;
-    size_t sliceCount      = 0;
+    std::size_t offtargetsCount = 0;
+    std::size_t seqLength       = 0;
+    std::size_t sliceCount      = 0;
 
-    const uint64_t* pOfftargets           = nullptr; // offtargets.data()
-    const uint64_t* pAllSignatures        = nullptr; // allSignatures.data()
-    const size_t*   pAllSliceListSizes    = nullptr; // allSlicelistSizes.data()
+    const uint64_t*     pOfftargets         = nullptr;
+    const uint64_t*     pAllSignatures      = nullptr;
+    const std::size_t*  pAllSliceListSizes  = nullptr;
 
-    // You’ll fill these later when you flatten masks / prefix sums:
-    const uint64_t* pSliceMaskPositions   = nullptr;
-    const uint32_t* pSliceMaskOffsets     = nullptr;
-    const uint32_t* pSliceMaskLengths     = nullptr;
-    const uint32_t* pSliceKeyCounts       = nullptr;
-    const uint64_t* pSliceKeyBaseOffsets  = nullptr;
+    const uint32_t* pSliceMaskPositions  = nullptr;
+    const uint32_t* pSliceMaskOffsets    = nullptr;
+    const uint32_t* pSliceMaskLengths    = nullptr;
+
+    const uint32_t* pSliceKeyCounts      = nullptr;
+    const uint64_t* pSliceKeyBaseOffsets = nullptr;
 };
 
-// Init once after you’ve loaded the index; stub does nothing (returns true).
-bool init_scoring_cl(const ScoringIndexMeta&);
+// Precision choice
+enum class ClScorePrecision { Float32, Float64 };
 
-// Try to score a whole batch on GPU. For now, stub returns false so CPU path runs.
-// Later you’ll use it to fill outMit/outCfd for [0..guideCount).
+// Step-2 API: choose precision and push LUTs
+void  cl_set_precision(ClScorePrecision p);     // call once before init/build
+void  cl_set_mit_lut(const double* data, std::size_t len); // MIT table lives in host as double; kernel casts if needed
+void  cl_set_cfd_pos_penalties(const double* data, std::size_t len);
+void  cl_set_cfd_pam_penalties(const double* data, std::size_t len);
+
+// Init/teardown + batch entry points
+void init_scoring_cl(const ScoringIndexMeta& meta);
 bool score_batch_cl(const uint64_t* querySigs,
-                    size_t guideCount,
-                    double* outMit,
-                    double* outCfd,
-                    otScoreMethod method,
-                    double threshold,
-                    size_t seqLength);
+                    std::size_t     guideCount,
+                    double*         outMit,     // nullable
+                    double*         outCfd,     // nullable
+                    int             method,     // your enum type is fine too
+                    double          threshold,
+                    std::size_t     seqLength);
 
-// Cleanup at program end (stub does nothing).
 void shutdown_scoring_cl();

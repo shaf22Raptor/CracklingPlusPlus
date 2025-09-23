@@ -55,7 +55,7 @@ endif()
 # --------------------------------------
 
 # ---- Toggle GPU scoring (OpenCL) ----
-option(SCORING_OPENCL "Enable OpenCL path for scoring" OFF)
+option(SCORING_OPENCL "Enable OpenCL path for scoring" ON)
 
 if(SCORING_OPENCL)
   # Only find/link OpenCL if not already added by seq2sig

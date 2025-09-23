@@ -39,12 +39,150 @@ std::chrono::steady_clock::time_point g_progStart{};
 #endif
 // ============================================================================
 
+#include <limits>
+#include <numeric>
+#include <array>
+
 // Small cross-platform error helper (works without OpenCL too)
 static inline void die_if(bool cond, const char* msg) {
     if (cond) {
         std::fprintf(stderr, "Fatal: %s\n", msg);
         std::fflush(stderr);
         std::exit(1);
+    }
+}
+
+// ---- Flatten slice metadata for GPU scoring ---------------------------------
+struct FlatScoringMeta {
+    // Masks
+    std::vector<uint32_t> sliceMaskPositions;
+    std::vector<uint32_t> sliceMaskOffsets;
+    std::vector<uint32_t> sliceMaskLengths;
+
+    // For indexing counts per slice/key inside the concatenated allSlicelistSizes
+    std::vector<uint64_t> sliceKeySliceOffsets; // start index in counts for each slice
+
+    // Per (slice,key): count and absolute base offset into allSignatures
+    std::vector<uint32_t> sliceKeyCounts;
+    std::vector<uint64_t> sliceKeyBaseOffsets;
+};
+
+static FlatScoringMeta build_flat_meta(
+    const std::vector<std::vector<uint64_t>>& sliceMasks,
+    const std::vector<size_t>& allSlicelistSizes,
+    size_t offtargetsCount
+) {
+    FlatScoringMeta fm{};
+
+    const size_t sliceCount = sliceMasks.size();
+
+    // A) Flatten masks
+    fm.sliceMaskOffsets.resize(sliceCount);
+    fm.sliceMaskLengths.resize(sliceCount);
+
+    uint32_t posCursor = 0;
+    size_t totalPos = 0;
+    for (const auto& m : sliceMasks) totalPos += m.size();
+    fm.sliceMaskPositions.reserve(totalPos);
+
+    for (size_t i = 0; i < sliceCount; ++i) {
+        const auto& m = sliceMasks[i];
+        fm.sliceMaskOffsets[i] = posCursor;
+        fm.sliceMaskLengths[i] = static_cast<uint32_t>(m.size());
+        for (uint64_t p : m) {
+            // positions are < 64; safe in uint32
+            fm.sliceMaskPositions.push_back(static_cast<uint32_t>(p));
+            ++posCursor;
+        }
+    }
+
+    // B) Per-slice key runs inside allSlicelistSizes
+    fm.sliceKeySliceOffsets.resize(sliceCount);
+    uint64_t countsCursor = 0;
+    for (size_t i = 0; i < sliceCount; ++i) {
+        fm.sliceKeySliceOffsets[i] = countsCursor;
+        const uint64_t keys_i = 1ULL << (fm.sliceMaskLengths[i] * 2ULL);
+        countsCursor += keys_i;
+    }
+    // Sanity: counts array length matches computed total keys
+    if (countsCursor != allSlicelistSizes.size()) {
+        die_if(true, "allSlicelistSizes length does not equal sum of per-slice key counts");
+    }
+
+    // C) sliceKeyCounts (copy/cast) and sliceKeyBaseOffsets (prefix sums per slice)
+    fm.sliceKeyCounts.resize(allSlicelistSizes.size());
+    fm.sliceKeyBaseOffsets.resize(allSlicelistSizes.size());
+
+    for (size_t i = 0; i < sliceCount; ++i) {
+        const uint64_t keys_i = 1ULL << (fm.sliceMaskLengths[i] * 2ULL);
+
+        const uint64_t countsStart = fm.sliceKeySliceOffsets[i];
+        const uint64_t countsEnd   = countsStart + keys_i;
+
+        // Copy counts (size_t -> uint32_t) with range check
+        uint64_t sumCounts = 0;
+        for (uint64_t idx = countsStart; idx < countsEnd; ++idx) {
+            size_t c = allSlicelistSizes[idx];
+            die_if(c > (std::numeric_limits<uint32_t>::max)(), "sliceKeyCount exceeds uint32_t");
+            fm.sliceKeyCounts[idx] = static_cast<uint32_t>(c);
+            sumCounts += c;
+        }
+        // Each slice occupies a block of offtargetsCount entries in allSignatures
+        die_if(sumCounts > offtargetsCount, "sum of key counts for a slice exceeds offtargetsCount");
+
+        // Exclusive prefix-sum → base offsets inside the slice’s signature block
+        uint64_t running = 0;
+        const uint64_t sliceBlockBase = i * offtargetsCount;
+        for (uint64_t idx = countsStart; idx < countsEnd; ++idx) {
+            fm.sliceKeyBaseOffsets[idx] = sliceBlockBase + running;
+            running += fm.sliceKeyCounts[idx];
+        }
+        // No run may cross the slice block limit
+        die_if((sliceBlockBase + running) > ((i + 1) * offtargetsCount),
+               "key runs overflow the slice’s signature block");
+    }
+
+    return fm;
+}
+
+// ---- Sanity check vs your existing CPU view (sliceLists & sizes) ------------
+static void sanity_check_flat_meta(
+    const std::vector<std::vector<uint64_t*>>& sliceLists,   // built in your code
+    const std::vector<size_t>& allSlicelistSizes,            // counts per key (concat)
+    const std::vector<uint64_t>& allSignatures,              // big flat blob
+    const FlatScoringMeta& fm
+){
+    const size_t sliceCount = sliceLists.size();
+
+    for (size_t i = 0; i < sliceCount; ++i) {
+        const uint64_t keys_i = 1ULL << (fm.sliceMaskLengths[i] * 2ULL);
+        const uint64_t countsStart = fm.sliceKeySliceOffsets[i];
+
+        // Check a few keys: first, middle, last (avoid O(total keys))
+        std::array<uint64_t,3> picks = {0ULL, keys_i/2ULL, (keys_i? keys_i-1ULL:0ULL)};
+        for (uint64_t k : picks) {
+            if (k >= keys_i) continue;
+
+            const uint64_t keyIdx   = countsStart + k;
+            const uint32_t countRef = static_cast<uint32_t>(allSlicelistSizes[keyIdx]);
+
+            // Base pointer CPU view
+            uint64_t* cpuPtr = sliceLists[i][static_cast<size_t>(k)];
+            const uint64_t observedBase = static_cast<uint64_t>(cpuPtr - allSignatures.data());
+
+            // Flattened view
+            const uint32_t countFlat = fm.sliceKeyCounts[keyIdx];
+            const uint64_t baseFlat  = fm.sliceKeyBaseOffsets[keyIdx];
+
+            die_if(countFlat != countRef, "count mismatch in flat vs CPU counts");
+            die_if(baseFlat  != observedBase, "base offset mismatch in flat vs CPU pointers");
+
+            // Quick boundary checks if non-empty
+            if (countFlat > 0) {
+                die_if(allSignatures[baseFlat] != sliceLists[i][k][0], "first element mismatch");
+                die_if(allSignatures[baseFlat + countFlat - 1] != sliceLists[i][k][countFlat - 1], "last element mismatch");
+            }
+        }
     }
 }
 
@@ -452,7 +590,12 @@ int main(int argc, char** argv)
         std::cout << "ENTERING_SCORING_SECTION at " << ts_full << std::endl;
     }
 
+    // ===== build & validate flattened metadata (do this once) =====
+    FlatScoringMeta flatMeta = build_flat_meta(sliceMasks, allSlicelistSizes, offtargetsCount);
+    sanity_check_flat_meta(sliceLists, allSlicelistSizes, allSignatures, flatMeta);
+
     #if USE_OPENCL_SCORING
+        // 1) Build the metadata (this is what you already had)
         ScoringIndexMeta clMeta{};
         clMeta.offtargetsCount      = offtargetsCount;
         clMeta.seqLength            = seqLength;
@@ -460,28 +603,62 @@ int main(int argc, char** argv)
         clMeta.pOfftargets          = offtargets.data();
         clMeta.pAllSignatures       = allSignatures.data();
         clMeta.pAllSliceListSizes   = allSlicelistSizes.data();
-        // The rest (mask/key tables) will be set later.
+        // The rest (mask/key tables) will be set later (when you wire flatMeta):
+        // clMeta.pSliceMaskPositions  = flatMeta.sliceMaskPositions.data();
+        // clMeta.pSliceMaskOffsets    = flatMeta.sliceMaskOffsets.data();
+        // clMeta.pSliceMaskLengths    = flatMeta.sliceMaskLengths.data();
+        // clMeta.pSliceKeyCounts      = flatMeta.sliceKeyCounts.data();
+        // clMeta.pSliceKeyBaseOffsets = flatMeta.sliceKeyBaseOffsets.data();
 
-        (void)init_scoring_cl(clMeta);  // stub: returns true, no side-effects yet
+        // 2) One-time precision + LUT registration (safe to call repeatedly)
+        //    Default to float32 for now; you can auto-upgrade to fp64 in Step 3.
+        cl_set_precision(ClScorePrecision::Float32);
+
+        // Feed the LUTs from your existing CPU tables.
+        // If these are std::vector<double>, the .data() + .size() are correct.
+        // If they are C arrays, use sizeof(...) / sizeof(...[0]) as shown.
+        const std::size_t mitLen = precalculatedMITScores.size();
+        cl_set_mit_lut(precalculatedMITScores.data(), mitLen);
+
+        const std::size_t posLen = sizeof(cfdPosPenalties) / sizeof(cfdPosPenalties[0]);
+        cl_set_cfd_pos_penalties(cfdPosPenalties, posLen);
+
+        const std::size_t pamLen = sizeof(cfdPamPenalties) / sizeof(cfdPamPenalties[0]);
+        cl_set_cfd_pam_penalties(cfdPamPenalties, pamLen);
+
+        // 3) Init (still a no-op stub right now)
+        init_scoring_cl(clMeta);
+
     #endif
 
     auto t_score_start = std::chrono::steady_clock::now();
     bool usedGpu = false;
-    #if USE_OPENCL_SCORING
-        // Try GPU once (stub returns false so CPU path runs as before)
-        usedGpu = score_batch_cl(
-            /*querySigs*/               querySignatures.data(),
-            /*guideCount*/              querySignatures.size(),
-            /*outMit*/                  calcMit ? querySignatureMitScores.data() : nullptr,
-            /*outCfd*/                  calcCfd ? querySignatureCfdScores.data() : nullptr,
-            /*method*/                  scoreMethod,
-            /*threshold*/               threshold,
-            /*seqLength*/               seqLength
-        );
-    #endif
+    #if USE_OPENCL_SCORING 
+        static bool cl_init_done = false;
+        if (!cl_init_done) {
+            ScoringIndexMeta clMeta{};
+            clMeta.offtargetsCount     = offtargetsCount;
+            clMeta.seqLength           = seqLength;
+            clMeta.sliceCount          = sliceCount;
 
+            clMeta.pOfftargets         = offtargets.data();
+            clMeta.pAllSignatures      = allSignatures.data();
+            clMeta.pAllSliceListSizes  = allSlicelistSizes.data();
+
+            // From flatMeta (types should match your ScoringIndexMeta declaration)
+            clMeta.pSliceMaskPositions  = flatMeta.sliceMaskPositions.data();   // uint32_t*
+            clMeta.pSliceMaskOffsets    = flatMeta.sliceMaskOffsets.data();     // uint32_t*
+            clMeta.pSliceMaskLengths    = flatMeta.sliceMaskLengths.data();     // uint32_t*
+
+            clMeta.pSliceKeyCounts      = flatMeta.sliceKeyCounts.data();       // uint32_t*
+            clMeta.pSliceKeyBaseOffsets = flatMeta.sliceKeyBaseOffsets.data();  // uint64_t*
+
+            (void)init_scoring_cl(clMeta);
+            cl_init_done = true;
+        }
+
+    #else
     /** Begin scoring */
-    if (!usedGpu) {
         #pragma omp parallel
             {
                 ProfStats local{};
@@ -747,7 +924,8 @@ int main(int argc, char** argv)
                     g_prof.samples_slice += local.samples_slice;
                 }
             }
-    }
+    #endif
+
     auto t_score_end = std::chrono::steady_clock::now();
     g_prof.scoring_total_ns = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(t_score_end - t_score_start).count());
 
