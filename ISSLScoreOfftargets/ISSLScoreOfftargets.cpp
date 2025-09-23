@@ -602,13 +602,15 @@ int main(int argc, char** argv)
         clMeta.sliceCount           = sliceCount;
         clMeta.pOfftargets          = offtargets.data();
         clMeta.pAllSignatures       = allSignatures.data();
-        clMeta.pAllSliceListSizes   = allSlicelistSizes.data();
-        // The rest (mask/key tables) will be set later (when you wire flatMeta):
-        // clMeta.pSliceMaskPositions  = flatMeta.sliceMaskPositions.data();
-        // clMeta.pSliceMaskOffsets    = flatMeta.sliceMaskOffsets.data();
-        // clMeta.pSliceMaskLengths    = flatMeta.sliceMaskLengths.data();
-        // clMeta.pSliceKeyCounts      = flatMeta.sliceKeyCounts.data();
-        // clMeta.pSliceKeyBaseOffsets = flatMeta.sliceKeyBaseOffsets.data();
+        //clMeta.pAllSliceListSizes   = allSlicelistSizes.data();
+        clMeta.pSliceKeyCounts      = flatMeta.sliceKeyCounts.data();
+        clMeta.pSliceKeyBaseOffsets = flatMeta.sliceKeyBaseOffsets.data();
+        clMeta.sliceKeyTableLen     = flatMeta.sliceKeyCounts.size();
+
+        clMeta.pSliceMaskPositions  = flatMeta.sliceMaskPositions.data();
+        clMeta.sliceMaskPositionsLen= flatMeta.sliceMaskPositions.size();
+        clMeta.pSliceMaskOffsets    = flatMeta.sliceMaskOffsets.data();
+        clMeta.pSliceMaskLengths    = flatMeta.sliceMaskLengths.data();
 
         // 2) One-time precision + LUT registration (safe to call repeatedly)
         //    Default to float32 for now; you can auto-upgrade to fp64 in Step 3.

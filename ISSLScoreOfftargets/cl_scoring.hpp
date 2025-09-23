@@ -12,22 +12,23 @@ enum otScoreMethod : int;
 
 // GPU-scoring static view of the host-side data
 struct ScoringIndexMeta {
-    std::size_t offtargetsCount = 0;
-    std::size_t seqLength       = 0;
-    std::size_t sliceCount      = 0;
+    size_t offtargetsCount;
+    size_t seqLength;
+    size_t sliceCount;
 
-    const uint64_t*     pOfftargets         = nullptr;
-    const uint64_t*     pAllSignatures      = nullptr;
-    const std::size_t*  pAllSliceListSizes  = nullptr;
+    const uint64_t* pOfftargets;         // [offtargetsCount]
+    const uint64_t* pAllSignatures;      // [sliceCount * offtargetsCount]
 
-    const uint32_t* pSliceMaskPositions  = nullptr;
-    const uint32_t* pSliceMaskOffsets    = nullptr;
-    const uint32_t* pSliceMaskLengths    = nullptr;
+    // flattened tables
+    const uint32_t* pSliceKeyCounts;       // [sliceKeyTableLen]
+    const uint64_t* pSliceKeyBaseOffsets;  // [sliceKeyTableLen]
+    size_t          sliceKeyTableLen;
 
-    const uint32_t* pSliceKeyCounts      = nullptr;
-    const uint64_t* pSliceKeyBaseOffsets = nullptr;
+    const uint32_t* pSliceMaskPositions; // [sliceMaskPositionsLen]
+    size_t          sliceMaskPositionsLen;
+    const uint32_t* pSliceMaskOffsets;   // [sliceCount]
+    const uint32_t* pSliceMaskLengths;   // [sliceCount]
 };
-
 // Precision choice
 enum class ClScorePrecision { Float32, Float64 };
 
