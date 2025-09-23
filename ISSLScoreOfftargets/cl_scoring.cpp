@@ -13,6 +13,13 @@
 #include <mutex>
 #include <string>
 
+#include <cstdint>
+static_assert(sizeof(cl_ulong)   == 8, "Expected cl_ulong to be 64-bit");
+static_assert(sizeof(uint64_t)   == 8, "Expected uint64_t to be 64-bit");
+static_assert(sizeof(cl_double)  == 8, "Expected cl_double to be 64-bit");
+static_assert(sizeof(cl_float)   == 4, "Expected cl_float to be 32-bit");
+static_assert(sizeof(cl_uint)    == 4, "Expected cl_uint to be 32-bit");
+
 // ====== lightweight error helpers ======
 static inline void cl_die_if(cl_int err, const char* where) {
     if (err != CL_SUCCESS) {
@@ -87,9 +94,18 @@ static std::vector<float> to_float(const std::vector<double>& v) {
     return out;
 }
 
+static size_t g_offtargetsCount_cached = 0;
+static size_t g_sliceCount_cached = 0;
+// (optionally seq length too)
+static size_t g_seqLength_cached = 0;
+
 // ====== init: choose device, build program, upload static data ======
 void init_scoring_cl(const ScoringIndexMeta& meta)
 {
+    g_offtargetsCount_cached = meta.offtargetsCount;
+    g_sliceCount_cached      = meta.sliceCount;
+    g_seqLength_cached       = meta.seqLength;
+
     std::lock_guard<std::mutex> lk(g_mu);
     if (g_ctx) return; // already inited
 
@@ -249,6 +265,7 @@ bool score_batch_cl(const uint64_t* querySigs,
                     double          threshold,
                     std::size_t     seqLength)
 {
+    if (!g_offtargetsCount_cached || !g_sliceCount_cached) return false;
     std::lock_guard<std::mutex> lk(g_mu);
     if (!g_ctx || !g_kernel) return false; // not initialized → caller will use CPU
 
@@ -287,8 +304,7 @@ bool score_batch_cl(const uint64_t* querySigs,
     // easiest: store them in static variables when you init (add to globals as needed)
     // For now, pass via the counts we can infer: we don't have them cached, so add them to the header if needed.
     // Assuming you added: g_offtargetsCount, g_sliceCount (store at init time)
-    extern size_t g_offtargetsCount_cached;
-    extern size_t g_sliceCount_cached;
+ 
     cl_ulong offtCountUL = (cl_ulong)g_offtargetsCount_cached;
 
     cl_die_if(clSetKernelArg(g_kernel, arg++, sizeof(cl_ulong), &offtCountUL), "set arg offtargetsCount");
@@ -331,6 +347,14 @@ bool score_batch_cl(const uint64_t* querySigs,
     err = clEnqueueNDRangeKernel(g_q, g_kernel, 1, nullptr, &gsz, nullptr, 0, nullptr, nullptr);
     cl_die_if(err, "clEnqueueNDRangeKernel");
     clFinish(g_q);
+
+    std::fprintf(stderr, "[CL] score_kernel launched for %zu guides (stub should write zeros)\n", guideCount);
+
+    if (g_profileLogFile) {
+        std::fprintf(g_profileLogFile, "[CL] score_kernel launched for %zu guides\n", guideCount);
+        std::fflush(g_profileLogFile);
+    }
+
 
     // ====== read back ======
     if (outMit) {

@@ -78,3 +78,25 @@ else()
   target_compile_definitions(ISSLScoreOfftargets PRIVATE USE_OPENCL_SCORING=0)
 endif()
 # ------------------------------------
+
+# -------- Kernel resource handling (runtime-loaded .cl) --------
+# Keep the .cl next to the built executable so read_text_file("scoring_kernels.cl") works.
+set(KERNEL_SRC ${CMAKE_CURRENT_SOURCE_DIR}/scoring_kernels.cl)
+
+add_custom_command(
+  TARGET ISSLScoreOfftargets POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          ${KERNEL_SRC}
+          $<TARGET_FILE_DIR:ISSLScoreOfftargets>/scoring_kernels.cl
+  COMMENT "Copy scoring_kernels.cl next to the binary"
+)
+
+# When debugging in Visual Studio, run the exe from its output dir
+# so relative paths to scoring_kernels.cl resolve.
+set_target_properties(ISSLScoreOfftargets PROPERTIES
+  VS_DEBUGGER_WORKING_DIRECTORY $<TARGET_FILE_DIR:ISSLScoreOfftargets>
+)
+
+# Optional: install the kernel alongside the binary on `cmake --install`
+install(TARGETS ISSLScoreOfftargets RUNTIME DESTINATION bin)
+install(FILES ${KERNEL_SRC} DESTINATION bin)

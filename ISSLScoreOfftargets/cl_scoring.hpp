@@ -9,6 +9,7 @@
 #include "ISSLScoreOfftargets.hpp"
 
 enum otScoreMethod : int;
+extern FILE* g_profileLogFile;
 
 // GPU-scoring static view of the host-side data
 struct ScoringIndexMeta {
@@ -44,7 +45,7 @@ bool score_batch_cl(const uint64_t* querySigs,
                     std::size_t     guideCount,
                     double*         outMit,     // nullable
                     double*         outCfd,     // nullable
-                    int             method,     // your enum type is fine too
+                    otScoreMethod   method,     // your enum type is fine too
                     double          threshold,
                     std::size_t     seqLength);
 

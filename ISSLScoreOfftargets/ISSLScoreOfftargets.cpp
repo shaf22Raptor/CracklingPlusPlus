@@ -593,70 +593,77 @@ int main(int argc, char** argv)
     // ===== build & validate flattened metadata (do this once) =====
     FlatScoringMeta flatMeta = build_flat_meta(sliceMasks, allSlicelistSizes, offtargetsCount);
     sanity_check_flat_meta(sliceLists, allSlicelistSizes, allSignatures, flatMeta);
+    auto t_score_start = std::chrono::steady_clock::now();
 
     #if USE_OPENCL_SCORING
-        // 1) Build the metadata (this is what you already had)
+    
+        // ---- 1) Build metadata once ----
         ScoringIndexMeta clMeta{};
-        clMeta.offtargetsCount      = offtargetsCount;
-        clMeta.seqLength            = seqLength;
-        clMeta.sliceCount           = sliceCount;
-        clMeta.pOfftargets          = offtargets.data();
-        clMeta.pAllSignatures       = allSignatures.data();
-        //clMeta.pAllSliceListSizes   = allSlicelistSizes.data();
-        clMeta.pSliceKeyCounts      = flatMeta.sliceKeyCounts.data();
-        clMeta.pSliceKeyBaseOffsets = flatMeta.sliceKeyBaseOffsets.data();
-        clMeta.sliceKeyTableLen     = flatMeta.sliceKeyCounts.size();
+        clMeta.offtargetsCount        = offtargetsCount;
+        clMeta.seqLength              = seqLength;
+        clMeta.sliceCount             = sliceCount;
+        clMeta.pOfftargets            = offtargets.data();
+        clMeta.pAllSignatures         = allSignatures.data();
+        clMeta.pSliceKeyCounts        = flatMeta.sliceKeyCounts.data();
+        clMeta.pSliceKeyBaseOffsets   = flatMeta.sliceKeyBaseOffsets.data();
+        clMeta.sliceKeyTableLen       = flatMeta.sliceKeyCounts.size();
+        clMeta.pSliceMaskPositions    = flatMeta.sliceMaskPositions.data();
+        clMeta.sliceMaskPositionsLen  = flatMeta.sliceMaskPositions.size();
+        clMeta.pSliceMaskOffsets      = flatMeta.sliceMaskOffsets.data();
+        clMeta.pSliceMaskLengths      = flatMeta.sliceMaskLengths.data();
 
-        clMeta.pSliceMaskPositions  = flatMeta.sliceMaskPositions.data();
-        clMeta.sliceMaskPositionsLen= flatMeta.sliceMaskPositions.size();
-        clMeta.pSliceMaskOffsets    = flatMeta.sliceMaskOffsets.data();
-        clMeta.pSliceMaskLengths    = flatMeta.sliceMaskLengths.data();
-
-        // 2) One-time precision + LUT registration (safe to call repeatedly)
-        //    Default to float32 for now; you can auto-upgrade to fp64 in Step 3.
+        // ---- 2) Precision + LUT registration (safe to call multiple times) ----
         cl_set_precision(ClScorePrecision::Float32);
 
-        // Feed the LUTs from your existing CPU tables.
-        // If these are std::vector<double>, the .data() + .size() are correct.
-        // If they are C arrays, use sizeof(...) / sizeof(...[0]) as shown.
-        const std::size_t mitLen = precalculatedMITScores.size();
-        cl_set_mit_lut(precalculatedMITScores.data(), mitLen);
+        // Flatten the phmap MIT LUT into a dense vector
+        const size_t mitSize = 1ULL << seqLength;  // 2^seqLength (e.g., 1,048,576 for 20)
+        std::vector<double> mitLut(mitSize, 0.0);
+        for (const auto& kv : precalculatedMITScores) {
+            const uint64_t mask = kv.first;
+            if (mask < mitSize) mitLut[mask] = kv.second;
+        }
+        cl_set_mit_lut(mitLut.data(), mitLut.size());
 
         const std::size_t posLen = sizeof(cfdPosPenalties) / sizeof(cfdPosPenalties[0]);
         cl_set_cfd_pos_penalties(cfdPosPenalties, posLen);
-
         const std::size_t pamLen = sizeof(cfdPamPenalties) / sizeof(cfdPamPenalties[0]);
         cl_set_cfd_pam_penalties(cfdPamPenalties, pamLen);
 
-        // 3) Init (still a no-op stub right now)
-        init_scoring_cl(clMeta);
-
-    #endif
-
-    auto t_score_start = std::chrono::steady_clock::now();
-    bool usedGpu = false;
-    #if USE_OPENCL_SCORING 
+        // ---- 3) One-time init ----
         static bool cl_init_done = false;
         if (!cl_init_done) {
-            ScoringIndexMeta clMeta{};
-            clMeta.offtargetsCount     = offtargetsCount;
-            clMeta.seqLength           = seqLength;
-            clMeta.sliceCount          = sliceCount;
-
-            clMeta.pOfftargets         = offtargets.data();
-            clMeta.pAllSignatures      = allSignatures.data();
-            clMeta.pAllSliceListSizes  = allSlicelistSizes.data();
-
-            // From flatMeta (types should match your ScoringIndexMeta declaration)
-            clMeta.pSliceMaskPositions  = flatMeta.sliceMaskPositions.data();   // uint32_t*
-            clMeta.pSliceMaskOffsets    = flatMeta.sliceMaskOffsets.data();     // uint32_t*
-            clMeta.pSliceMaskLengths    = flatMeta.sliceMaskLengths.data();     // uint32_t*
-
-            clMeta.pSliceKeyCounts      = flatMeta.sliceKeyCounts.data();       // uint32_t*
-            clMeta.pSliceKeyBaseOffsets = flatMeta.sliceKeyBaseOffsets.data();  // uint64_t*
-
-            (void)init_scoring_cl(clMeta);
+            init_scoring_cl(clMeta);
             cl_init_done = true;
+            if (g_profileLogFile) {
+                std::fprintf(g_profileLogFile, "[CL] init_scoring_cl done (offtargets=%zu, slices=%zu)\n",
+                            offtargetsCount, sliceCount);
+                std::fflush(g_profileLogFile);
+            }
+        }
+
+        // ---- 4) Run the stub kernel across the whole batch ----
+        const size_t n = querySignatures.size();
+        std::vector<double> mitOut(n), cfdOut(n);
+        bool ok = score_batch_cl(querySignatures.data(), n,
+                                calcMit ? mitOut.data() : nullptr,
+                                calcCfd ? cfdOut.data() : nullptr,
+                                scoreMethod, threshold, seqLength);
+
+        if (ok) {
+            for (size_t i = 0; i < n; ++i) {
+                querySignatureMitScores[i] = calcMit ? mitOut[i] : -1.0;
+                querySignatureCfdScores[i] = calcCfd ? cfdOut[i] : -1.0;
+            }
+            if (g_profileLogFile) {
+                std::fprintf(g_profileLogFile, "[CL] score_batch_cl OK for %zu guides (stub zeros expected)\n", n);
+                std::fflush(g_profileLogFile);
+            }
+        } else {
+            if (g_profileLogFile) {
+                std::fprintf(g_profileLogFile, "[CL] score_batch_cl returned false — falling back to CPU\n");
+                std::fflush(g_profileLogFile);
+            }
+        
         }
 
     #else
