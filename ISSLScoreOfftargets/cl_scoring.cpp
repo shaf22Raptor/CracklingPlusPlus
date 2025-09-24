@@ -328,6 +328,18 @@ bool score_batch_cl(const uint64_t* querySigs,
         cl_die_if(err, "clCreateBuffer(d_outCfd)");
     }
 
+    // wordsPerGuide = ceil(offtargetsCount / 64)
+    const cl_ulong wordsPerGuide = (cl_ulong)((g_offtargetsCount_cached + 63ull) / 64ull);
+    const size_t seenBytes = (size_t)guideCount * (size_t)wordsPerGuide * sizeof(cl_ulong);
+
+    cl_mem d_seenBits = clCreateBuffer(g_ctx, CL_MEM_READ_WRITE, seenBytes, nullptr, &err);
+    cl_die_if(err, "clCreateBuffer(d_seenBits)");
+
+    // Fast zero: OpenCL 1.2+ clEnqueueFillBuffer (pattern = 0)
+    const cl_uint zero = 0;
+    err = clEnqueueFillBuffer(g_q, d_seenBits, &zero, sizeof(zero), 0, seenBytes, 0, nullptr, nullptr);
+    cl_die_if(err, "clEnqueueFillBuffer(d_seenBits=0)");
+
     // ====== set kernel args (order must match the .cl) ======
     cl_uint arg = 0;
     cl_die_if(clSetKernelArg(g_kernel, arg++, sizeof(cl_mem), &d_query), "set arg querySigs");
@@ -371,9 +383,15 @@ bool score_batch_cl(const uint64_t* querySigs,
         cl_die_if(clSetKernelArg(g_kernel, arg++, sizeof(cl_double), &thr), "set arg threshold(f64)");
     }
 
+    // ... after method + threshold
     cl_uint seqLenU = (cl_uint)seqLength;
     cl_die_if(clSetKernelArg(g_kernel, arg++, sizeof(cl_uint), &seqLenU), "set arg seqLength");
 
+    // NEW: bitsets + wordsPerGuide  (these come AFTER seqLength)
+    cl_die_if(clSetKernelArg(g_kernel, arg++, sizeof(cl_mem),   &d_seenBits),     "set arg seenBits");
+    cl_die_if(clSetKernelArg(g_kernel, arg++, sizeof(cl_ulong), &wordsPerGuide),  "set arg wordsPerGuide");
+
+    // outputs
     cl_die_if(clSetKernelArg(g_kernel, arg++, sizeof(cl_mem), &d_outMit), "set arg outMit");
     cl_die_if(clSetKernelArg(g_kernel, arg++, sizeof(cl_mem), &d_outCfd), "set arg outCfd");
 
@@ -413,6 +431,7 @@ bool score_batch_cl(const uint64_t* querySigs,
 
     // cleanup per-call buffers
     clReleaseMemObject(d_query);
+    clReleaseMemObject(d_seenBits);   // NEW
     clReleaseMemObject(d_outMit);
     clReleaseMemObject(d_outCfd);
 

@@ -90,6 +90,9 @@ __kernel void score_kernel(
     ScoreT threshold,     // early-exit threshold (same formula as CPU)
     uint   seqLength,     // usually 20
 
+    __global ulong* seenBits,      // length = guideCount * wordsPerGuide
+    ulong           wordsPerGuide, // number of 64-bit words per guide
+
     // Outputs (one per guide)
     __global ScoreT* outMit,
     __global ScoreT* outCfd
@@ -118,11 +121,9 @@ __kernel void score_kernel(
     // (Optional sanity: touch the LUTs to ensure args wired correctly)
     // This keeps the compiler from optimizing args away in some drivers.
     // Remove once real scoring uses them.
-    if ((gid == 0ul) && mitLut && cfdPos && cfdPam) {
-        // volatile prevents DCE; write to outMit[0] harmlessly.
-        volatile ScoreT sink = mitLut[0];
-        sink += cfdPos[0];
-        sink += cfdPam[0];
-        if (outMit) outMit[0] = (ScoreT)0 + (ScoreT)0 * sink; // still zero
+
+    if (gid == 0ul && seenBits && wordsPerGuide > 0ul) {
+        volatile ulong sink = seenBits[0];
+        (void)sink;
     }
 }
