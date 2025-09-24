@@ -55,7 +55,15 @@ static cl_mem d_cfdPam               = nullptr;
 static std::vector<double> g_mitLutHost;
 static std::vector<double> g_cfdPosHost;
 static std::vector<double> g_cfdPamHost;
-static ClScorePrecision    g_prec = ClScorePrecision::Float32;
+static ClScorePrecision g_prec = ClScorePrecision::Float32;
+
+
+static size_t g_offtargetsCount_cached = 0;
+static size_t g_sliceCount_cached = 0;
+static size_t g_seqLength_cached = 0;
+
+static size_t g_total_global_mem_bytes = 0; // device property
+static size_t g_static_bytes           = 0; // what we've uploaded (sum)
 
 // ====== setters you already declared in the header ======
 void cl_set_precision(ClScorePrecision p) {
@@ -94,20 +102,15 @@ static std::vector<float> to_float(const std::vector<double>& v) {
     return out;
 }
 
-static size_t g_offtargetsCount_cached = 0;
-static size_t g_sliceCount_cached = 0;
-// (optionally seq length too)
-static size_t g_seqLength_cached = 0;
-
 // ====== init: choose device, build program, upload static data ======
 void init_scoring_cl(const ScoringIndexMeta& meta)
 {
+    std::lock_guard<std::mutex> lk(g_mu);
+    if (g_ctx) return;
+
     g_offtargetsCount_cached = meta.offtargetsCount;
     g_sliceCount_cached      = meta.sliceCount;
     g_seqLength_cached       = meta.seqLength;
-
-    std::lock_guard<std::mutex> lk(g_mu);
-    if (g_ctx) return; // already inited
 
     cl_int err = CL_SUCCESS;
 
@@ -123,6 +126,12 @@ void init_scoring_cl(const ScoringIndexMeta& meta)
     std::vector<cl_device_id> devs(ndev);
     cl_die_if(clGetDeviceIDs(g_platform, CL_DEVICE_TYPE_GPU, ndev, devs.data(), nullptr), "clGetDeviceIDs(list)");
     g_device = devs[0];
+
+    cl_ulong memBytes = 0;
+    cl_die_if(clGetDeviceInfo(g_device, CL_DEVICE_GLOBAL_MEM_SIZE,
+                            sizeof(memBytes), &memBytes, nullptr),
+                            "clGetDeviceInfo(GLOBAL_MEM_SIZE)");
+    g_total_global_mem_bytes = static_cast<size_t>(memBytes);
 
     // 2) context + queue
 #if defined(CL_VERSION_2_0)
@@ -254,6 +263,31 @@ void init_scoring_cl(const ScoringIndexMeta& meta)
                                   const_cast<double*>(g_cfdPamHost.data()), &err);
         cl_die_if(err, "clCreateBuffer(d_cfdPam)");
     }
+    // <<< put accounting block HERE >>>
+    g_static_bytes = 0;
+    auto add_bytes = [](size_t& acc, size_t bytes){ acc += bytes; };
+
+    add_bytes(g_static_bytes, meta.offtargetsCount * sizeof(cl_ulong));
+    add_bytes(g_static_bytes, meta.sliceCount * meta.offtargetsCount * sizeof(cl_ulong));
+    add_bytes(g_static_bytes, meta.sliceKeyTableLen * sizeof(cl_uint));
+    add_bytes(g_static_bytes, meta.sliceKeyTableLen * sizeof(cl_ulong));
+    add_bytes(g_static_bytes, meta.sliceMaskPositionsLen * sizeof(cl_uint));
+    add_bytes(g_static_bytes, meta.sliceCount * sizeof(cl_uint)); // offsets
+    add_bytes(g_static_bytes, meta.sliceCount * sizeof(cl_uint)); // lengths
+
+    const bool useF32 = (g_prec == ClScorePrecision::Float32);
+    if (useF32) {
+        add_bytes(g_static_bytes, g_mitLutHost.size() * sizeof(cl_float));
+        add_bytes(g_static_bytes, g_cfdPosHost.size() * sizeof(cl_float));
+        add_bytes(g_static_bytes, g_cfdPamHost.size() * sizeof(cl_float));
+    } else {
+        add_bytes(g_static_bytes, g_mitLutHost.size() * sizeof(cl_double));
+        add_bytes(g_static_bytes, g_cfdPosHost.size() * sizeof(cl_double));
+        add_bytes(g_static_bytes, g_cfdPamHost.size() * sizeof(cl_double));
+    }
+
+    std::fprintf(stderr, "[CL] static_upload_bytes=%zu (of %zu VRAM)\n",
+                g_static_bytes, g_total_global_mem_bytes);
 }
 
 // ====== run one batch (stub kernel writes zeros) ======
@@ -264,6 +298,7 @@ bool score_batch_cl(const uint64_t* querySigs,
                     otScoreMethod   method,
                     double          threshold,
                     std::size_t     seqLength)
+                    
 {
     if (!g_offtargetsCount_cached || !g_sliceCount_cached) return false;
     std::lock_guard<std::mutex> lk(g_mu);
@@ -409,6 +444,25 @@ void shutdown_scoring_cl() {
 
     g_device = nullptr;
     g_platform = nullptr;
+
+    g_total_global_mem_bytes = 0;
+    g_static_bytes = 0;
+    g_offtargetsCount_cached = 0;
+    g_sliceCount_cached = 0;
+    g_seqLength_cached = 0;
+}
+
+ClScorePrecision cl_get_precision() noexcept {
+    std::lock_guard<std::mutex> lk(g_mu);
+    return g_prec;
+}
+std::size_t cl_get_total_global_mem_bytes() noexcept {
+    std::lock_guard<std::mutex> lk(g_mu);
+    return g_total_global_mem_bytes;
+}
+std::size_t cl_get_static_bytes() noexcept {
+    std::lock_guard<std::mutex> lk(g_mu);
+    return g_static_bytes;
 }
 
 #else
@@ -420,4 +474,8 @@ void cl_set_cfd_pam_penalties(const double*, std::size_t) {}
 void init_scoring_cl(const ScoringIndexMeta&) {}
 bool score_batch_cl(const uint64_t*, std::size_t, double*, double*, otScoreMethod, double, std::size_t) { return false; }
 void shutdown_scoring_cl() {}
+
+ClScorePrecision cl_get_precision() { return ClScorePrecision::Float32; }
+std::size_t cl_get_total_global_mem_bytes() { return 0; }
+std::size_t cl_get_static_bytes() { return 0; }
 #endif

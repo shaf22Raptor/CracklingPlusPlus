@@ -9,7 +9,22 @@
 #include "ISSLScoreOfftargets.hpp"
 
 enum otScoreMethod : int;
-extern FILE* g_profileLogFile;
+enum class ClScorePrecision { Float32, Float64 };
+
+#ifdef MANPROF_ENABLE
+extern std::FILE* g_profileLogFile;
+#endif
+
+#if USE_OPENCL_SCORING
+ClScorePrecision cl_get_precision() noexcept;
+std::size_t      cl_get_total_global_mem_bytes() noexcept;
+std::size_t      cl_get_static_bytes() noexcept;
+#else
+inline ClScorePrecision cl_get_precision() noexcept { return ClScorePrecision::Float32; }
+inline std::size_t      cl_get_total_global_mem_bytes() noexcept { return 0; }
+inline std::size_t      cl_get_static_bytes() noexcept { return 0; }
+#endif
+
 
 // GPU-scoring static view of the host-side data
 struct ScoringIndexMeta {
@@ -30,8 +45,6 @@ struct ScoringIndexMeta {
     const uint32_t* pSliceMaskOffsets;   // [sliceCount]
     const uint32_t* pSliceMaskLengths;   // [sliceCount]
 };
-// Precision choice
-enum class ClScorePrecision { Float32, Float64 };
 
 // Step-2 API: choose precision and push LUTs
 void  cl_set_precision(ClScorePrecision p);     // call once before init/build

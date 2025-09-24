@@ -594,6 +594,7 @@ int main(int argc, char** argv)
     FlatScoringMeta flatMeta = build_flat_meta(sliceMasks, allSlicelistSizes, offtargetsCount);
     sanity_check_flat_meta(sliceLists, allSlicelistSizes, allSignatures, flatMeta);
     auto t_score_start = std::chrono::steady_clock::now();
+    bool usedGpu = false;
 
     #if USE_OPENCL_SCORING
     
@@ -641,29 +642,78 @@ int main(int argc, char** argv)
             }
         }
 
-        // ---- 4) Run the stub kernel across the whole batch ----
-        const size_t n = querySignatures.size();
-        std::vector<double> mitOut(n), cfdOut(n);
-        bool ok = score_batch_cl(querySignatures.data(), n,
-                                calcMit ? mitOut.data() : nullptr,
-                                calcCfd ? cfdOut.data() : nullptr,
-                                scoreMethod, threshold, seqLength);
+        usedGpu = true;
 
-        if (ok) {
-            for (size_t i = 0; i < n; ++i) {
-                querySignatureMitScores[i] = calcMit ? mitOut[i] : -1.0;
-                querySignatureCfdScores[i] = calcCfd ? cfdOut[i] : -1.0;
+        const size_t n = querySignatures.size();
+
+        // Estimate per-guide bytes (future-proof: includes dedup bitset)
+        const bool     useF64           = (cl_get_precision() == ClScorePrecision::Float64);
+        const uint64_t wordsPerGuide    = (offtargetsCount + 63ull) / 64ull;
+        const uint64_t bitsetBytes      = wordsPerGuide * sizeof(uint64_t);     // ~46 KB in your dataset
+        const uint64_t outBytesPerGuide = useF64 ? 16ull : 8ull;                // MIT + CFD
+        const uint64_t sigBytesPerGuide = sizeof(uint64_t);
+        const uint64_t perGuideBytes    = bitsetBytes + outBytesPerGuide + sigBytesPerGuide;
+
+        const uint64_t totalVRAM   = cl_get_total_global_mem_bytes();
+        const uint64_t staticBytes = cl_get_static_bytes();
+        const double   keepFrac    = 0.20; // 20% headroom
+
+        uint64_t usable = (totalVRAM > staticBytes)
+                        ? (uint64_t)((double)(totalVRAM - staticBytes) * (1.0 - keepFrac))
+                        : 0ull;
+
+        uint64_t B = (perGuideBytes && usable > perGuideBytes) ? (usable / perGuideBytes) : 1ull;
+        B = std::max<uint64_t>(1ull, std::min<uint64_t>(B, (uint64_t)n));
+
+        std::fprintf(stderr,
+            "[CL] batch planner: vram_total=%llu, static=%llu, usable≈%llu, perGuide=%llu → B=%llu\n",
+            (unsigned long long)totalVRAM,
+            (unsigned long long)staticBytes,
+            (unsigned long long)usable,
+            (unsigned long long)perGuideBytes,
+            (unsigned long long)B
+        );
+        if (g_profileLogFile) {
+            std::fprintf(g_profileLogFile,
+                "[CL] batch planner: vram_total=%llu, static=%llu, usable≈%llu, perGuide=%llu → B=%llu\n",
+                (unsigned long long)totalVRAM,
+                (unsigned long long)staticBytes,
+                (unsigned long long)usable,
+                (unsigned long long)perGuideBytes,
+                (unsigned long long)B
+            );
+            std::fflush(g_profileLogFile);
+        }
+
+        // Run in batches; write outputs directly into final arrays
+        size_t done = 0;
+        while (done < n) {
+            const size_t take = (size_t)std::min<uint64_t>(B, (uint64_t)(n - done));
+
+            const bool ok = score_batch_cl(
+                /* querySigs */  querySignatures.data() + done,
+                /* guideCount */ take,
+                /* outMit     */ calcMit ? (querySignatureMitScores.data() + done) : nullptr,
+                /* outCfd     */ calcCfd ? (querySignatureCfdScores.data() + done) : nullptr,
+                /* method     */ scoreMethod,
+                /* threshold  */ threshold,
+                /* seqLength  */ seqLength
+            );
+
+            if (!ok) {
+                usedGpu = false;
+                if (g_profileLogFile) {
+                    std::fprintf(g_profileLogFile, "[CL] score_batch_cl failed — falling back to CPU\n");
+                    std::fflush(g_profileLogFile);
+                }
+                break; // optional: fall back to CPU for the remaining guides
             }
+
             if (g_profileLogFile) {
-                std::fprintf(g_profileLogFile, "[CL] score_batch_cl OK for %zu guides (stub zeros expected)\n", n);
+                std::fprintf(g_profileLogFile, "[CL] score_batch_cl OK for %zu guides\n", take);
                 std::fflush(g_profileLogFile);
             }
-        } else {
-            if (g_profileLogFile) {
-                std::fprintf(g_profileLogFile, "[CL] score_batch_cl returned false — falling back to CPU\n");
-                std::fflush(g_profileLogFile);
-            }
-        
+            done += take;
         }
 
     #else
