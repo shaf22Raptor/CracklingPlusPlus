@@ -115,23 +115,122 @@ void init_scoring_cl(const ScoringIndexMeta& meta)
     cl_int err = CL_SUCCESS;
 
     // 1) pick first platform/device (portable & simple)
+    // Pick a GPU by name substring; fall back to first GPU if not found.
+    // Optional env override: CRACKLING_CL_DEVICE=gfx1200 (or "Radeon", etc.)
+    const char* wantEnv = std::getenv("CRACKLING_CL_DEVICE");
+    std::string want = wantEnv ? wantEnv : "gfx1200"; // <-- set your default here
+
+    auto contains_ci = [](std::string hay, std::string needle){
+        std::transform(hay.begin(), hay.end(), hay.begin(), ::tolower);
+        std::transform(needle.begin(), needle.end(), needle.begin(), ::tolower);
+        return hay.find(needle) != std::string::npos;
+    };
+
+    cl_platform_id chosenPlat = nullptr;
+    cl_device_id   chosenDev  = nullptr;
+    std::string    chosenPlatName, chosenName, chosenVendor, chosenVersion;
+
+    // enumerate platforms
     cl_uint nplat = 0;
     cl_die_if(clGetPlatformIDs(0, nullptr, &nplat), "clGetPlatformIDs(count)");
     std::vector<cl_platform_id> plats(nplat);
     cl_die_if(clGetPlatformIDs(nplat, plats.data(), nullptr), "clGetPlatformIDs(list)");
-    g_platform = plats[0];
 
-    cl_uint ndev = 0;
-    cl_die_if(clGetDeviceIDs(g_platform, CL_DEVICE_TYPE_GPU, 0, nullptr, &ndev), "clGetDeviceIDs(count)");
-    std::vector<cl_device_id> devs(ndev);
-    cl_die_if(clGetDeviceIDs(g_platform, CL_DEVICE_TYPE_GPU, ndev, devs.data(), nullptr), "clGetDeviceIDs(list)");
-    g_device = devs[0];
+    // helper to fetch a string property
+    auto get_pstr = [](cl_platform_id p, cl_platform_info param){
+        size_t n=0; clGetPlatformInfo(p, param, 0, nullptr, &n);
+        std::string s(n, '\0'); clGetPlatformInfo(p, param, n, s.data(), nullptr);
+        if (!s.empty() && s.back()=='\0') s.pop_back(); return s;
+    };
+    auto get_dstr = [](cl_device_id d, cl_device_info param){
+        size_t n=0; clGetDeviceInfo(d, param, 0, nullptr, &n);
+        std::string s(n, '\0'); clGetDeviceInfo(d, param, n, s.data(), nullptr);
+        if (!s.empty() && s.back()=='\0') s.pop_back(); return s;
+    };
 
+    // 1) First pass: exact/substring match on any GPU
+    for (cl_uint pi = 0; pi < nplat && !chosenDev; ++pi) {
+        cl_uint ndev = 0;
+        clGetDeviceIDs(plats[pi], CL_DEVICE_TYPE_GPU, 0, nullptr, &ndev);
+        std::vector<cl_device_id> devs(ndev);
+        clGetDeviceIDs(plats[pi], CL_DEVICE_TYPE_GPU, ndev, devs.data(), nullptr);
+
+        for (cl_uint di = 0; di < ndev; ++di) {
+            std::string name    = get_dstr(devs[di], CL_DEVICE_NAME);
+            if (contains_ci(name, want)) {
+                chosenPlat   = plats[pi];
+                chosenDev    = devs[di];
+                chosenPlatName = get_pstr(plats[pi], CL_PLATFORM_NAME);
+                chosenName     = name;
+                chosenVendor   = get_dstr(devs[di], CL_DEVICE_VENDOR);
+                chosenVersion  = get_dstr(devs[di], CL_DEVICE_VERSION);
+                break;
+            }
+        }
+    }
+
+    // 2) Fallback: first discrete-leaning GPU (hostUnifiedMemory == false)
+    if (!chosenDev) {
+        for (cl_uint pi = 0; pi < nplat && !chosenDev; ++pi) {
+            cl_uint ndev = 0;
+            clGetDeviceIDs(plats[pi], CL_DEVICE_TYPE_GPU, 0, nullptr, &ndev);
+            std::vector<cl_device_id> devs(ndev);
+            clGetDeviceIDs(plats[pi], CL_DEVICE_TYPE_GPU, ndev, devs.data(), nullptr);
+            for (auto d : devs) {
+                cl_bool unified = CL_TRUE;
+                clGetDeviceInfo(d, CL_DEVICE_HOST_UNIFIED_MEMORY, sizeof(unified), &unified, nullptr);
+                if (unified == CL_FALSE) {
+                    chosenPlat   = plats[pi];
+                    chosenDev    = d;
+                    chosenPlatName = get_pstr(plats[pi], CL_PLATFORM_NAME);
+                    chosenName     = get_dstr(d, CL_DEVICE_NAME);
+                    chosenVendor   = get_dstr(d, CL_DEVICE_VENDOR);
+                    chosenVersion  = get_dstr(d, CL_DEVICE_VERSION);
+                    break;
+                }
+            }
+        }
+    }
+
+    // 3) Last fallback: first GPU anywhere
+    if (!chosenDev) {
+        for (cl_uint pi = 0; pi < nplat && !chosenDev; ++pi) {
+            cl_uint ndev = 0;
+            clGetDeviceIDs(plats[pi], CL_DEVICE_TYPE_GPU, 0, nullptr, &ndev);
+            if (!ndev) continue;
+            std::vector<cl_device_id> devs(ndev);
+            clGetDeviceIDs(plats[pi], CL_DEVICE_TYPE_GPU, ndev, devs.data(), nullptr);
+
+            chosenPlat   = plats[pi];
+            chosenDev    = devs[0];
+            chosenPlatName = get_pstr(plats[pi], CL_PLATFORM_NAME);
+            chosenName     = get_dstr(devs[0], CL_DEVICE_NAME);
+            chosenVendor   = get_dstr(devs[0], CL_DEVICE_VENDOR);
+            chosenVersion  = get_dstr(devs[0], CL_DEVICE_VERSION);
+            break;
+        }
+    }
+
+    if (!chosenDev) cl_die_if(CL_DEVICE_NOT_FOUND, "No OpenCL GPU devices found.");
+
+    g_platform = chosenPlat;
+    g_device   = chosenDev;
+
+    // log selection
+    if (g_profileLogFile) {
+        std::fprintf(g_profileLogFile,
+            "[CL] Selected device: %s | Vendor=%s | Platform=%s | Version=%s (want=\"%s\")\n",
+            chosenName.c_str(), chosenVendor.c_str(), chosenPlatName.c_str(), chosenVersion.c_str(), want.c_str());
+        std::fflush(g_profileLogFile);
+    }
+
+    // keep your mem size query
     cl_ulong memBytes = 0;
     cl_die_if(clGetDeviceInfo(g_device, CL_DEVICE_GLOBAL_MEM_SIZE,
                             sizeof(memBytes), &memBytes, nullptr),
-                            "clGetDeviceInfo(GLOBAL_MEM_SIZE)");
+            "clGetDeviceInfo(GLOBAL_MEM_SIZE)");
     g_total_global_mem_bytes = static_cast<size_t>(memBytes);
+
 
     // 2) context + queue
 #if defined(CL_VERSION_2_0)
