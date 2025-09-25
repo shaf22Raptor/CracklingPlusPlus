@@ -1,10 +1,10 @@
-// scoring_kernels.cl
-// Portable OpenCL 1.2 skeleton for Crackling++ scoring
-// - No vendor extensions except optional fp64
-// - No program-scope pointers (LUTs passed as kernel args)
-// - Safe bounds checks; outputs are zeroed for now
+// // scoring_kernels.cl
+// // Portable OpenCL 1.2 skeleton for Crackling++ scoring
+// // - No vendor extensions except optional fp64
+// // - No program-scope pointers (LUTs passed as kernel args)
+// // - Safe bounds checks; outputs are zeroed for now
 
-// -------- Optional double precision --------
+// // -------- Optional double precision --------
 // Define USE_FP64 at build time if the device supports fp64
 #ifdef USE_FP64
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable
@@ -13,8 +13,8 @@ typedef double ScoreT;
 typedef float  ScoreT;
 #endif
 
-// 64-bit integers (commonly available; include pragma for safety on old stacks)
-#pragma OPENCL EXTENSION cl_khr_int64 : enable
+// // 64-bit integers (commonly available; include pragma for safety on old stacks)
+// #pragma OPENCL EXTENSION cl_khr_int64 : enable
 
 // ---------- Bit helpers (match CPU logic exactly) ----------
 inline ulong mismatch_mask(ulong ss, ulong ot)
@@ -48,82 +48,157 @@ inline ulong build_search_slice(ulong guideSig,
     return acc;
 }
 
-// ============= Kernel arguments =============
-//
-// This kernel is a no-op scoring stub for now:
-//  • It binds all expected buffers (index + LUTs).
-//  • It computes guide index = get_global_id(0) and writes zeros.
-//  • Later we’ll implement the full slice/key traversal & scoring.
-//
-// Global size: launch with at least guideCount work-items.
-//
+inline ulong pack_mismatch_bits(ulong mm, uint seqLength) {
+    ulong packed = 0ul;
+    for (uint pos = 0; pos < seqLength; ++pos)
+        packed |= ((mm >> (2u*pos)) & 1ul) << pos;
+    return packed;
+}
+
 __kernel void score_kernel(
-    // Guides (query signatures, 2-bit packed, 64-bit)
     __global const ulong* querySigs,
     ulong                 guideCount,
 
-    // ---- Flattened index/meta ----
-    // Off-target sequences (64-bit signatures)
     __global const ulong* offtargets,
     ulong                 offtargetsCount,
 
-    // Concatenated signatures for all slices (layout matches host)
     __global const ulong* allSignatures,
 
-    // Per (slice,key): counts and base offsets (flattened)
-    __constant const uint*  sliceKeyCounts,       // length = sum( 4^(maskLen_i) )
-    __constant const ulong* sliceKeyBaseOffsets,  // same length
+    __constant const uint*  sliceKeyCounts,
+    __constant const ulong* sliceKeyBaseOffsets,
 
-    // Slice mask tables
-    __constant const uint*  sliceMaskPositions,   // concatenated positions
-    __constant const uint*  sliceMaskOffsets,     // per-slice offset into positions
-    __constant const uint*  sliceMaskLengths,     // per-slice length
+    __constant const uint*  sliceMaskPositions,
+    __constant const uint*  sliceMaskOffsets,
+    __constant const uint*  sliceMaskLengths,
     uint                    sliceCount,
 
-    // Scoring/LUTs (passed as buffers; constant-qualified)
     __constant const ScoreT* mitLut,
     __constant const ScoreT* cfdPos,
     __constant const ScoreT* cfdPam,
 
-    // Scoring knobs
-    int    method,        // enum otScoreMethod (passed as int)
-    ScoreT threshold,     // early-exit threshold (same formula as CPU)
-    uint   seqLength,     // usually 20
+    int    method,      // enum otScoreMethod as int
+    ScoreT threshold,
+    uint   seqLength,
 
-    __global ulong* seenBits,      // length = guideCount * wordsPerGuide
-    ulong           wordsPerGuide, // number of 64-bit words per guide
+    __global ulong*      seenBits,      // guideCount * wordsPerGuide
+    ulong                wordsPerGuide, // 64-bit words per guide
 
-    // Outputs (one per guide)
     __global ScoreT* outMit,
     __global ScoreT* outCfd
-
-    // (Future) per-guide counters/debug could go here
 )
 {
     ulong gid = (ulong)get_global_id(0);
     if (gid >= guideCount) return;
 
-    // Read this guide’s packed signature
-    ulong guide = querySigs[gid];
+    ulong guideSig = querySigs[gid];
 
-    // ---- Placeholder “no-op” behavior ----
-    // For now, write zeros so the host path can validate plumbing.
-    // Later we’ll:
-    //   - loop over slices
-    //   - build searchSlice via build_search_slice(...)
-    //   - locate run via sliceKeyCounts/BaseOffsets
-    //   - iterate signatures, dedup offtarget ids with a per-guide bitset
-    //   - compute dist and accumulate MIT/CFD using LUTs
-    //   - apply early-exit logic by 'method' and 'threshold'
-    if (outMit) outMit[gid] = (ScoreT)0;
-    if (outCfd) outCfd[gid] = (ScoreT)0;
+    // Per-guide bitset window
+    __global ulong* seen = seenBits + gid * wordsPerGuide;
 
-    // (Optional sanity: touch the LUTs to ensure args wired correctly)
-    // This keeps the compiler from optimizing args away in some drivers.
-    // Remove once real scoring uses them.
+    // Accumulators
+    ScoreT totMit = (ScoreT)0;
+    ScoreT totCfd = (ScoreT)0;
 
-    if (gid == 0ul && seenBits && wordsPerGuide > 0ul) {
-        volatile ulong sink = seenBits[0];
-        (void)sink;
+    // Flags for which scores to compute (derive from whether out* was provided)
+    const bool haveMitLut = (mitLut != 0);
+    const bool calcMit = (outMit != 0) && haveMitLut;
+    const bool calcCfd = (outCfd != 0) && (cfdPos != 0) && (cfdPam != 0);
+
+    // Early-exit ceiling (matches CPU)
+    const ScoreT maxSum = (((ScoreT)10000) - threshold * (ScoreT)100) / fmax((ScoreT)1e-9, threshold);
+
+    // Walk the concatenated (slice,key) tables with a running index
+    uint tbl = 0ul; // start of this slice’s key block in sliceKey{Counts,BaseOffsets}
+
+    for (uint si = 0; si < sliceCount; ++si)
+    {
+        const uint  maskLen  = sliceMaskLengths[si];
+        const uint  posOff   = sliceMaskOffsets[si];
+
+        const ulong keys_i   = (1ul << (2u * maskLen));     // 64-bit!
+        const ulong countsStart = tbl;
+        const ulong countsEnd   = tbl + keys_i;
+
+        const ulong searchSlice = build_search_slice(guideSig,
+                                                    sliceMaskPositions + posOff,
+                                                    maskLen);
+        const ulong keyIdx   = countsStart + searchSlice;
+
+        const uint  runCount = sliceKeyCounts[keyIdx];       // arrays unchanged
+        const ulong base     = sliceKeyBaseOffsets[keyIdx];
+
+        // Iterate signatures for this key
+        for (uint j = 0; j < runCount; ++j) {
+            const ulong packed = allSignatures[base + (ulong)j];
+            const uint  id  = (uint)(packed & 0xFFFFFFFFul);
+            const uint  occ = (uint)(packed >> 32);
+
+            // Dedup per guide
+            const ulong word = ((ulong)id) >> 6;
+            const ulong bit  = (ulong)1 << (id & 63u);
+            const ulong oldv = seen[word];
+            if ((oldv & bit) != 0ul) continue;     // already seen
+            seen[word] = oldv | bit;               // mark seen
+
+            // Hamming distance via your parity trick
+            const ulong mm   = mismatch_mask(guideSig, offtargets[id]);
+            const uint  dist = dist_from_mask(mm);
+
+            if (dist <= 4u) {
+                // MIT
+                if (calcMit && dist > 0u) {
+                    // NOTE: mm can be up to 2*seqLength bits; mitLut was provisioned to 2^seqLength on host.
+                    // Guard array access by masking if needed (optional if host LUT is dense enough).
+                    const ulong packed = pack_mismatch_bits(mm, seqLength);   // <-- fix
+                    totMit += (ScoreT)mitLut[packed] * (ScoreT)occ;
+                }
+
+                // CFD
+                if (calcCfd) {
+                    ScoreT cfd = (dist == 0u) ? (ScoreT)1 : (ScoreT)cfdPam[0b1010];
+                    if (dist != 0u) {
+                        const ulong ot = offtargets[id];
+                        for (uint pos = 0; pos < seqLength; ++pos) {
+                            const uint g2 = (uint)((guideSig >> (2u*pos)) & 3ul);
+                            const uint o2 = (uint)((ot       >> (2u*pos)) & 3ul);
+                            if (g2 != o2) {
+                                const uint m = (pos << 4) | (g2 << 2) | (o2 ^ 3u);
+                                // optional debug bound: if (m >= 16u*seqLength) continue;
+                                cfd *= cfdPos[m];
+                            }
+                        }
+                    }
+                    totCfd += cfd * (ScoreT)occ;
+                }
+
+                // Early exit checks (match CPU semantics)
+                if (threshold > (ScoreT)0) {
+                    if (method == /* mitAndCfd */ 0 && (totMit > maxSum) && (totCfd > maxSum)) break;
+                    if (method == /* mitOrCfd  */ 1 && ((totMit > maxSum) || (totCfd > maxSum))) break;
+                    if (method == /* avgMitCfd */ 2 && (((totMit + totCfd) * (ScoreT)0.5) > maxSum)) break;
+                    if (method == /* mit       */ 3 && (totMit > maxSum)) break;
+                    if (method == /* cfd       */ 4 && (totCfd > maxSum)) break;
+                }
+            }
+        }
+
+        // advance to next slice block in the tables
+        tbl = countsEnd;
+
+        // if an early-exit was triggered in the inner loop, stop slices
+        if (threshold > (ScoreT)0) {
+            bool stop = false;
+            if (method == 0 && (totMit > maxSum) && (totCfd > maxSum)) stop = true;
+            if (method == 1 && ((totMit > maxSum) || (totCfd > maxSum))) stop = true;
+            if (method == 2 && (((totMit + totCfd) * (ScoreT)0.5) > maxSum)) stop = true;
+            if (method == 3 && (totMit > maxSum)) stop = true;
+            if (method == 4 && (totCfd > maxSum)) stop = true;
+            if (stop) break;
+        }
     }
+
+    // Final transform (same as CPU)
+    if (outMit) outMit[gid] = calcMit ? ((ScoreT)10000 / ((ScoreT)100 + totMit)) : (ScoreT)(-1);
+    if (outCfd) outCfd[gid] = calcCfd ? ((ScoreT)10000 / ((ScoreT)100 + totCfd)) : (ScoreT)(-1);
 }
+

@@ -614,20 +614,30 @@ int main(int argc, char** argv)
         clMeta.pSliceMaskLengths      = flatMeta.sliceMaskLengths.data();
 
         // ---- 2) Precision + LUT registration (safe to call multiple times) ----
-        cl_set_precision(ClScorePrecision::Float32);
+        cl_set_precision(ClScorePrecision::Float64);
 
-        // Flatten the phmap MIT LUT into a dense vector
-        const size_t mitSize = 1ULL << seqLength;  // 2^seqLength (e.g., 1,048,576 for 20)
-        std::vector<double> mitLut(mitSize, 0.0);
+        // Build GPU MIT LUT keyed by the packed L-bit mismatch mask
+        const uint32_t L = static_cast<uint32_t>(seqLength);
+        const size_t   mitSize = 1ULL << L;  // 2^L (e.g., 1,048,576 for 20)
+
+        std::vector<double> mitLutPacked(mitSize, 0.0);
         for (const auto& kv : precalculatedMITScores) {
-            const uint64_t mask = kv.first;
-            if (mask < mitSize) mitLut[mask] = kv.second;
+            const uint64_t cpuMask2L = kv.first;
+            const double   score     = kv.second;
+
+            uint64_t packed = 0;
+            for (uint32_t pos = 0; pos < L; ++pos) {
+                packed |= ((cpuMask2L >> (2u * pos)) & 1ull) << pos; // take LSB of each 2-bit pair
+            }
+            mitLutPacked[packed] = score;
         }
-        cl_set_mit_lut(mitLut.data(), mitLut.size());
+
+        // IMPORTANT: upload the *packed* LUT (and make sure the name matches)
 
         const std::size_t posLen = sizeof(cfdPosPenalties) / sizeof(cfdPosPenalties[0]);
-        cl_set_cfd_pos_penalties(cfdPosPenalties, posLen);
         const std::size_t pamLen = sizeof(cfdPamPenalties) / sizeof(cfdPamPenalties[0]);
+        cl_set_mit_lut(mitLutPacked.data(), mitLutPacked.size());
+        cl_set_cfd_pos_penalties(cfdPosPenalties, posLen);
         cl_set_cfd_pam_penalties(cfdPamPenalties, pamLen);
 
         // ---- 3) One-time init ----
