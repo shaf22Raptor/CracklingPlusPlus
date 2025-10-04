@@ -2,10 +2,11 @@
 #include <vector>
 #include <cstdint>
 #include <string>
+#include "app_options.hpp"
 
 class SeqSigEncoderCL {
 public:
-    SeqSigEncoderCL();  // builds context, queue, program, kernel, LUT buffer
+    explicit SeqSigEncoderCL(const AppOptions& opts); // builds context, queue, program, kernel, LUT buffer
     ~SeqSigEncoderCL();
 
     // Encodes queryCount sequences from queryBytes into outSigs.

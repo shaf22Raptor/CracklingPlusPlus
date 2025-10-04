@@ -43,6 +43,87 @@ std::chrono::steady_clock::time_point g_progStart{};
 #include <numeric>
 #include <array>
 
+#include <cctype>
+#include <fstream>
+#include <sstream>
+#include "app_options.hpp"
+
+static inline void ltrim(std::string &s){ size_t i=0; while(i<s.size() && std::isspace((unsigned char)s[i])) ++i; s.erase(0,i); }
+static inline void rtrim(std::string &s){ while(!s.empty() && std::isspace((unsigned char)s.back())) s.pop_back(); }
+static inline void trim(std::string &s){ ltrim(s); rtrim(s); }
+static inline std::string lower(std::string s){ for(char &c: s) c=(char)std::tolower((unsigned char)c); return s; }
+
+static bool parse_bool(const std::string& val, bool& out){
+    std::string v = lower(val);
+    if (v=="1" || v=="true" || v=="yes"  || v=="on")  { out=true;  return true; }
+    if (v=="0" || v=="false"|| v=="no"   || v=="off") { out=false; return true; }
+    return false;
+}
+
+// --- read a simple INI into flat "section.key -> value" map ---
+static std::unordered_map<std::string,std::string>
+read_ini_kv(const std::string& path)
+{
+    std::unordered_map<std::string,std::string> kv;
+    std::ifstream f(path);
+    if (!f) return kv;
+
+    std::string line, sec;
+    while (std::getline(f, line)) {
+        auto hash = line.find('#'); if (hash != std::string::npos) line.erase(hash);
+        auto semi = line.find(';'); if (semi != std::string::npos) line.erase(semi);
+        trim(line);
+        if (line.empty()) continue;
+
+        if (line.front()=='[' && line.back()==']') {
+            sec = line.substr(1, line.size()-2);
+            trim(sec);
+            continue;
+        }
+
+        auto eq = line.find('=');
+        if (eq == std::string::npos) continue;
+        std::string key = line.substr(0, eq);
+        std::string val = line.substr(eq+1);
+        trim(key); trim(val);
+
+        if (!val.empty() && ((val.front()=='"' && val.back()=='"') || (val.front()=='\'' && val.back()=='\''))) {
+            if (val.size()>=2) val = val.substr(1, val.size()-2);
+        }
+
+        std::string full = sec.empty()? key : (sec + "." + key);
+        kv[lower(full)] = val; // case-insensitive keys
+    }
+    return kv;
+}
+
+// --- fill AppOptions from kv map with defaults preserved ---
+static void apply_ini_to_opts(const std::unordered_map<std::string,std::string>& kv, AppOptions& o)
+{
+    auto get = [&](const char* k)->const std::string*{
+        auto it = kv.find(lower(k));
+        return (it==kv.end()? nullptr : &it->second);
+    };
+
+    // Booleans
+    if (auto v=get("opencl.use_seq2sig")) { bool b; if (parse_bool(*v,b)) o.useCLSeq2Sig=b; }
+    if (auto v=get("opencl.use_scoring")) { bool b; if (parse_bool(*v,b)) o.useCLScoring=b; }
+
+    // Device selection
+    if (auto v=get("opencl.platform_index")) { try { o.clPlatformIndex = std::stoi(*v); } catch(...){} }
+    if (auto v=get("opencl.device_index"))   { try { o.clDeviceIndex   = std::stoi(*v); } catch(...){} }
+    if (auto v=get("opencl.device_gfx_id"))  { o.clDeviceGfxId = lower(*v); } // e.g., "gfx1200"
+    if (auto v=get("opencl.device_name_contains")) { o.clDeviceNameContains = *v; }
+
+    // Profiling
+    if (auto v=get("profiling.trace_file")) { if (!v->empty()) o.traceFile = *v; }
+
+    // (optional) Normalize whitespace
+    auto trim_inplace = [](std::string& s){ trim(s); };
+    trim_inplace(o.clDeviceGfxId);
+    trim_inplace(o.clDeviceNameContains);
+}
+
 // Small cross-platform error helper (works without OpenCL too)
 static inline void die_if(bool cond, const char* msg) {
     if (cond) {
@@ -186,8 +267,6 @@ static void sanity_check_flat_meta(
     }
 }
 
-
-
 struct alignas(64) ProfStats {
     // Times in nanoseconds to keep addition cheap & precise
     uint64_t seq_to_sig_ns = 0;
@@ -245,16 +324,44 @@ int main(int argc, char** argv)
 {
     g_progStart = std::chrono::steady_clock::now();
 
-    // Default log file name
-    const char* traceFileName = "profile_trace.txt";
-    if (argc >= 7) {
-        traceFileName = argv[6];
+    // 5 required args; 6th (optional) is the INI path
+    if (argc < 6) {
+        std::fprintf(stderr,
+            "Usage: %s [issltable] [query file] [max distance] [score-threshold] [score-method] [optional-config-ini]\n",
+            argv[0]);
+        std::exit(1);
     }
 
+    // Load runtime options (defaults -> INI overrides if present)
+    AppOptions opts;  // defaults: OpenCL off, trace_file = "profile_trace.txt"
+    if (argc >= 7) {
+        const std::string iniPath = argv[6];
+        auto kv = read_ini_kv(iniPath);
+        if (kv.empty()) {
+            std::fprintf(stderr,
+                "Warning: could not read INI at '%s' (using defaults)\n",
+                iniPath.c_str());
+        } else {
+            apply_ini_to_opts(kv, opts);
+        }
+    }
+
+    // Open trace file from INI-driven options
+    const char* traceFileName = opts.traceFile.c_str();
     g_profileLogFile = std::fopen(traceFileName, "w");
     if (!g_profileLogFile) {
-        fprintf(stderr, "Error: could not open trace log file '%s' for writing\n", traceFileName);
-        exit(1);
+        std::fprintf(stderr,
+            "Error: could not open trace log file '%s' for writing\n",
+            traceFileName);
+        std::exit(1);
+    }
+
+    // (optional) let the console know which config is active
+    std::cout << "Trace output will be written to: " << traceFileName << "\n";
+    if (argc >= 7) {
+        std::cout << "Loaded config INI: " << argv[6] << "\n";
+    } else {
+        std::cout << "No INI provided; using built-in defaults.\n";
     }
 
     std::fprintf(g_profileLogFile,
@@ -278,13 +385,6 @@ int main(int argc, char** argv)
     std::cout << "Trace output will be written to: " << traceFileName << std::endl;
 
     auto startLoading = std::chrono::high_resolution_clock::now();
-
-    if (argc < 6) {
-        fprintf(stderr,
-            "Usage: %s [issltable] [query file] [max distance] [score-threshold] [score-method] [optional-tracefile]\n",
-            argv[0]);
-        exit(1);
-    }
 
     if (g_profileLogFile) {
         auto now   = std::chrono::system_clock::now();
@@ -532,26 +632,26 @@ int main(int argc, char** argv)
 
     /** Binary encode query sequences */
     auto t_seq_start = std::chrono::steady_clock::now();
-    #if USE_OPENCL_SEQ2SIG
-    {
-        SeqSigEncoderCL enc;                      // one-time init (context, queue, program)
-        enc.encode(queryDataSet.data(),           // base pointer to the raw bytes
-                seqLineLength,                 // stride (including newline)
-                (uint32_t)seqLength,           // guide length (20)
+    if (opts.useCLSeq2Sig) {
+        // GPU path
+        SeqSigEncoderCL enc(opts);  // NEW: pass options so it can pick gfx1200, indices, etc.
+        enc.encode(queryDataSet.data(),            // base pointer to raw bytes
+                (uint32_t)seqLineLength,       // stride (incl. newline)
+                (uint32_t)seqLength,           // guide length
                 (uint32_t)queryCount,
                 querySignatures);              // output vector<uint64_t>
     }
-    #else
-    #pragma omp parallel
-        {
-    #pragma omp for
-            for (int i = 0; i < queryCount; i++) {
-                char* ptr = &queryDataSet[i * seqLineLength];
-                uint64_t signature = sequenceToSignature(ptr, 20);
-                querySignatures[i] = signature;
+    else {
+        #pragma omp parallel
+            {
+        #pragma omp for
+                for (int i = 0; i < queryCount; i++) {
+                    char* ptr = &queryDataSet[i * seqLineLength];
+                    uint64_t signature = sequenceToSignature(ptr, 20);
+                    querySignatures[i] = signature;
+                }
             }
-        }
-    #endif
+    }
     auto t_seq_end = std::chrono::steady_clock::now();
 
     // Reduce into global at thread exit
@@ -593,11 +693,12 @@ int main(int argc, char** argv)
     // ===== build & validate flattened metadata (do this once) =====
     FlatScoringMeta flatMeta = build_flat_meta(sliceMasks, allSlicelistSizes, offtargetsCount);
     sanity_check_flat_meta(sliceLists, allSlicelistSizes, allSignatures, flatMeta);
+
     auto t_score_start = std::chrono::steady_clock::now();
     bool usedGpu = false;
 
-    #if USE_OPENCL_SCORING
-    
+    // ---------- GPU path (runtime switch) ----------
+    if (opts.useCLScoring) {
         // ---- 1) Build metadata once ----
         ScoringIndexMeta clMeta{};
         clMeta.offtargetsCount        = offtargetsCount;
@@ -616,75 +717,71 @@ int main(int argc, char** argv)
         // ---- 2) Precision + LUT registration (safe to call multiple times) ----
         cl_set_precision(ClScorePrecision::Float64);
 
-        // Build GPU MIT LUT keyed by the packed L-bit mismatch mask
         const uint32_t L = static_cast<uint32_t>(seqLength);
-        const size_t   mitSize = 1ULL << L;  // 2^L (e.g., 1,048,576 for 20)
-
+        const size_t   mitSize = (L <= 31 ? (size_t)1ULL << L : 0); // guard huge LUTs
         std::vector<double> mitLutPacked(mitSize, 0.0);
-        for (const auto& kv : precalculatedMITScores) {
-            const uint64_t cpuMask2L = kv.first;
-            const double   score     = kv.second;
-
-            uint64_t packed = 0;
-            for (uint32_t pos = 0; pos < L; ++pos) {
-                packed |= ((cpuMask2L >> (2u * pos)) & 1ull) << pos; // take LSB of each 2-bit pair
+        if (mitSize) {
+            for (const auto& kv : precalculatedMITScores) {
+                const uint64_t cpuMask2L = kv.first;
+                const double   score     = kv.second;
+                uint64_t packed = 0;
+                for (uint32_t pos = 0; pos < L; ++pos) {
+                    packed |= ((cpuMask2L >> (2u * pos)) & 1ull) << pos; // take LSB of each 2-bit pair
+                }
+                if (packed < mitSize) mitLutPacked[(size_t)packed] = score;
             }
-            mitLutPacked[packed] = score;
+            cl_set_mit_lut(mitLutPacked.data(), mitLutPacked.size());
         }
-
-        // IMPORTANT: upload the *packed* LUT (and make sure the name matches)
 
         const std::size_t posLen = sizeof(cfdPosPenalties) / sizeof(cfdPosPenalties[0]);
         const std::size_t pamLen = sizeof(cfdPamPenalties) / sizeof(cfdPamPenalties[0]);
-        cl_set_mit_lut(mitLutPacked.data(), mitLutPacked.size());
         cl_set_cfd_pos_penalties(cfdPosPenalties, posLen);
         cl_set_cfd_pam_penalties(cfdPamPenalties, pamLen);
 
-        // ---- 3) One-time init ----
-        static bool cl_init_done = false;
-        if (!cl_init_done) {
-            init_scoring_cl(clMeta);
-            cl_init_done = true;
-            if (g_profileLogFile) {
-                std::fprintf(g_profileLogFile, "[CL] init_scoring_cl done (offtargets=%zu, slices=%zu)\n",
-                            offtargetsCount, sliceCount);
-                std::fflush(g_profileLogFile);
+        // ---- 3) One-time init (remember success/failure) ----
+        static int cl_init_state = 0; // 0=not tried, 1=ok, -1=failed
+        if (cl_init_state == 0) {
+            if (init_scoring_cl(clMeta, opts)) {
+                cl_init_state = 1;
+                if (g_profileLogFile) {
+                    std::fprintf(g_profileLogFile, "[CL] init_scoring_cl done (offtargets=%zu, slices=%zu)\n",
+                                offtargetsCount, sliceCount);
+                    std::fflush(g_profileLogFile);
+                }
+            } else {
+                cl_init_state = -1;
+                if (g_profileLogFile) {
+                    std::fprintf(g_profileLogFile, "[CL] init_scoring_cl failed — falling back to CPU\n");
+                    std::fflush(g_profileLogFile);
+                }
             }
         }
 
-        usedGpu = true;
+        if (cl_init_state == 1) {
+            usedGpu = true;
 
-        const size_t n = querySignatures.size();
+            const size_t n = querySignatures.size();
 
-        // Estimate per-guide bytes (future-proof: includes dedup bitset)
-        const bool     useF64           = (cl_get_precision() == ClScorePrecision::Float64);
-        const uint64_t wordsPerGuide    = (offtargetsCount + 63ull) / 64ull;
-        const uint64_t bitsetBytes      = wordsPerGuide * sizeof(uint64_t);     // ~46 KB in your dataset
-        const uint64_t outBytesPerGuide = useF64 ? 16ull : 8ull;                // MIT + CFD
-        const uint64_t sigBytesPerGuide = sizeof(uint64_t);
-        const uint64_t perGuideBytes    = bitsetBytes + outBytesPerGuide + sigBytesPerGuide;
+            // Estimate per-guide bytes (future-proof: includes dedup bitset)
+            const bool     useF64           = (cl_get_precision() == ClScorePrecision::Float64);
+            const uint64_t wordsPerGuide    = (offtargetsCount + 63ull) / 64ull;
+            const uint64_t bitsetBytes      = wordsPerGuide * sizeof(uint64_t);
+            const uint64_t outBytesPerGuide = useF64 ? 16ull : 8ull;   // MIT + CFD
+            const uint64_t sigBytesPerGuide = sizeof(uint64_t);
+            const uint64_t perGuideBytes    = bitsetBytes + outBytesPerGuide + sigBytesPerGuide;
 
-        const uint64_t totalVRAM   = cl_get_total_global_mem_bytes();
-        const uint64_t staticBytes = cl_get_static_bytes();
-        const double   keepFrac    = 0.20; // 20% headroom
+            const uint64_t totalVRAM   = cl_get_total_global_mem_bytes();
+            const uint64_t staticBytes = cl_get_static_bytes();
+            const double   keepFrac    = 0.20; // 20% headroom
 
-        uint64_t usable = (totalVRAM > staticBytes)
-                        ? (uint64_t)((double)(totalVRAM - staticBytes) * (1.0 - keepFrac))
-                        : 0ull;
+            uint64_t usable = (totalVRAM > staticBytes)
+                            ? (uint64_t)((double)(totalVRAM - staticBytes) * (1.0 - keepFrac))
+                            : 0ull;
 
-        uint64_t B = (perGuideBytes && usable > perGuideBytes) ? (usable / perGuideBytes) : 1ull;
-        B = std::max<uint64_t>(1ull, std::min<uint64_t>(B, (uint64_t)n));
+            uint64_t B = (perGuideBytes && usable > perGuideBytes) ? (usable / perGuideBytes) : 1ull;
+            B = std::max<uint64_t>(1ull, std::min<uint64_t>(B, (uint64_t)n));
 
-        std::fprintf(stderr,
-            "[CL] batch planner: vram_total=%llu, static=%llu, usable≈%llu, perGuide=%llu → B=%llu\n",
-            (unsigned long long)totalVRAM,
-            (unsigned long long)staticBytes,
-            (unsigned long long)usable,
-            (unsigned long long)perGuideBytes,
-            (unsigned long long)B
-        );
-        if (g_profileLogFile) {
-            std::fprintf(g_profileLogFile,
+            std::fprintf(stderr,
                 "[CL] batch planner: vram_total=%llu, static=%llu, usable≈%llu, perGuide=%llu → B=%llu\n",
                 (unsigned long long)totalVRAM,
                 (unsigned long long)staticBytes,
@@ -692,42 +789,53 @@ int main(int argc, char** argv)
                 (unsigned long long)perGuideBytes,
                 (unsigned long long)B
             );
-            std::fflush(g_profileLogFile);
-        }
-
-        // Run in batches; write outputs directly into final arrays
-        size_t done = 0;
-        while (done < n) {
-            const size_t take = (size_t)std::min<uint64_t>(B, (uint64_t)(n - done));
-
-            const bool ok = score_batch_cl(
-                /* querySigs */  querySignatures.data() + done,
-                /* guideCount */ take,
-                /* outMit     */ calcMit ? (querySignatureMitScores.data() + done) : nullptr,
-                /* outCfd     */ calcCfd ? (querySignatureCfdScores.data() + done) : nullptr,
-                /* method     */ scoreMethod,
-                /* threshold  */ threshold,
-                /* seqLength  */ seqLength
-            );
-
-            if (!ok) {
-                usedGpu = false;
-                if (g_profileLogFile) {
-                    std::fprintf(g_profileLogFile, "[CL] score_batch_cl failed — falling back to CPU\n");
-                    std::fflush(g_profileLogFile);
-                }
-                break; // optional: fall back to CPU for the remaining guides
-            }
-
             if (g_profileLogFile) {
-                std::fprintf(g_profileLogFile, "[CL] score_batch_cl OK for %zu guides\n", take);
+                std::fprintf(g_profileLogFile,
+                    "[CL] batch planner: vram_total=%llu, static=%llu, usable≈%llu, perGuide=%llu → B=%llu\n",
+                    (unsigned long long)totalVRAM,
+                    (unsigned long long)staticBytes,
+                    (unsigned long long)usable,
+                    (unsigned long long)perGuideBytes,
+                    (unsigned long long)B
+                );
                 std::fflush(g_profileLogFile);
             }
-            done += take;
-        }
 
-    #else
-    /** Begin scoring */
+            // Run in batches; write outputs directly into final arrays
+            size_t done = 0;
+            while (done < n) {
+                const size_t take = (size_t)std::min<uint64_t>(B, (uint64_t)(n - done));
+
+                const bool ok = score_batch_cl(
+                    /* querySigs */  querySignatures.data() + done,
+                    /* guideCount */ take,
+                    /* outMit     */ calcMit ? (querySignatureMitScores.data() + done) : nullptr,
+                    /* outCfd     */ calcCfd ? (querySignatureCfdScores.data() + done) : nullptr,
+                    /* method     */ scoreMethod,
+                    /* threshold  */ threshold,
+                    /* seqLength  */ seqLength
+                );
+
+                if (!ok) {
+                    usedGpu = false;
+                    if (g_profileLogFile) {
+                        std::fprintf(g_profileLogFile, "[CL] score_batch_cl failed — falling back to CPU\n");
+                        std::fflush(g_profileLogFile);
+                    }
+                    break; // fall back to CPU for remaining guides
+                }
+
+                if (g_profileLogFile) {
+                    std::fprintf(g_profileLogFile, "[CL] score_batch_cl OK for %zu guides\n", take);
+                    std::fflush(g_profileLogFile);
+                }
+                done += take;
+            }
+        }
+    }
+    
+    else {
+        /** Begin scoring */
         #pragma omp parallel
             {
                 ProfStats local{};
@@ -993,7 +1101,7 @@ int main(int argc, char** argv)
                     g_prof.samples_slice += local.samples_slice;
                 }
             }
-    #endif
+        }
 
     auto t_score_end = std::chrono::steady_clock::now();
     g_prof.scoring_total_ns = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(t_score_end - t_score_start).count());

@@ -1,8 +1,8 @@
 // cl_scoring.cpp
 #include "cl_scoring.hpp"
+#include "app_options.hpp"
 
-#if USE_OPENCL_SCORING
-
+#if USE_OPENCL_SCORING  // <-- prefer this (or remove the guard to always compile)
 #include <CL/cl.h>
 #include <cstdio>
 #include <cstdlib>
@@ -12,8 +12,9 @@
 #include <vector>
 #include <mutex>
 #include <string>
-
+#include <algorithm>
 #include <cstdint>
+
 static_assert(sizeof(cl_ulong)   == 8, "Expected cl_ulong to be 64-bit");
 static_assert(sizeof(uint64_t)   == 8, "Expected uint64_t to be 64-bit");
 static_assert(sizeof(cl_double)  == 8, "Expected cl_double to be 64-bit");
@@ -102,11 +103,100 @@ static std::vector<float> to_float(const std::vector<double>& v) {
     return out;
 }
 
-// ====== init: choose device, build program, upload static data ======
-void init_scoring_cl(const ScoringIndexMeta& meta)
+// helpers for CI substring match
+static std::string to_lower(std::string s){ for(char& c: s) c=(char)std::tolower((unsigned char)c); return s; }
+static bool contains_ci(const std::string& hay, const std::string& needle){
+    if (needle.empty()) return false;
+    auto H = to_lower(hay); auto N = to_lower(needle);
+    return H.find(N) != std::string::npos;
+}
+
+static void pick_device(const AppOptions& opts,
+                        cl_platform_id& outPlat,
+                        cl_device_id&   outDev)
+{
+    cl_uint nplat = 0;
+    cl_die_if(clGetPlatformIDs(0, nullptr, &nplat), "clGetPlatformIDs(count)");
+    if (!nplat) cl_die_if(CL_DEVICE_NOT_FOUND, "No OpenCL platforms");
+    std::vector<cl_platform_id> plats(nplat);
+    cl_die_if(clGetPlatformIDs(nplat, plats.data(), nullptr), "clGetPlatformIDs(list)");
+
+    auto get_dstr = [](cl_device_id d, cl_device_info param){
+        size_t n=0; clGetDeviceInfo(d, param, 0, nullptr, &n);
+        std::string s(n, '\0'); clGetDeviceInfo(d, param, n, s.data(), nullptr);
+        if (!s.empty() && s.back()=='\0') s.pop_back(); return s;
+    };
+
+    // 1) indices
+    if (opts.clPlatformIndex >= 0 && opts.clDeviceIndex >= 0 &&
+        (size_t)opts.clPlatformIndex < plats.size())
+    {
+        cl_platform_id P = plats[(size_t)opts.clPlatformIndex];
+        cl_uint ndev=0; if (clGetDeviceIDs(P, CL_DEVICE_TYPE_ALL, 0, nullptr, &ndev)==CL_SUCCESS && ndev){
+            std::vector<cl_device_id> devs(ndev);
+            clGetDeviceIDs(P, CL_DEVICE_TYPE_ALL, ndev, devs.data(), nullptr);
+            if ((size_t)opts.clDeviceIndex < devs.size()){
+                outPlat = P; outDev = devs[(size_t)opts.clDeviceIndex]; return;
+            }
+        }
+    }
+
+    // 2) gfx#### (name contains, case-insensitive)
+    if (!opts.clDeviceGfxId.empty()){
+        for (auto P: plats){
+            cl_uint ndev=0; clGetDeviceIDs(P, CL_DEVICE_TYPE_ALL, 0, nullptr, &ndev);
+            std::vector<cl_device_id> devs(ndev);
+            clGetDeviceIDs(P, CL_DEVICE_TYPE_ALL, ndev, devs.data(), nullptr);
+            for (auto d: devs){
+                if (contains_ci(get_dstr(d, CL_DEVICE_NAME), opts.clDeviceGfxId)){
+                    outPlat=P; outDev=d; return;
+                }
+            }
+        }
+    }
+
+    // 3) name substring
+    if (!opts.clDeviceNameContains.empty()){
+        for (auto P: plats){
+            cl_uint ndev=0; clGetDeviceIDs(P, CL_DEVICE_TYPE_ALL, 0, nullptr, &ndev);
+            std::vector<cl_device_id> devs(ndev);
+            clGetDeviceIDs(P, CL_DEVICE_TYPE_ALL, ndev, devs.data(), nullptr);
+            for (auto d: devs){
+                if (contains_ci(get_dstr(d, CL_DEVICE_NAME), opts.clDeviceNameContains)){
+                    outPlat=P; outDev=d; return;
+                }
+            }
+        }
+    }
+
+    // 4) prefer discrete GPU
+    for (auto P: plats){
+        cl_uint ndev=0; clGetDeviceIDs(P, CL_DEVICE_TYPE_GPU, 0, nullptr, &ndev);
+        std::vector<cl_device_id> devs(ndev);
+        clGetDeviceIDs(P, CL_DEVICE_TYPE_GPU, ndev, devs.data(), nullptr);
+        for (auto d: devs){
+            cl_bool unified=CL_TRUE;
+            clGetDeviceInfo(d, CL_DEVICE_HOST_UNIFIED_MEMORY, sizeof(unified), &unified, nullptr);
+            if (unified==CL_FALSE){ outPlat=P; outDev=d; return; }
+        }
+    }
+
+    // 5) first GPU anywhere
+    for (auto P: plats){
+        cl_uint ndev=0; clGetDeviceIDs(P, CL_DEVICE_TYPE_GPU, 0, nullptr, &ndev);
+        if (!ndev) continue;
+        std::vector<cl_device_id> devs(ndev);
+        clGetDeviceIDs(P, CL_DEVICE_TYPE_GPU, ndev, devs.data(), nullptr);
+        outPlat=P; outDev=devs[0]; return;
+    }
+
+    cl_die_if(CL_DEVICE_NOT_FOUND, "No OpenCL GPU devices found.");
+}
+
+bool init_scoring_cl(const ScoringIndexMeta& meta, const AppOptions& opts)  // <-- RETURNS bool
 {
     std::lock_guard<std::mutex> lk(g_mu);
-    if (g_ctx) return;
+    if (g_ctx) return true;  // already inited
 
     g_offtargetsCount_cached = meta.offtargetsCount;
     g_sliceCount_cached      = meta.sliceCount;
@@ -114,29 +204,10 @@ void init_scoring_cl(const ScoringIndexMeta& meta)
 
     cl_int err = CL_SUCCESS;
 
-    // 1) pick first platform/device (portable & simple)
-    // Pick a GPU by name substring; fall back to first GPU if not found.
-    // Optional env override: CRACKLING_CL_DEVICE=gfx1200 (or "Radeon", etc.)
-    const char* wantEnv = std::getenv("CRACKLING_CL_DEVICE");
-    std::string want = wantEnv ? wantEnv : "gfx1200"; // <-- set your default here
+    // --- device selection via opts ---
+    pick_device(opts, g_platform, g_device);
 
-    auto contains_ci = [](std::string hay, std::string needle){
-        std::transform(hay.begin(), hay.end(), hay.begin(), ::tolower);
-        std::transform(needle.begin(), needle.end(), needle.begin(), ::tolower);
-        return hay.find(needle) != std::string::npos;
-    };
-
-    cl_platform_id chosenPlat = nullptr;
-    cl_device_id   chosenDev  = nullptr;
-    std::string    chosenPlatName, chosenName, chosenVendor, chosenVersion;
-
-    // enumerate platforms
-    cl_uint nplat = 0;
-    cl_die_if(clGetPlatformIDs(0, nullptr, &nplat), "clGetPlatformIDs(count)");
-    std::vector<cl_platform_id> plats(nplat);
-    cl_die_if(clGetPlatformIDs(nplat, plats.data(), nullptr), "clGetPlatformIDs(list)");
-
-    // helper to fetch a string property
+    // log selection info
     auto get_pstr = [](cl_platform_id p, cl_platform_info param){
         size_t n=0; clGetPlatformInfo(p, param, 0, nullptr, &n);
         std::string s(n, '\0'); clGetPlatformInfo(p, param, n, s.data(), nullptr);
@@ -148,95 +219,25 @@ void init_scoring_cl(const ScoringIndexMeta& meta)
         if (!s.empty() && s.back()=='\0') s.pop_back(); return s;
     };
 
-    // 1) First pass: exact/substring match on any GPU
-    for (cl_uint pi = 0; pi < nplat && !chosenDev; ++pi) {
-        cl_uint ndev = 0;
-        clGetDeviceIDs(plats[pi], CL_DEVICE_TYPE_GPU, 0, nullptr, &ndev);
-        std::vector<cl_device_id> devs(ndev);
-        clGetDeviceIDs(plats[pi], CL_DEVICE_TYPE_GPU, ndev, devs.data(), nullptr);
-
-        for (cl_uint di = 0; di < ndev; ++di) {
-            std::string name    = get_dstr(devs[di], CL_DEVICE_NAME);
-            if (contains_ci(name, want)) {
-                chosenPlat   = plats[pi];
-                chosenDev    = devs[di];
-                chosenPlatName = get_pstr(plats[pi], CL_PLATFORM_NAME);
-                chosenName     = name;
-                chosenVendor   = get_dstr(devs[di], CL_DEVICE_VENDOR);
-                chosenVersion  = get_dstr(devs[di], CL_DEVICE_VERSION);
-                break;
-            }
-        }
-    }
-
-    // 2) Fallback: first discrete-leaning GPU (hostUnifiedMemory == false)
-    if (!chosenDev) {
-        for (cl_uint pi = 0; pi < nplat && !chosenDev; ++pi) {
-            cl_uint ndev = 0;
-            clGetDeviceIDs(plats[pi], CL_DEVICE_TYPE_GPU, 0, nullptr, &ndev);
-            std::vector<cl_device_id> devs(ndev);
-            clGetDeviceIDs(plats[pi], CL_DEVICE_TYPE_GPU, ndev, devs.data(), nullptr);
-            for (auto d : devs) {
-                cl_bool unified = CL_TRUE;
-                clGetDeviceInfo(d, CL_DEVICE_HOST_UNIFIED_MEMORY, sizeof(unified), &unified, nullptr);
-                if (unified == CL_FALSE) {
-                    chosenPlat   = plats[pi];
-                    chosenDev    = d;
-                    chosenPlatName = get_pstr(plats[pi], CL_PLATFORM_NAME);
-                    chosenName     = get_dstr(d, CL_DEVICE_NAME);
-                    chosenVendor   = get_dstr(d, CL_DEVICE_VENDOR);
-                    chosenVersion  = get_dstr(d, CL_DEVICE_VERSION);
-                    break;
-                }
-            }
-        }
-    }
-
-    // 3) Last fallback: first GPU anywhere
-    if (!chosenDev) {
-        for (cl_uint pi = 0; pi < nplat && !chosenDev; ++pi) {
-            cl_uint ndev = 0;
-            clGetDeviceIDs(plats[pi], CL_DEVICE_TYPE_GPU, 0, nullptr, &ndev);
-            if (!ndev) continue;
-            std::vector<cl_device_id> devs(ndev);
-            clGetDeviceIDs(plats[pi], CL_DEVICE_TYPE_GPU, ndev, devs.data(), nullptr);
-
-            chosenPlat   = plats[pi];
-            chosenDev    = devs[0];
-            chosenPlatName = get_pstr(plats[pi], CL_PLATFORM_NAME);
-            chosenName     = get_dstr(devs[0], CL_DEVICE_NAME);
-            chosenVendor   = get_dstr(devs[0], CL_DEVICE_VENDOR);
-            chosenVersion  = get_dstr(devs[0], CL_DEVICE_VERSION);
-            break;
-        }
-    }
-
-    if (!chosenDev) cl_die_if(CL_DEVICE_NOT_FOUND, "No OpenCL GPU devices found.");
-
-    g_platform = chosenPlat;
-    g_device   = chosenDev;
-
-    // log selection
     if (g_profileLogFile) {
-        std::fprintf(g_profileLogFile,
-            "[CL] Selected device: %s | Vendor=%s | Platform=%s | Version=%s (want=\"%s\")\n",
-            chosenName.c_str(), chosenVendor.c_str(), chosenPlatName.c_str(), chosenVersion.c_str(), want.c_str());
+        std::fprintf(g_profileLogFile, "[CL] Selected device: %s | Vendor=%s | Platform=%s | Version=%s\n",
+            get_dstr(g_device, CL_DEVICE_NAME).c_str(),
+            get_dstr(g_device, CL_DEVICE_VENDOR).c_str(),
+            get_pstr(g_platform, CL_PLATFORM_NAME).c_str(),
+            get_dstr(g_device, CL_DEVICE_VERSION).c_str());
         std::fflush(g_profileLogFile);
     }
 
-    // keep your mem size query
+    // memory info
     cl_ulong memBytes = 0;
-    cl_die_if(clGetDeviceInfo(g_device, CL_DEVICE_GLOBAL_MEM_SIZE,
-                            sizeof(memBytes), &memBytes, nullptr),
-            "clGetDeviceInfo(GLOBAL_MEM_SIZE)");
-    g_total_global_mem_bytes = static_cast<size_t>(memBytes);
+    cl_die_if(clGetDeviceInfo(g_device, CL_DEVICE_GLOBAL_MEM_SIZE, sizeof(memBytes), &memBytes, nullptr),
+              "clGetDeviceInfo(GLOBAL_MEM_SIZE)");
+    g_total_global_mem_bytes = (size_t)memBytes;
 
-
-    // 2) context + queue
+    // context + queue (2.0 first, fallback to 1.2)
 #if defined(CL_VERSION_2_0)
     g_ctx = clCreateContext(nullptr, 1, &g_device, nullptr, nullptr, &err);
     cl_die_if(err, "clCreateContext");
-    // create a CL 2.0 queue if available, else fall back below
     cl_queue_properties props[] = { 0 };
     g_q = clCreateCommandQueueWithProperties(g_ctx, g_device, props, &err);
     if (err != CL_SUCCESS) {
@@ -250,34 +251,33 @@ void init_scoring_cl(const ScoringIndexMeta& meta)
     cl_die_if(err, "clCreateCommandQueue");
 #endif
 
-    // 3) build program
-    const char* kpath = "scoring_kernels.cl"; // ensure it’s next to the exe (see CMake copy step below)
+    // build program
+    const char* kpath = "scoring_kernels.cl";
     std::string src = read_text_file(kpath);
     const char* srcPtr = src.c_str();
     size_t      srcLen = src.size();
     g_prog = clCreateProgramWithSource(g_ctx, 1, &srcPtr, &srcLen, &err);
     cl_die_if(err, "clCreateProgramWithSource");
 
-    // Build options: enable fp64 macro if requested
-    std::string opts;
-    if (g_prec == ClScorePrecision::Float64) {
-        // We only *request* fp64 in the kernel via -D USE_FP64.
-        // If device lacks cl_khr_fp64, build may fail; you can catch & fallback.
-        opts += "-D USE_FP64=1";
-    }
-    err = clBuildProgram(g_prog, 1, &g_device, opts.c_str(), nullptr, nullptr);
+    std::string buildOpts;
+    if (g_prec == ClScorePrecision::Float64) buildOpts += "-D USE_FP64=1";
+    err = clBuildProgram(g_prog, 1, &g_device, buildOpts.c_str(), nullptr, nullptr);
     if (err != CL_SUCCESS) {
-        // dump build log to help debugging
         size_t logSz = 0;
         clGetProgramBuildInfo(g_prog, g_device, CL_PROGRAM_BUILD_LOG, 0, nullptr, &logSz);
-        std::vector<char> log(logSz + 1, 0);
+        std::vector<char> log(logSz+1, 0);
         clGetProgramBuildInfo(g_prog, g_device, CL_PROGRAM_BUILD_LOG, logSz, log.data(), nullptr);
         std::fprintf(stderr, "Kernel build failed:\n%s\n", log.data());
-        std::exit(1);
+        return false;
     }
 
     g_kernel = clCreateKernel(g_prog, "score_kernel", &err);
     cl_die_if(err, "clCreateKernel(score_kernel)");
+
+    // --- upload static buffers (unchanged from your version) ---
+    // [keep your buffer creation + accounting exactly as you posted]
+
+    // ... (your existing buffer uploads) ...
 
     // 4) upload static buffers (index + masks + LUTs)
     //    All sizes are in elements; multiply by sizeof(T) for bytes.
@@ -387,6 +387,8 @@ void init_scoring_cl(const ScoringIndexMeta& meta)
 
     std::fprintf(stderr, "[CL] static_upload_bytes=%zu (of %zu VRAM)\n",
                 g_static_bytes, g_total_global_mem_bytes);
+    
+    return true;
 }
 
 // ====== run one batch (stub kernel writes zeros) ======
@@ -584,16 +586,20 @@ std::size_t cl_get_static_bytes() noexcept {
 }
 
 #else
-// if USE_OPENCL_SCORING == 0, keep empty stubs
-void cl_set_precision(ClScorePrecision) {}
-void cl_set_mit_lut(const double*, std::size_t) {}
-void cl_set_cfd_pos_penalties(const double*, std::size_t) {}
-void cl_set_cfd_pam_penalties(const double*, std::size_t) {}
-void init_scoring_cl(const ScoringIndexMeta&) {}
-bool score_batch_cl(const uint64_t*, std::size_t, double*, double*, otScoreMethod, double, std::size_t) { return false; }
-void shutdown_scoring_cl() {}
-
-ClScorePrecision cl_get_precision() { return ClScorePrecision::Float32; }
-std::size_t cl_get_total_global_mem_bytes() { return 0; }
-std::size_t cl_get_static_bytes() { return 0; }
+// -------- STUBS --------
+static void log_compiled_path_stub() {
+    std::fprintf(stderr, "[CL] cl_scoring.cpp: STUB implementation compiled\n");
+}
+struct LogOnceStub { LogOnceStub(){ log_compiled_path_stub(); } };
+static LogOnceStub s_log_once_stub;
+void  cl_set_precision(ClScorePrecision) {}
+void  cl_set_mit_lut(const double*, std::size_t) {}
+void  cl_set_cfd_pos_penalties(const double*, std::size_t) {}
+void  cl_set_cfd_pam_penalties(const double*, std::size_t) {}
+bool  init_scoring_cl(const ScoringIndexMeta&, const AppOptions&) { return false; }
+bool  score_batch_cl(const uint64_t*, std::size_t, double*, double*, otScoreMethod, double, std::size_t) { return false; }
+void  shutdown_scoring_cl() {}
+ClScorePrecision cl_get_precision() noexcept { return ClScorePrecision::Float32; }
+std::size_t      cl_get_total_global_mem_bytes() noexcept { return 0; }
+std::size_t      cl_get_static_bytes() noexcept { return 0; }
 #endif
