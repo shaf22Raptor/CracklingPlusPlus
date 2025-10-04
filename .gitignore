@@ -403,3 +403,4 @@ FodyWeavers.xsd
 /cmake-build-debug
 
 **/TestData*/
+**/Results*/
