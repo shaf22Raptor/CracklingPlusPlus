@@ -27,7 +27,7 @@ x86/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/
 bld/
-[Bb]uild/
+[Bb]uild*/
 [Bb]in/
 [Oo]bj/
 [Ll]og/
@@ -401,3 +401,6 @@ FodyWeavers.xsd
 *.sln.iml
 /.idea
 /cmake-build-debug
+
+**/TestData*/
+**/Results*/

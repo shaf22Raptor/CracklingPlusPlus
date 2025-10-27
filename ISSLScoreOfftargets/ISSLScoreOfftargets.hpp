@@ -14,5 +14,9 @@
 #include "../include/otScorePenalties.hpp"
 #include "../include/util.hpp"
 
+// new includes for manual profiling
+#include <cstdio>
+#include <cinttypes>
+
 
 #endif // !ISSLScoreOfftargetsInclude
