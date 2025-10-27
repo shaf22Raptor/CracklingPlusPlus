@@ -5,17 +5,11 @@ Rapid Whole-Genome Identification of High Quality CRISPR Guide RNAs with the Cra
 
 ## Preamble
 
-> The design of CRISPR-Cas9 guide RNAs is not trivial. In particular, it is crucial to evaluate 
-the risk of unintended, off-target modifications, but this is computationally expensive. To 
-avoid a brute-force approach where each guide RNA is compared against every possible CRISPR 
-target site in the genome, we previously introduced Crackling, a guide RNA design tool that 
-relies on exact matches over 4bp subsequences to approximate a neighbourhood and accelerate 
-off-target scoring by greatly reducing the search space. While this was faster than other 
-existing tools, it still generates large neighbourhoods. Here, we aim to further reduce the 
-search space by requiring more, now non-contiguous, exact matches. The new implementation, 
-called Crackling++, is benchmarked against our initial approach and other off-target evaluation 
-tools. We show that it provides the fastest way to assess candidate guide RNAs. By using memorymapped 
-files, it also scales to the largest genomes. 
+> CracklingCL is a GPU-parallelised implementation of the ISSL off-target scoring component from Crackling++
+, a high-performance CRISPR-Cas9 guide RNA design tool.
+It leverages OpenCL to accelerate the ISSL scoring pipeline on modern GPUs while maintaining compatibility with Crackling++’s scoring models (MIT, CFD, and Zhang).
+
+CracklingCL demonstrates that GPU parallelisation can substantially reduce runtime on large genomic datasets, especially for full-genome off-target discovery and scoring tasks.
 Crackling++ is available at https://github.com/bmds-lab/CracklingPlusPlus under the Berkeley Software 
 Distribution (BSD) 3-Clause license.
 
@@ -24,8 +18,10 @@ Distribution (BSD) 3-Clause license.
 - [Boost](https://www.boost.org/)
 - [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml)
 - [RNAfold](https://www.tbi.univie.ac.at/RNA/RNAfold.1.html)
+- OpenCL 1.2+ runtime
 
-Note: Please ensure that your version of Boost that you have installed is supported by your version of CMake.
+Note: Windows builds for subprograms such as ISSLCreateIndex and ExtractOfftargets are unstable. The focus of development was ISSLScoreOfftargets.
+These components should be compiled and executed in WSL2 or on a Linux machine for best stability and performance.
 
 ## Installation
 1. Clone or download the repo.
@@ -36,21 +32,17 @@ cd ~/CracklingPlusPlus
 
 2. Create build directory
 ```bash
-mkdir build
-cd build
+mkdir [folder_name]
+cd [folder_name]
 ```
 
-3. Run CMake to generate build files
-
+3. Run CMAKE to build GPU accelerated program
+Please execute the following in the same directory where the topline cmakelists.txt file is located:
 ```bash
-CMake ..
+cmake -B [folder_name] -S . -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+cmake --build [folder_name] --config Release
 ```
-
-4. Run build system command. E.g. `make`
-```bash
-make
-```
-All of the programs (CracklingPlusPlus, ISSLCreateIndex and ExtractOfftargets) have now been built.
+The program will now be built
 
 ## Building Bowtie2 Index
 The Bowtie2 manual can be found [here](https://bowtie-bio.sourceforge.net/bowtie2/manual.shtml).
@@ -132,19 +124,26 @@ ISSLCreateIndex ~/genomes/mouse_offtargets.txt ~/CracklingPlusPlus/sample/slice4
 
 Running scoring algorithm in Windows
 ```bash
-.\ISSLScoreOfftargets.exe ..\..\..\TestData\non\nonISSL.issl ..\..\..\TestData\non\non_offtargets.txt 4 0.1 mit
+.\ISSLScoreOfftargets.exe <issl-index> <offtarget-file> <max-mismatches> <threshold> <scoring-method> <config-file>
+```
+For example
+```bash
+.\ISSLScoreOfftargets.exe TestData/Genome/issl.issl TestData/Genome/offtargets.txt 4 0.1 mit config.ini
 ```
 
-## Running CracklingPlusPlus
+## Running CracklingPlusPlus ISSLScoreOfftargets
 Please ensure all of the above steps have been completed before running the program. 
-To run the program simply fill out the provided `config.ini` in the samples folder and call the program as follows:
+To run the program, config.ini file must be created in the release folder of ISSLScoreOfftargets. To specify OpenCL and profiling options:
 
 ```bash
-CracklingPlusPlus <config-file>
+[opencl]
+use_seq2sig = [true/false]
+use_scoring = [true/false]
+device_gfx_id = [cl_id e.g. gfx1200]
 
-## Running 
+[profiling]
+trace_file = [name].log
 ```
-
 
 
 ## References
